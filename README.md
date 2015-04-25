@@ -5,8 +5,8 @@
 * Import Database:
   - Download.
   - Create new folder `backup/`
-  - Extract *.sql file to `backup/*.sql`
-  - Go to folder `bin`: `cd bin`
+  - Extract `*.sql` file to `backup/*.sql`
+  - Go to `bin/` folder: `cd bin`
   - Run: `sh import.sh` [To import the sql file. This might take a few hours.]
 
 Tables:
