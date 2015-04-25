@@ -1,4 +1,5 @@
-# ignore backup + tmp
+# ignore log, backup + tmp
+*.log
 backup/*
 tmp
 

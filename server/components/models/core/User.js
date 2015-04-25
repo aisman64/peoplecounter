@@ -8,11 +8,6 @@
 var NoGapDef = require('nogap').Def;
 
 
-var componentsRoot = '../../';
-var libRoot = componentsRoot + '../lib/';
-var SequelizeUtil = require(libRoot + 'SequelizeUtil');
-
-
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
@@ -80,7 +75,7 @@ module.exports = NoGapDef.component({
                         indices: [
                             {
                                 unique: true,
-                                key: ['name']
+                                key: ['username']
                             },
                             {
                                 unique: true,
@@ -114,8 +109,8 @@ module.exports = NoGapDef.component({
                                 else if (queryInput.facebookID) {
                                     return this.indices.facebookID.get(queryInput.facebookID);
                                 }
-                                else if (queryInput.name) {
-                                    return this.indices.name.get(queryInput.name);
+                                else if (queryInput.username) {
+                                    return this.indices.username.get(queryInput.username);
                                 }
                                 return null;
                             },
@@ -148,7 +143,7 @@ module.exports = NoGapDef.component({
                 },
 
                 getCurrentUserName: function() {
-                    return this.currentUser ? this.currentUser.name : null;
+                    return this.currentUser ? this.currentUser.username : null;
                 },
 
                 /**
@@ -181,11 +176,16 @@ module.exports = NoGapDef.component({
         var UserModel;
         var UserRole;
 
+        var componentsRoot = '../../';
+        var libRoot = componentsRoot + '../lib/';
+        var SequelizeUtil;
+
         // TODO: Updates
         // see: http://stackoverflow.com/a/8158485/2228771
 
         return {
             __ctor: function () {
+                SequelizeUtil = require(libRoot + 'SequelizeUtil');
             },
 
             initModel: function() {
@@ -196,7 +196,7 @@ module.exports = NoGapDef.component({
                  * User object definition.
                  */
                 return UserModel = sequelize.define('User', {
-                    uid: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
+                    id: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
                     role: {
                         type: Sequelize.INTEGER.UNSIGNED,
                         allowNull: false
@@ -206,21 +206,20 @@ module.exports = NoGapDef.component({
                         allowNull: false
                     },
                     // debugMode: {type: Sequelize.INTEGER.UNSIGNED},
-                    name: {
+                    username: {
                         type: Sequelize.STRING(100),
                         allowNull: false
                     },
+
                     realName: Sequelize.STRING(100),
                     email: Sequelize.STRING(100),
                     locale: Sequelize.STRING(20),
-                    lastIp: Sequelize.STRING(100),
-                    facebookID: Sequelize.STRING(100),
-                    facebookToken: Sequelize.STRING(100),
 
-                    lastNotificationCheck: Sequelize.DATE
+                    facebookID: Sequelize.STRING(100),
+                    facebookToken: Sequelize.STRING(100)
                 },{
                     freezeTableName: true,
-                    tableName: 'bjt_user',
+                    tableName: 'users',
                     classMethods: {
                         onBeforeSync: function(models) {
                         },
@@ -230,7 +229,7 @@ module.exports = NoGapDef.component({
                             return Promise.join(
                                 // create indices
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['role']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['name'], { indexOptions: 'UNIQUE'}),
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['username'], { indexOptions: 'UNIQUE'}),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['facebookID'], { indexOptions: 'UNIQUE'})
                             );
                         }
@@ -249,7 +248,7 @@ module.exports = NoGapDef.component({
                              * 
                              */
                             compileReadObjectQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
-                                // Possible input: uid, name, facebookID
+                                // Possible input: uid, username, facebookID
                                 if (!queryInput) {
                                     return Promise.reject(makeError('error.invalid.request'));
                                 }
@@ -272,8 +271,8 @@ module.exports = NoGapDef.component({
                                 else if (queryInput.facebookID) {
                                     queryData.where.facebookID = queryInput.facebookID;
                                 }
-                                else if (queryInput.name) {
-                                    queryData.where.name = queryInput.name;
+                                else if (queryInput.username) {
+                                    queryData.where.username = queryInput.username;
                                 }
                                 else {
                                     return Promise.reject(makeError('error.invalid.request'));
@@ -371,7 +370,7 @@ module.exports = NoGapDef.component({
                  */
                 onLogout: function(){
                     // fire logout event
-                    var userName = this.currentUser && this.currentUser.name;
+                    var userName = this.currentUser && this.currentUser.username;
                     return this.events.logout.fire()
                     .bind(this)
                     .then(function() {
@@ -394,6 +393,17 @@ module.exports = NoGapDef.component({
                         // login using userName
                         queryInput = { name: authData.userName };
                     }
+
+                    var logLoginAttempt = function(user, result) {
+                        // TODO: Need string for IP address due to the diversity in types (at the very least: IPv4, IPv6)
+                        // return this.Instance.LoginAttempt.Model.create({
+                        //     user_id: user && user.id,
+                        //     result: !!user,
+                        //     ip: 
+                        // })
+                        // .return(user);
+                        return user;
+                    };
 
                     return this.findUser(queryInput)
                     .bind(this)
@@ -440,6 +450,18 @@ module.exports = NoGapDef.component({
                             return this.onLogin(user, true)
                             .return(user);
                         }
+                    })
+
+                    // log LoginAttempt
+                    .then(function(user) {
+                        return logLoginAttempt(user);
+                    })
+                    .catch(function(err) {
+                        return logLoginAttempt(null)
+                        .then(function() {
+                            // propagate original error
+                            return Promise.reject(err); 
+                        });
                     });
                 },
 

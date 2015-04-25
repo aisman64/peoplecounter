@@ -96,7 +96,7 @@ module.exports = NoGapDef.component({
                         userName = this.Instance.Libs.ComponentCommunications.getUserIdentifier();
                      }
                      else {
-                        userName = user.name;
+                        userName = user.username;
                      }
                      return userName;
                 },

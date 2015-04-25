@@ -177,7 +177,7 @@ module.exports = NoGapDef.component({
                         // TODO: This is a hack to update the "urgent marker" on demand...
                         ThisComponent.page.navButton && ThisComponent.page.navButton.setUrgentMarker(user && user.role != user.displayRole);
 
-                        return user && user.name;
+                        return user && user.username;
                     }
                 });
             },
