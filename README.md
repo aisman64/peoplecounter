@@ -1,5 +1,14 @@
 # peoplecounter
 
+=Getting Started=
+* Setup server by following [these steps](https://github.com/Domiii/node-sample-app)
+* Import Database:
+  - Download.
+  - Create new folder `backup/`
+  - Extract *.sql file to `backup/*.sql`
+  - Go to folder `bin`: `cd bin`
+  - Run: `sh import.sh` [To import the sql file. This might take a few hours.]
+
 Tables:
 
 	CREATE TABLE `users` (
