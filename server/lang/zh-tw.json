@@ -1,0 +1,17 @@
+{
+    "en": "英文",
+    "zh": "中文",
+    "zh-ch": "中文 (簡體)",
+    "zh-tw": "中文 (繁體)",
+
+    "Ok": "Ok",
+    "Cancel": "取消",
+    "none": "無",
+    "Done": "完成",
+    "Or": "或",
+
+    "Login": "登入",
+    "Logout": "登出",
+
+    "account.currentLanguage": "語言"
+}

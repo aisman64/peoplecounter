@@ -1,0 +1,115 @@
+<div class="fill container-page" ng-controller="accountCtrl">
+
+    <div ng-if="currentUser.role != currentUser.displayRole"
+        ng-click="clickDefaultDisplayRole()"
+        class="alert alert-danger fill"
+        >
+        <localize key="account.downgradedPermissions" />
+        <span style="color: orange" class="fa fa-exclamation-triangle" />
+        <span ng-style="{visibility: busyRole && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+        <br/>
+    </div>
+
+    <div ng-if="!!errorMessage" class="alert alert-danger fill">
+        <span>
+            {{errorMessage}}
+        </span>
+        <br/>
+    </div>
+
+    <div ng-if="!!infoMessage" class="alert alert-info fill">
+        <a href="#" class="close" data-dismiss="alert">&times;</a>
+        <span>
+            {{infoMessage}}
+        </span>
+        <br/>
+    </div>
+
+
+    <!-- ##################################################################################################### -->
+    <!-- Account Overview -->
+
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <div class="panel-title">
+                <localize key="account.yourAccount"></localize> - <span>{{currentUser.name}}</span>
+            </div>
+        </div>
+        <div class="panel-body">
+            <span>
+                Hello!
+            </span>
+        </div> <!-- panel-body -->
+    </div> <!-- panel -->
+
+
+    <!-- ##################################################################################################### -->
+    <!-- Preferences -->
+
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <div class="panel-title">
+                <!-- <localize key="account.yourAccount" /> -->
+                Preferences
+            </div>
+        </div>
+        <div class="panel-body">
+
+            <!-- Language selection -->
+            <div class="btn-group" dropdown is-open="status.isopen">
+                <button type="button" class="btn btn-lg btn-fancy dropdown-toggle" ng-disabled="disabled">
+                    <localize key="account.currentLanguage"/> - <localize key="{{currentUser.locale}}"/>
+                    <span ng-show="!busyLocale" class="caret"></span>
+                    <span ng-show="busyLocale"><i class="fa fa-spinner fa-spin"></i></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li ng-repeat="locale in PC.allLocales">
+                        <a href="" ng-click="setLocale(locale); status.isopen = false;">
+                            <localize locale="{{locale}}" key="{{locale}}"></localize>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div> <!-- panel-body -->
+    </div> <!-- panel -->
+    
+
+    <!-- ##################################################################################################### -->
+    <!-- Admin stuff -->
+
+    <div class="panel panel-primary"
+            ng-show="currentUserIsStaff">
+        <div class="panel-heading">
+            <div class="panel-title">
+                <!-- <localize key="account.yourAccount" /> -->
+                Admin
+            </div>
+        </div>
+        <div class="panel-body">
+
+
+            <!-- Change to stand user View -->
+            <div>
+                <a ng-disabled="busyRole"
+                    class="btn btn-lg btn-fancy" 
+                    ng-click="clickStandardUserDisplayRole()">
+                        <localize key="account.changeToStandardUserView" />
+                        <span ng-style="{visibility: busyRole && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+                </a>
+            </div>
+
+        </div> <!-- panel-body -->
+    </div> <!-- panel -->
+
+    <!-- Logout button -->
+    <div class="">
+        <a ng-disabled="busy"
+            class="btn btn-lg btn-danger"
+            ng-click="clickLogout()">
+            <localize key="Logout"></localize>
+            <span ng-style="{visibility: busy && 'visible' || 'hidden'}">
+                <i class="fa fa-spinner fa-spin"></i>
+            </span>
+        </a>
+    </div>
+</div>

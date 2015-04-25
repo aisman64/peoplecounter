@@ -1,0 +1,38 @@
+{
+  "name": "sample-app",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node app",
+    "deb": "node-debug app"
+  },
+  "dependencies": {
+    "express": "~4.1.0",
+    "static-favicon": "~1.0.0",
+    "cookie-parser": "~1.0.1",
+    "debug": "~0.7.4",
+    "mysql": "*",
+    "sequelize": "~2.0.0",
+    "express-json": "*",
+    "express-session": "^1.0.4",
+    "express-mysql-session": "0.0.12",
+    "cookie": "*",
+    "mime": "*",
+
+    "process": "*",
+    "mkdirp": "*",
+    "rimraf": "*",
+    "URIjs": "*",
+    "log4js": "*",
+    "longjohn": "*",
+    "bluebird": "*",
+    "promisify-node": "*",
+
+    "nogap": "*",
+    "http-proxy": "*",
+    
+    "fb": "*",
+    "passport": "*",
+    "passport-facebook": "*"
+  }
+}
