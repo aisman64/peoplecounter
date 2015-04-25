@@ -1,6 +1,6 @@
 # peoplecounter
 
-=Getting Started=
+## Getting Started
 * Setup server by following [these steps](https://github.com/Domiii/node-sample-app)
 * Import Database:
   - Download.
