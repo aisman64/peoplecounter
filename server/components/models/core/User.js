@@ -196,7 +196,7 @@ module.exports = NoGapDef.component({
                  * User object definition.
                  */
                 return UserModel = sequelize.define('User', {
-                    id: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
+                    uid: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
                     role: {
                         type: Sequelize.INTEGER.UNSIGNED,
                         allowNull: false
@@ -219,7 +219,6 @@ module.exports = NoGapDef.component({
                     facebookToken: Sequelize.STRING(100)
                 },{
                     freezeTableName: true,
-                    tableName: 'users',
                     classMethods: {
                         onBeforeSync: function(models) {
                         },
