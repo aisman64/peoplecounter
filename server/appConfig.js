@@ -88,7 +88,7 @@ module.exports = {
         'user'     : 'root',
         'password' : 'r00t',
         'port'     : '3306',
-        'database' : 'my_db',
+        'database' : 'peoplecounter',
         'reconnectDelay':   '5'
     },
 
