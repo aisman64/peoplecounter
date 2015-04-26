@@ -1,0 +1,54 @@
+-> Important
+	- Device registration
+	- Receive datasets from device
+	- User login: Facebook (or Google, Github etc...) tie-in
+	- Basic packet statistics (which?)
+
+-> Features
+	-> Physical location mapping of devices
+	-> People counting
+		-> Location density graphs/maps over time
+	-> MAC tracking
+		-> Per-MAC time correlation of data points between devices ()
+		-> Per-MAC time tracking, maps, graphs etc.
+		-> "What do you know about me?" -> Page shows your current device's MAC's info
+	-> Triangulation
+		-> 1D mapping constraint in hall-ways for devices of certain signal strength derivatives?
+
+-> Later
+	- Device monitoring tables (cpu, mem, network)
+	- Use some API to look up SSID physical locations
+
+-> Tables:
+	- data
+		-> One row = one packet
+		-> `sigstr` = signal strength (0 [strong] to -99 [weak]; dbm)
+		-> One `ssid` per packet (string)
+		-> `dataset` (id)
+		-> `device` is a string
+			- change `device` to `deviceId`
+		-> mac string -> add separate table instead
+		-> prefix = `oui` string
+			- not needed
+		-> file = filename (sent by device in a batch)
+			- not needed
+
+	- datasets
+		-> Multiple files per dataset
+
+	- ssid
+		-> exported from `data`
+		-> Sometimes they send binary data?
+
+	- devices
+
+
+	[unimportant for now]
+	- oui
+		- (I guess, you imported this from some website?)
+	- clean
+		-> Get rid of it
+	- files
+	- ifaces
+	- cpu
+	- mem
