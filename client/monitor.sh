@@ -12,7 +12,6 @@ elif [ "$1" == 'stop' ]; then
 	killall -SIGINT tcpdump
 	ifconfig mon0 down
 	iw dev mon0 del
-	iw phy phy0 interface add wlan0 type managed
 	exit
 else
 	echo "write ./monitor.sh start or ./monitor.sh stop for starting or stopping this program"
