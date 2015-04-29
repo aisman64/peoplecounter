@@ -14,7 +14,7 @@ module.exports = NoGapDef.component({
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
-    Host: NoGapDef.defHost(function(Shared, Context) { return {
+    Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { return {
         /**
          * 
          */
