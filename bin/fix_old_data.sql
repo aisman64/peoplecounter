@@ -1,6 +1,25 @@
+-- Most often used mac addresses in `clean`: count, macId
+-- 102139, 12742
+-- 37756, 8429
+-- 36731, 166
+-- 34138, 11013
+-- 29649, 8815
+-- 28556, 8878
+-- 23694, 11015
+-- 21550, 353
+-- 17363, 3597
+-- 13489, 8967
+
+-- Time sampling (using 60 second time slices):
+-- SELECT COUNT(*) c, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` WHERE macid = 11015 GROUP BY `t` ORDER BY `t` LIMIT 30;
+-- SELECT COUNT(*) c, `macId`, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` GROUP BY `macId`, `t` ORDER BY `macId`, `t` LIMIT 30;
+
+
 ###################################################################################################
 # move and rename tables
 ###################################################################################################
+
+CREATE DATABASE `peoplecounter`;
 
 ALTER TABLE project.data RENAME peoplecounter.WifiPacket;
 ALTER TABLE project.datasets RENAME peoplecounter.WifiDataset;
@@ -22,16 +41,16 @@ USE `peoplecounter`;
 # rename columns
 ###################################################################################################
 
-ALTER TABLE WifiPacket CHANGE id packetId;
-ALTER TABLE WifiPacket CHANGE sigstr signalStrength;
+ALTER TABLE WifiPacket CHANGE id packetId INTEGER UNSIGNED;
+ALTER TABLE WifiPacket CHANGE sigstr signalStrength INTEGER;
 
-ALTER TABLE WifiDataset CHANGE COLUMN dataset datasetName;
+ALTER TABLE WifiDataset CHANGE COLUMN dataset datasetName varchar(255);
 
-ALTER TABLE WifiSnifferDevice CHANGE COLUMN id deviceId;
-ALTER TABLE WifiSnifferDevice CHANGE COLUMN device deviceName;
+ALTER TABLE WifiSnifferDevice CHANGE COLUMN id deviceId INTEGER UNSIGNED;
+ALTER TABLE WifiSnifferDevice CHANGE COLUMN device deviceName varchar(255);
 
-ALTER TABLE SSID CHANGE COLUMN id ssidId;
-ALTER TABLE SSID CHANGE COLUMN ssid ssidName;
+ALTER TABLE SSID CHANGE COLUMN id ssidId INTEGER UNSIGNED;
+ALTER TABLE SSID CHANGE COLUMN ssid ssidName varchar(32);
 
 
 ###################################################################################################

@@ -22,6 +22,7 @@ module.exports = NoGapDef.component({
                  */
                 "Unregistered": 1,
                 "StandardUser": 2,
+                "Device": 3,
                 
                 /**
                  * This role is used for maintenance operations that may have severe consequences 
@@ -75,7 +76,7 @@ module.exports = NoGapDef.component({
                         indices: [
                             {
                                 unique: true,
-                                key: ['username']
+                                key: ['userName']
                             },
                             {
                                 unique: true,
@@ -109,8 +110,8 @@ module.exports = NoGapDef.component({
                                 else if (queryInput.facebookID) {
                                     return this.indices.facebookID.get(queryInput.facebookID);
                                 }
-                                else if (queryInput.username) {
-                                    return this.indices.username.get(queryInput.username);
+                                else if (queryInput.userName) {
+                                    return this.indices.userName.get(queryInput.userName);
                                 }
                                 return null;
                             },
@@ -143,7 +144,7 @@ module.exports = NoGapDef.component({
                 },
 
                 getCurrentUserName: function() {
-                    return this.currentUser ? this.currentUser.username : null;
+                    return this.currentUser ? this.currentUser.userName : null;
                 },
 
                 /**
@@ -206,7 +207,7 @@ module.exports = NoGapDef.component({
                         allowNull: false
                     },
                     // debugMode: {type: Sequelize.INTEGER.UNSIGNED},
-                    username: {
+                    userName: {
                         type: Sequelize.STRING(100),
                         allowNull: false
                     },
@@ -228,7 +229,7 @@ module.exports = NoGapDef.component({
                             return Promise.join(
                                 // create indices
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['role']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['username'], { indexOptions: 'UNIQUE'}),
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['userName'], { indexOptions: 'UNIQUE'}),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['facebookID'], { indexOptions: 'UNIQUE'})
                             );
                         }
@@ -247,7 +248,7 @@ module.exports = NoGapDef.component({
                              * 
                              */
                             compileReadObjectQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
-                                // Possible input: uid, username, facebookID
+                                // Possible input: uid, userName, facebookID
                                 if (!queryInput) {
                                     return Promise.reject(makeError('error.invalid.request'));
                                 }
@@ -270,10 +271,11 @@ module.exports = NoGapDef.component({
                                 else if (queryInput.facebookID) {
                                     queryData.where.facebookID = queryInput.facebookID;
                                 }
-                                else if (queryInput.username) {
-                                    queryData.where.username = queryInput.username;
+                                else if (queryInput.userName) {
+                                    queryData.where.userName = queryInput.userName;
                                 }
                                 else {
+                                    console.error(queryInput);
                                     return Promise.reject(makeError('error.invalid.request'));
                                 }
 
@@ -369,7 +371,7 @@ module.exports = NoGapDef.component({
                  */
                 onLogout: function(){
                     // fire logout event
-                    var userName = this.currentUser && this.currentUser.username;
+                    var userName = this.currentUser && this.currentUser.userName;
                     return this.events.logout.fire()
                     .bind(this)
                     .then(function() {
@@ -390,7 +392,7 @@ module.exports = NoGapDef.component({
                     }
                     else {
                         // login using userName
-                        queryInput = { name: authData.userName };
+                        queryInput = { userName: authData.userName };
                     }
 
                     var logLoginAttempt = function(user, result) {
@@ -401,7 +403,7 @@ module.exports = NoGapDef.component({
                         //     ip: 
                         // })
                         // .return(user);
-                        return user;
+                        return Promise.resolve(user);
                     };
 
                     return this.findUser(queryInput)
@@ -485,7 +487,7 @@ module.exports = NoGapDef.component({
                     }
 
                     var queryData = {
-                        name: authData.userName, 
+                        userName: authData.userName, 
                         role: role, 
                         displayRole: role,
 

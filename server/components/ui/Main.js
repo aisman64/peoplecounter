@@ -188,6 +188,7 @@ module.exports = NoGapDef.component({
 
                 pageComponents: [
                     'HomePage',
+                    'DevicePage',
                     'AccountPage'
                 ],
 

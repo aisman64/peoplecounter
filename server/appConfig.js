@@ -68,8 +68,6 @@ module.exports = {
     // ########################################################################################################################
     // Mostly constant options
 
-    'title': 'Sample App',
-
     // folder containing files, accessible by clients
     'uploadFolder': 'uploads/',
 
@@ -163,6 +161,7 @@ module.exports = {
 
             // user pages:
             'ui/home/HomePage',
+            'ui/device/DevicePage',
             'ui/account/AccountPage'
         ]
     },

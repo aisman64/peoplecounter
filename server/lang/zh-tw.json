@@ -13,5 +13,7 @@
     "Login": "登入",
     "Logout": "登出",
 
+    "page.Device": "裝置",
+
     "account.currentLanguage": "語言"
 }

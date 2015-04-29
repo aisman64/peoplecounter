@@ -195,6 +195,7 @@ var SequelizeUtil = {
      *
 	 * @param row The result object or array from a Sequelize query's `success` or `complete` operation.
 	 * @param associations The `include` parameter of the Sequelize query.
+     * @see http://stackoverflow.com/a/24837502/2228771
      */
     getValuesFromRows: function(rows, associations) {
         // get POD (plain old data) values
