@@ -135,11 +135,17 @@ module.exports = NoGapDef.component({
              * Guess browser locale
              * @see http://stackoverflow.com/a/26889118/2228771
              */
-            guessBrowserLanguage: function() {
-                var locale = window.navigator.languages ? window.navigator.languages[0] : null;
-                locale = locale || window.navigator.language || 
-                    window.navigator.browserLanguage || window.navigator.userLanguage;
-                return locale;
+            guessClientLanguage: function() {
+                if (typeof(window) !== 'undefined') {
+                    var locale = window.navigator.languages ? window.navigator.languages[0] : null;
+                    locale = locale || window.navigator.language || 
+                        window.navigator.browserLanguage || window.navigator.userLanguage;
+                    return locale;
+                }
+                else {
+                    // nothing to guess
+                    return 'en';
+                }
             }
         };
     })

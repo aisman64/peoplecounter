@@ -1,5 +1,5 @@
 /**
- * The Main component is the base component for logged in users.
+ * The MainUI component hosts shared JS + CSS files, and kicks off the UI Client
  */
 "use strict";
  
@@ -79,54 +79,6 @@ module.exports = NoGapDef.component({
         Private: {
             __ctor: function() {
             },
-
-            onNewClient: function() {
-                // enable these core components on the client initially
-                return this.Tools.requestClientComponents(
-                    // Core stuff
-                    'RuntimeError',
-                    'AppConfig', 
-                    'User',
-
-                    // utilities
-                    'CacheUtil',
-                    'MiscUtil',
-                    'Localizer',
-                    'Log',
-                    'ValidationUtil',
-                    'SimpleBooleanExpressions',
-                    'Auth',
-
-                    // base UI elements
-                    'UIMgr', 'Main'
-                )
-                .bind(this)
-                .then(function() {
-                    // send default localizer to client
-                    this.client.setDefaultLocalizer(Shared.Localizer.Default);
-                })
-
-                // then send other core components that depend on previous components to be ready
-                .then(function() {
-                    // return this.Tools.requestClientComponents(
-                    //     'UIActivityTracker'
-                    // );
-                });
-            },
-
-            /**
-             * This is called after `onNewClient`
-             */
-            onClientBootstrap: function() {
-                // explicitely install caches
-                this.Instance.CacheUtil.initCaches();
-
-                // sanity check: Make sure, User cache is present
-                console.assert(this.Instance.User.users, 'INTERNAL ERROR: Cache installation failed.');
-
-                // resume user session
-                return this.Instance.User.resumeSession();
-            },
         }
     };}),
     
@@ -138,11 +90,6 @@ module.exports = NoGapDef.component({
         // misc variables
 
         var UserRole;
-
-        /**
-         * The main Angular module (aka. the Angular app).
-         */
-        var app;
 
         /**
          * The $scope object of the Main controller.
@@ -454,12 +401,13 @@ module.exports = NoGapDef.component({
             // });
         };
 
-        var MainClient;
-        return MainClient = {
+        var ThisComponent;
+        return {
             // ################################################################################################################
             // Main initialization
 
             __ctor: function() {
+            	ThisComponent = this;
             },
 
             events: {
@@ -570,7 +518,7 @@ module.exports = NoGapDef.component({
                          * Utility for managing simple selection states.
                          */
                         createSelectionState: function(idProperty) {
-                            return new Instance.Main.SelectionState(idProperty);
+                            return new ThisComponent.SelectionState(idProperty);
                         },
 
                         getCountdown: function(date) {
@@ -633,10 +581,6 @@ module.exports = NoGapDef.component({
                 // ################################################################################################################
                 // Events triggered directly by the server (or by client)
 
-                setDefaultLocalizer: function(localizerData) {
-                    Instance.Localizer.Default = Instance.Localizer.createLocalizer(localizerData);
-                },
-
                 updateTemplateData: function() {
                     // update template data in global scope:
                     Instance.UIMgr.scope.gotAllGroups = false;
@@ -657,14 +601,6 @@ module.exports = NoGapDef.component({
                  */
                 onCurrentUserChanged: function(privsChanged) {
                     Instance.UIMgr.ready(function() {
-                        // update user locale
-                        var locale = Instance.User.getCurrentLocale();
-                        Instance.Localizer.Default.setLocale(locale);
-
-                        // update moment locale, too (for date + time formatting)
-                        moment.locale(locale);
-
-
                         this.updateTemplateData();
 
                         if (privsChanged) {

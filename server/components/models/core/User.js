@@ -703,7 +703,7 @@ module.exports = NoGapDef.component({
                 }
 
                 if (!localizer.localeExists(locale)) {
-                    locale = Instance.MiscUtil.guessBrowserLanguage();
+                    locale = Instance.MiscUtil.guessClientLanguage();
 
                     if (!localizer.localeExists(locale)) {
                         // check if region-independent locale exists

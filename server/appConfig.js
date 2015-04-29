@@ -68,6 +68,8 @@ module.exports = {
     // ########################################################################################################################
     // Mostly constant options
 
+    'title': 'People Counter',
+
     // folder containing files, accessible by clients
     'uploadFolder': 'uploads/',
 
@@ -149,12 +151,17 @@ module.exports = {
             'util/Localizer',
             'util/Log',
             'util/ValidationUtil',
-            'util/SimpleBooleanExpressions',
             'util/FacebookApi',
+            
+            // this one kicks off Instance code
+            'Main',
 
             // core UI components:
             'ui/UIMgr',
-            'ui/Main',
+            'ui/UIMain',
+
+            // core device components:
+            'device/DeviceMain',
 
             // guest + unregistered pages:
             'ui/guest/GuestPage',
