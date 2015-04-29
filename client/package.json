@@ -6,7 +6,9 @@
 	"contributors": [], 
 	"scripts": { "start": "node app.js" }, 
 	"main": "app.js", 
-	"dependencies": {"pcap": "git+https://github.com/mranney/node_pcap.git"}, 
+	"dependencies": {
+		"pcap": "git+https://github.com/mranney/node_pcap.git",
+		"file-queue": "latest"}, 
 	"preferGlobal": true, 
 	"private": true 
 }
