@@ -49,7 +49,7 @@ ALTER TABLE WifiDataset CHANGE COLUMN dataset datasetName varchar(255);
 ALTER TABLE WifiSnifferDevice CHANGE COLUMN id deviceId INTEGER UNSIGNED;
 ALTER TABLE WifiSnifferDevice CHANGE COLUMN device deviceName varchar(255);
 
-ALTER TABLE SSID CHANGE COLUMN id ssidId INTEGER UNSIGNED;
+ALTER TABLE SSID CHANGE COLUMN id ssidId INTEGER UNSIGNED AUTO_INCREMENT;
 ALTER TABLE SSID CHANGE COLUMN ssid ssidName varchar(32);
 
 
@@ -78,7 +78,6 @@ INSERT INTO `SSID` (`ssidName`) (
     WHERE SSID.ssidName IS NULL
 );
 
-
 ###################################################################################################
 # convert all kinds of names to ids in WifiPacket table
 ###################################################################################################
@@ -90,7 +89,6 @@ UPDATE `WifiPacket`
 INNER JOIN `WifiSnifferDevice`
 ON `WifiSnifferDevice`.`deviceName` = `WifiPacket`.`device`
 SET `WifiPacket`.`deviceId` = `WifiSnifferDevice`.`deviceId`;
-
 
 # convert `mac` string to `macId`
 ALTER TABLE WifiPacket ADD `macId` INTEGER UNSIGNED;
@@ -115,6 +113,7 @@ SET `WifiPacket`.`ssidId` = `SSID`.`ssidId`;
 # TODO: Make sure, all WifiPackets have a valid ssidId!
 SELECT * FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL OR ssidId IS NULL);
 
+#DONE!?
 
 ###################################################################################################
 # delete unused/useless stuff
