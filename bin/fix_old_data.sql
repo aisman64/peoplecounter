@@ -48,7 +48,7 @@ ALTER TABLE WifiPacket CHANGE dataset datasetId INTEGER UNSIGNED;
 ALTER TABLE WifiDataset CHANGE id datasetId INTEGER UNSIGNED AUTO_INCREMENT;
 ALTER TABLE WifiDataset CHANGE name datasetName varchar(255);
 
-ALTER TABLE WifiSnifferDevice CHANGE id deviceId INTEGER UNSIGNED;
+ALTER TABLE WifiSnifferDevice CHANGE id deviceId INTEGER UNSIGNED AUTO_INCREMENT;
 ALTER TABLE WifiSnifferDevice CHANGE device deviceName varchar(255);
 
 ALTER TABLE SSID CHANGE id ssidId INTEGER UNSIGNED AUTO_INCREMENT;
@@ -90,7 +90,7 @@ ALTER TABLE WifiPacket ADD `deviceId` INTEGER UNSIGNED;
 UPDATE `WifiPacket`
 INNER JOIN `WifiSnifferDevice`
 ON `WifiSnifferDevice`.`host` = `WifiPacket`.`device`
-SET `WifiPacket`.`deviceId` = `WifiSnifferDevice`.`deviceId`;
+SET `WifiPacket`.`deviceId` = `WifiSnifferDevice`.`id`;
 
 # convert `mac` string to `macId`
 ALTER TABLE WifiPacket ADD `macId` INTEGER UNSIGNED;
@@ -106,7 +106,7 @@ ALTER TABLE WifiPacket ADD `ssidId` INTEGER UNSIGNED;
 
 UPDATE `WifiPacket`
 INNER JOIN `SSID`
-ON `SSID`.`ssid` = `WifiPacket`.`ssid`
+ON `SSID`.`ssidName` = `WifiPacket`.`ssid`
 SET `WifiPacket`.`ssidId` = `SSID`.`ssidId`;
 
 
