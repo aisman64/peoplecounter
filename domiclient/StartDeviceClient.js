@@ -59,12 +59,15 @@ connectToServerNow();
 
 var CommLayer = {
 	 sendCustomClientRequestToHost: function(path, clientRequestData, serialize, headers) {
-        if (this.Instance.Libs.ComponentCommunications.hasRefreshBeenRequested()) {
+        var ComponentCommunications = this.Instance.Libs.ComponentCommunications;
+        if (ComponentCommunications.hasRefreshBeenRequested()) {
             // already out of sync with server
             return Promise.reject('Tried to send request to server, but already out of sync');
         }
 
+        // add security and other metadata, required by NoGap
         headers = headers || {};
+        ComponentCommunications.prepareRequestMetadata(headers);
 
 		return new Promise(function(resolve, reject) {
 			var Context = this.Context;

@@ -1,6 +1,5 @@
 /**
  * Kicks off device code!
- * TODO: Dynamic dependencies (re-write package.json + re-start?)
  */
 "use strict";
 
@@ -26,7 +25,9 @@ module.exports = NoGapDef.component({
          * Host commands can be directly called by the client
          */
         Public: {
-            test: function() {
+            onClientBootstrap: function() {
+                if (!this.Context.IsDevice) return;
+
                 this.Tools.log('Device connected!!');
 
                 return 'Host says hi!';

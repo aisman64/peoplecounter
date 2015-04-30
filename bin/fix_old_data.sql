@@ -41,16 +41,18 @@ USE `peoplecounter`;
 # rename columns
 ###################################################################################################
 
-ALTER TABLE WifiPacket CHANGE id packetId INTEGER UNSIGNED;
+ALTER TABLE WifiPacket CHANGE id packetId INTEGER UNSIGNED AUTO_INCREMENT;
 ALTER TABLE WifiPacket CHANGE sigstr signalStrength INTEGER;
+ALTER TABLE WifiPacket CHANGE dataset datasetId INTEGER UNSIGNED;
 
-ALTER TABLE WifiDataset CHANGE COLUMN dataset datasetName varchar(255);
+ALTER TABLE WifiDataset CHANGE id datasetId INTEGER UNSIGNED AUTO_INCREMENT;
+ALTER TABLE WifiDataset CHANGE name datasetName varchar(255);
 
-ALTER TABLE WifiSnifferDevice CHANGE COLUMN id deviceId INTEGER UNSIGNED;
-ALTER TABLE WifiSnifferDevice CHANGE COLUMN device deviceName varchar(255);
+ALTER TABLE WifiSnifferDevice CHANGE id deviceId INTEGER UNSIGNED;
+ALTER TABLE WifiSnifferDevice CHANGE device deviceName varchar(255);
 
-ALTER TABLE SSID CHANGE COLUMN id ssidId INTEGER UNSIGNED AUTO_INCREMENT;
-ALTER TABLE SSID CHANGE COLUMN ssid ssidName varchar(32);
+ALTER TABLE SSID CHANGE id ssidId INTEGER UNSIGNED AUTO_INCREMENT;
+ALTER TABLE SSID CHANGE ssid ssidName varchar(32);
 
 
 ###################################################################################################
@@ -87,7 +89,7 @@ ALTER TABLE WifiPacket ADD `deviceId` INTEGER UNSIGNED;
 
 UPDATE `WifiPacket`
 INNER JOIN `WifiSnifferDevice`
-ON `WifiSnifferDevice`.`deviceName` = `WifiPacket`.`device`
+ON `WifiSnifferDevice`.`host` = `WifiPacket`.`device`
 SET `WifiPacket`.`deviceId` = `WifiSnifferDevice`.`deviceId`;
 
 # convert `mac` string to `macId`

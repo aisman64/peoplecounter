@@ -379,20 +379,34 @@ module.exports = NoGapDef.component({
                     });
                 },
 
+                verifyCredentials: function(authData, userData) {
+                    // TODO: Use crypto and SHA1
+                    // consider: SRP (https://github.com/mozilla/node-srp)
+                },
+
                 /**
                  * Query DB to validate user-provided credentials.
                  */
                 tryLogin: function(authData) {
                     // query user from DB
                     var queryInput;
+                    var hasSpecialPermission = this.Context.clientIsLocal || Shared.AppConfig.getValue('dev');
                     var isFacebookLogin = !!authData.facebookID;
+                    var hasAlreadyProvenCredentials = isFacebookLogin;
                     if (isFacebookLogin) {
                         // login using FB
                         queryInput = { facebookID: authData.facebookID };
                     }
-                    else {
+                    else if (!!authData.uid) {
+                        queryInput = { uid: authData.uid };
+                    }
+                    else if (hasSpecialPermission) {
                         // login using userName
-                        queryInput = { userName: authData.userName };
+                        queryInput = { name: authData.userName };
+                    }
+                    else {
+                        // invalid user credentials
+                        return Promise.reject('error.login.auth');
                     }
 
                     var logLoginAttempt = function(user, result) {
@@ -409,11 +423,10 @@ module.exports = NoGapDef.component({
                     return this.findUser(queryInput)
                     .bind(this)
                     .then(function(user) {
-                        if (!user) {
-                            // user does not exist
-                            if (this.Context.clientIsLocal || Shared.AppConfig.getValue('dev')) {
-                                // dev mode always allows admin accounts
-                                // localhost may create Admin accounts
+                        if (!user && authData.userName) {
+                            // user does not exist: Check for special cases
+                            if (hasSpecialPermission) {
+                                // dev mode and localhost always allow admin accounts
                                 authData.role = UserRole.Admin;
                                 return this.createAndLogin(authData);
                             }
@@ -439,9 +452,21 @@ module.exports = NoGapDef.component({
                                 });
                             }
                         }
+                        else if (!user) {
+                            // invalid user credentials
+                            return Promise.reject('error.login.auth');
+                        }
                         else {
                             if (this.isLoginLocked(user)) {
                                 return Promise.reject('error.login.locked');
+                            }
+
+                            if (!hasAlreadyProvenCredentials) {
+                                // verify credentials
+                                if (!this.verifyCredentials(authData, user)) {
+                                    // invalid user credentials
+                                    return Promise.reject('error.login.auth');
+                                }
                             }
                             
                             // set current user data

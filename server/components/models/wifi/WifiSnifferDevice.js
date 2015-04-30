@@ -25,10 +25,12 @@ module.exports = NoGapDef.component({
         var componentsRoot = '../../';
         var libRoot = componentsRoot + '../lib/';
         var SequelizeUtil;
+        var TokenStore;
 
         return {
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
+                TokenStore = require(libRoot + 'TokenStore');
             },
 
             initModel: function() {
@@ -39,7 +41,7 @@ module.exports = NoGapDef.component({
                  */
                 return sequelize.define('WifiSnifferDevice', {
                     deviceId: { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
-                    deviceName: { type: Sequelize.TEXT, notNull: true },
+                    deviceName: { type: Sequelize.STRING(255), notNull: true },
 
                     // the time when the device has last contacted the server
                     lastSeen: { type: Sequelize.DATE },
@@ -48,7 +50,17 @@ module.exports = NoGapDef.component({
                     lat: SEQUELIZE.FLOAT,
                     lon: SEQUELIZE.FLOAT,
 
-                    host: SEQUELIZE.STRING(255)
+                    host: SEQUELIZE.STRING(255),
+
+                    /**
+                     * The secret is only known by server and device, and very rarely exchanged (for refresh purposes).
+                     */
+                    deviceSecret:  { type: Sequelize.STRING(1024), notNull: true },
+
+                    /**
+                     * The current authentication token for this device. Required to establish a session.
+                     */
+                    authenticationToken:  { type: Sequelize.STRING(1024), notNull: true },
                 });
             }
         };

@@ -60,12 +60,18 @@ module.exports = NoGapDef.component({
                         'UIMgr',
                         'UIMain'
                     ];
+
+                    // not a device Instance
+                    this.Context.IsDevice = 0;
                 }
                 else {
                     // add core Device components (device-client only)
                     specializedComponents = [
                         'DeviceMain'
                     ];
+
+                    // make this officially a device Instance
+                    this.Context.IsDevice = 1;
                 }
                 initialComponents.push.apply(initialComponents, specializedComponents);
 
