@@ -14,6 +14,9 @@
 -- SELECT COUNT(*) c, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` WHERE macid = 11015 GROUP BY `t` ORDER BY `t` LIMIT 30;
 -- SELECT COUNT(*) c, `macId`, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` GROUP BY `macId`, `t` ORDER BY `macId`, `t` LIMIT 30;
 
+# Most active MACAddresses
+# SELECT COUNT(*) c, macId m FROM WifiPacket GROUP BY macId ORDER BY c DESC LIMIT 10;
+
 
 ###################################################################################################
 # move and rename tables
@@ -116,10 +119,10 @@ SET `WifiPacket`.`ssidId` = `SSID`.`ssidId`;
 
 SHOW INDEX FROM WifiPacket;
 
-# TODO: Make sure, all WifiPackets have a valid deviceId!
-# TODO: Make sure, all WifiPackets have a valid macId!
-# TODO: Make sure, all WifiPackets have a valid ssidId!
-SELECT COUNT(*) FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL OR ssidId IS NULL);
+# All WifiPackets have a valid deviceId!
+# All WifiPackets have a valid macId!
+# NOTE: Not all WifiPackets have a valid ssidId!
+SELECT COUNT(*) FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL); # == 0
 
 #DONE!?
 
