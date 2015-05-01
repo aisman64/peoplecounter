@@ -92,6 +92,8 @@ INNER JOIN `WifiSnifferDevice`
 ON `WifiSnifferDevice`.`host` = `WifiPacket`.`device`
 SET `WifiPacket`.`deviceId` = `WifiSnifferDevice`.`id`;
 
+ CREATE INDEX WifiPacket_deviceId ON WifiPacket (deviceId);
+
 # convert `mac` string to `macId`
 ALTER TABLE WifiPacket ADD `macId` INTEGER UNSIGNED;
 
@@ -100,6 +102,7 @@ INNER JOIN `MACAddress`
 ON `MACAddress`.`macAddress` = `WifiPacket`.`mac`
 SET `WifiPacket`.`macId` = `MACAddress`.`macId`;
 
+ CREATE INDEX WifiPacket_macId ON WifiPacket (macId);
 
 # convert `ssid` string to `ssidId`
 ALTER TABLE WifiPacket ADD `ssidId` INTEGER UNSIGNED;
@@ -109,11 +112,14 @@ INNER JOIN `SSID`
 ON `SSID`.`ssidName` = `WifiPacket`.`ssid`
 SET `WifiPacket`.`ssidId` = `SSID`.`ssidId`;
 
+ CREATE INDEX WifiPacket_ssidId ON WifiPacket (ssidId);
+
+SHOW INDEX FROM WifiPacket;
 
 # TODO: Make sure, all WifiPackets have a valid deviceId!
 # TODO: Make sure, all WifiPackets have a valid macId!
 # TODO: Make sure, all WifiPackets have a valid ssidId!
-SELECT * FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL OR ssidId IS NULL);
+SELECT COUNT(*) FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL OR ssidId IS NULL);
 
 #DONE!?
 
