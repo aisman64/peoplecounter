@@ -405,7 +405,7 @@ module.exports = NoGapDef.component({
                     }
                     else if (hasSpecialPermission) {
                         // login using userName
-                        queryInput = { name: authData.userName };
+                        queryInput = { userName: authData.userName };
                     }
                     else {
                         // invalid user credentials

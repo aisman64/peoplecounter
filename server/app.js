@@ -179,8 +179,15 @@ Promise.resolve()
 
     // error handler
     app.use(function(err, req, res, next) {
-        var status = err.status || (!isNaNOrNull(err) && err) || 500;
-        console.error('Error during request (' + status + '): ' + (err.stack || new Error(err).stack));
+        var status = err && err.status || (!isNaNOrNull(err) && err) || 500;
+        var errorMsg = 'Error during request (' + status + '): ' + (err.stack || err.message);
+
+        if (req.Instance) {
+            req.Instance.Libs.ComponentLoader.Tools.handleError(errorMsg);
+        }
+        else {
+            console.error(errorMsg);
+        }
         
         res.writeHead(status, {'Content-Type': 'text/html'});
 
