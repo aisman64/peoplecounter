@@ -37,10 +37,6 @@ var touch = require('touch');
 var request = require('request');	// HTTP client module
 var FileCookieStore = require('tough-cookie-filestore');
 
-// need to expose our XMLHttpRequest wrapper so NoGap will function properly
-//     see: https://github.com/driverdan/node-XMLHttpRequest
-GLOBAL.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest; 
-
 
 // #############################################################################
 // Connect to server and get started
