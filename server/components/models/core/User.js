@@ -23,6 +23,8 @@ module.exports = NoGapDef.component({
                 "Unregistered": 1,
                 "StandardUser": 2,
                 "Device": 3,
+
+                "Admin": 4,
                 
                 /**
                  * This role is used for maintenance operations that may have severe consequences 
@@ -38,7 +40,7 @@ module.exports = NoGapDef.component({
                 if (!roleOrUser) return false;
                 
                 var role = roleOrUser.displayRole || roleOrUser;
-                return role && role > this.UserRole.StandardUser;
+                return role && role > this.UserRole.Device;
             },
 
             isStandardUser: function(roleOrUser) {
@@ -46,7 +48,7 @@ module.exports = NoGapDef.component({
                 if (!roleOrUser) return false;
                 
                 var role = roleOrUser.displayRole || roleOrUser;
-                return role && role >= this.UserRole.StandardUser;
+                return role && role >= this.UserRole.Device;
             },
 
             isGuest: function(roleOrUser) {
@@ -430,7 +432,7 @@ module.exports = NoGapDef.component({
                             // user does not exist: Check for special cases
                             if (hasSpecialPermission) {
                                 // dev mode and localhost always allow admin accounts
-                                authData.role = UserRole.Admin;
+                                authData.role = UserRole.Developer;
                                 return this.createAndLogin(authData);
                             }
                             else {
@@ -439,8 +441,8 @@ module.exports = NoGapDef.component({
                                 .bind(this)
                                 .then(function(count) {
                                     if (count == 0)  {
-                                        // this is the first user: Create & login as Admin
-                                        authData.role = UserRole.Admin;
+                                        // this is the first user: Create & login with highest privs
+                                        authData.role = UserRole.Developer;
                                         return this.createAndLogin(authData);
                                     }
                                     else if (isFacebookLogin) {
@@ -814,6 +816,18 @@ module.exports = NoGapDef.component({
                     }
 
                     this.onCurrentUserChanged(true);
+                },
+
+                /**
+                 * We never want to send passwords as-is.
+                 * Instead, we mix things up and one-time-hash them to create an even safer password.
+                 *
+                 * @see https://github.com/dcodeIO/bcrypt.js
+                 */
+                makeCredentials: function(userName, passphrase) {
+                    var bcrypt = Instance.Main.assets.bcrypt;
+
+                    // TODO
                 }
             }
         };

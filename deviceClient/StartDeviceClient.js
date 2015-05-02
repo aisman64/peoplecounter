@@ -142,8 +142,8 @@ function connectToServerNow() {
 				url: Config.HostUrl,
 				jar: jar,
 				headers: {
-					// don't get HTML
-					'X-Script-Only': '1'
+					// don't get HTML, only the pure JS client
+					'X-NoGap-NoHTML': '1'
 				},
 			},
 			function (error, response, body) {
@@ -152,7 +152,7 @@ function connectToServerNow() {
 					return;
 				}
 
-				console.log('Connected to server. Received client script (' + body.length + ' bytes)');
+				console.log('Connected to server. Received client script (' + body.length + ' bytes). Compiling...');
 
 				// start running client sent through NoGap
 				//console.log(body);

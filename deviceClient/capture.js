@@ -1,3 +1,8 @@
+/**
+ * TODO: Migrate to server/components/device/DeviceCapture component
+ */
+"use strict";
+
 var pcap = require('pcap');
 var sys = require('sys');
 var exec = require('child_process').exec;

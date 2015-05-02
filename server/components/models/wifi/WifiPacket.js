@@ -87,6 +87,8 @@ module.exports = NoGapDef.component({
 
 
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
+        return {
 
+        };
     })
 });

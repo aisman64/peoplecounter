@@ -12,8 +12,24 @@ module.exports = NoGapDef.component({
     	return {
 	    	Private: {
 	    		Caches: {
-	    			wifiPackets: {
-	    				idProperty: 'deviceId'
+	    			wifiSnifferDevices: {
+	    				idProperty: 'deviceId',
+
+                        hasHostMemorySet: 1,    // keep devices in Host memory (for now)
+
+                        InstanceProto: {
+                            /**
+                             * Get user from cache (or null, if not cached).
+                             * On Host, need to reach in context (since this is a globally shared object).
+                             */
+                            getUserNow: function(Instance) {
+                                return (Instance || Shared).User.users.getObjectNowById(this.uid);
+                            }
+                        },
+
+                        members: {
+
+                        }
 	    			}
 	    		}
 	    	}
@@ -41,33 +57,83 @@ module.exports = NoGapDef.component({
                  */
                 return sequelize.define('WifiSnifferDevice', {
                     deviceId: { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
-                    deviceName: { type: Sequelize.STRING(255), notNull: true },
+
+                    uid: Sequelize.INTEGER.UNSIGNED,
 
                     // the time when the device has last contacted the server
                     lastSeen: { type: Sequelize.DATE },
 
                     // physical location (latitude + longitude)
-                    lat: SEQUELIZE.FLOAT,
-                    lon: SEQUELIZE.FLOAT,
+                    lat: Sequelize.FLOAT,
+                    lon: Sequelize.FLOAT,
 
-                    host: SEQUELIZE.STRING(255),
+                    host: Sequelize.STRING(255),    // do we need this?
+                },{
+                    classMethods: {
+                        onBeforeSync: function(models) {
+                            // setup foreign key Association between user and device (one-to-one relationship)
+                            this.belongsTo(models.User,
+                                { foreignKey: 'uid', as: 'user', foreignKeyConstraint: true,
+                                onDelete: 'cascade', onUpdate: 'cascade' });
+                        },
 
-                    /**
-                     * The secret is only known by server and device, and very rarely exchanged (for refresh purposes).
-                     */
-                    deviceSecret:  { type: Sequelize.STRING(1024), notNull: true },
-
-                    /**
-                     * The current authentication token for this device. Required to establish a session.
-                     */
-                    authenticationToken:  { type: Sequelize.STRING(1024), notNull: true },
+                        onAfterSync: function(models) {
+                            var tableName = this.getTableName();
+                            return Promise.join(
+                                // create indices
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['uid'])
+                            );
+                        }
+                    }
                 });
+            },
+
+            Public: {
+                registerDevice: function(name) {
+                    // must have staff privileges
+                    if (!this.Instance.User.isStaff()) return Promise.reject('error.invalid.permissions');
+
+                    // TODO: Generate authentication credentials
+
+                    // first, make sure, the name does not exist yet
+                    return this.Instance.User.users.getObject({userName: name}, true, false, true)
+                    .bind(this)
+                    .then(function(user) {
+                        if (user) {
+                            return Promise.reject('error.user.exists');
+                        }
+
+                        // then, create a new user
+                        var role = Shared.User.UserRole.Device;
+                        var userData = {
+                            userName: name, 
+                            role: role,
+                            displayRole: role,
+                        };
+
+                        return this.Instance.User.users.createObject(userData)
+                    })
+                    .then(function(newUser) {
+                        // then create the device
+                        return this.wifiSnifferDevices.createObject({
+                            uid: newUser.uid,
+                            lastSeen: Date.now(),
+                        });
+                    });
+
+                },
+
+                downloadImageFileForDevice: function(deviceId) {
+                    // TODO!
+                }
             }
         };
     }),
 
 
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
+        return {
 
+        };
     })
 });

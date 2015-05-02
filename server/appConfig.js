@@ -145,6 +145,13 @@ module.exports = {
             'models/core/AppConfig',
             'models/core/User',
 
+            // all kinds of model components
+            'models/wifi/MacAddress',
+            'models/wifi/SSID',
+            'models/wifi/WifiDataset',
+            'models/wifi/WifiPacket',
+            'models/wifi/WifiSnifferDevice',
+
             // misc utilities
             'util/Auth',
             'util/MiscUtil',

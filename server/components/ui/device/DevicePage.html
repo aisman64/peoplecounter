@@ -1,7 +1,106 @@
 <div class="fill container-page" ng-controller="deviceCtrl">
-    DEVICES!
-    <button class="btn btn-default"
-    	ng-click="tryCreateNewDeviceImage()">
-    	Create new device image!
+
+<!-- ######################################################################################################################## -->
+<!-- Device list -->
+	<div class="panel panel-primary">
+	    <div class="panel-heading">
+	        <div class="panel-title">
+	            <span class="">All Devices<span style="color:#DDDDDD"> ({{deviceCache.list.length || 0}}) </span></span>
+	        </div>
+	    </div>
+	    <div class="panel-body no-padding"><ul class="list-group">
+	        <li ng-repeat="device in deviceCache.list"
+	            code="user = device.getUserNow()"
+	            class="list-group-item no-padding"
+	            ng-class="{ 'highlight-own': PC.selection.isSelected(device) }">
+
+            	<!-- Show device Info -->
+		        <div class="table table-striped some-padding"
+	            	ng-click="PC.selection.toggleSelection(device)">
+		        	<div class="row">
+			        	<div class="col-xs-12">
+			                {{user.userName}}
+		                </div>
+	                </div>
+		        </div>
+
+			<!-- ######################################################################################################################## -->
+			<!-- Device Editor -->
+                <form ng-if="PC.selection.isSelected(device)">
+                	<div class="some-padding">
+	                    <input type="text" ng-model="user.userName"
+	                        ng-change="onChange()">
+
+	                    <!-- Save indicators -->
+	                    <span ng-style="{visibility: PC.deviceSaving && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+	                    <span ng-style="{visibility: PC.deviceSaved && 'visible' || 'hidden'}" class="label label-default">saved</span>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="table row some-padding">
+                        <a ng-disabled="PC.deviceSaving || PC.deviceSaved"
+                            class="btn btn-default col-xs-3"
+                            style="display:inline-block"
+                            ng-click="clickSave(device, false)">
+                            <localize key="Apply"></localize>
+                        </a>
+                        <a ng-disabled="PC.deviceSaving || PC.deviceSaved"
+                            class="btn btn-default col-xs-3"
+                            style="display:inline-block" 
+                            ng-click="clickSave(device, true)">
+                            <localize key="Done"></localize>
+                        </a>
+                        <a style="visibility:hidden;"
+                            class="btn btn-default col-xs-4"
+                            style="display:inline-block" 
+                            ng-click="">
+                            <span></span>
+                        </a>
+                        <span dropdown class="col-xs-2"
+                          style="padding:0">
+                            <a href=""
+                              type="button"
+                              class="btn btn-default dropdown-toggle"
+                              style="width: 100%"
+                              title="More">
+                              <i class="fa fa-navicon"></i>
+                            </a>
+                            <ul class="dropdown-menu" role="menu">
+                                <!-- <li>
+                                    <a href="" ng-click="">
+                                        nothing
+                                    </a>
+                                </li>                
+
+                                <hr /> -->
+
+                                <li>
+                                    <a href="" ng-click="tryDeleteDevice(device)">
+                                        <localize key="Delete"></localize>
+                                    </a>
+                                </li>
+                            </ul>
+                        </span>
+                    </div>
+                </form>
+	        </li>		<!-- ng-repeat="device" -->
+    	</ul></div>
+	</div>
+
+    <div class="alert alert-danger" ng-if="!!errorMessage">
+        <span>
+            {{errorMessage}}
+        </span>
+    </div>
+
+    <div class="alert alert-info" ng-if="!PC.loading && deviceCache.list.length == 0">
+        There are no registered devices yet...
+    </div>
+
+    <button class="btn btn-block btn-default"
+        ng-click="registerNewDevice('unnamed device')">
+        Add Device!
+
+        <span ng-style="{visibility: PC.loading && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
     </button>
 </div>

@@ -30,7 +30,6 @@ module.exports = NoGapDef.component({
          * 
          */
         initHost: function() {
-            
         },
 
         Private: {

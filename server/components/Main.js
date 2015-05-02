@@ -6,12 +6,22 @@
 
 var NoGapDef = require('nogap').Def;
 
-
+var componentsRoot = './';
+var libRoot = componentsRoot + '../lib/';
 
 module.exports = NoGapDef.component({
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { return {
         Assets: {
-            AutoIncludes: {
+            Files: {
+                code: {
+                    /**
+                     * We are using bcrypt on client side to generate a password from user input.
+                     * Currently only used in the browser.
+                     *
+                     * @see https://github.com/dcodeIO/bcrypt.js
+                     */
+                    bcrypt: libRoot + 'bcrypt.js'
+                }
             }
         },
 
@@ -25,7 +35,7 @@ module.exports = NoGapDef.component({
             },
 
             getClientCtorArguments: function() {
-                if (!this.Context.clientScriptOnly) {
+                if (!this.Context.clientNoHtml) {
                     return ['UIMain'];
                 }
                 else {
@@ -41,6 +51,14 @@ module.exports = NoGapDef.component({
                     'AppConfig', 
                     'User',
 
+                    // model components
+                    'MacAddress',
+                    'SSID',
+                    'WifiDataset',
+                    'WifiPacket',
+                    'WifiSnifferDevice',
+
+
                     // utilities
                     'CacheUtil',
                     'MiscUtil',
@@ -54,7 +72,7 @@ module.exports = NoGapDef.component({
                 ];
 
                 var specializedComponents = [];
-                if (!this.Context.clientScriptOnly) {
+                if (!this.Context.clientNoHtml) {
                     // add core UI components (UI-client only)
                     specializedComponents = [
                         'UIMgr',
@@ -129,6 +147,8 @@ module.exports = NoGapDef.component({
              * 
              */
             initClient: function() {
+                // bcrypt does some weird things... Need some fixing uppin` so it works the same on Node and in the browser
+                this.assets.bcrypt = this.assets.bcrypt || dcodeIO.bcrypt;
             },
 
             
