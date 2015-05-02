@@ -8,7 +8,6 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Includes: [
         // add all device-only components here
-        'DeviceCapture'
     ],
 
     /**
@@ -36,11 +35,6 @@ module.exports = NoGapDef.component({
 
         Private: {
             onClientBootstrap: function() {
-                if (!this.Context.IsDevice) return;
-
-                this.Tools.log('Device connected!!');
-
-                return 'Host says hi!';
             }
         },
         
@@ -48,6 +42,12 @@ module.exports = NoGapDef.component({
          * Host commands can be directly called by the client
          */
         Public: {
+            storePacket: function(packet) {
+                // TODO: Require authentication
+                //if (!this.isAuthenticated) return Promise.reject('error.invalid.permissions');
+
+                this.Instance.WifiPacket.storePacket(packet);
+            }
         },
     }}),
     
@@ -67,6 +67,18 @@ module.exports = NoGapDef.component({
              * Device has initialized
              */
             initClient: function() {
+                // TODO: Start capturing packets
+
+                // this.host.test()
+                // .then(function(result) {
+                //     console.log('Host said: ' + result);
+                // });
+
+            	console.log('Let\'s capture something!');
+            },
+
+            storePacket: function(packet) {
+                return this.host.storePacket(packet);
             },
 
             onCurrentUserChanged: function(privsChanged) {

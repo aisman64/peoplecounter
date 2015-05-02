@@ -212,6 +212,9 @@ module.exports = NoGapDef.component({
                         allowNull: false
                     },
 
+                    authSecret: Sequelize.STRING(256),
+                    authToken: Sequelize.STRING(256),       // a transformation of the user's password
+
                     realName: Sequelize.STRING(100),
                     email: Sequelize.STRING(100),
                     locale: Sequelize.STRING(20),
@@ -381,7 +384,7 @@ module.exports = NoGapDef.component({
 
                 verifyCredentials: function(authData, userData) {
                     // TODO: Use crypto and SHA1
-                    // consider: SRP (https://github.com/mozilla/node-srp)
+                    return true;                    
                 },
 
                 /**

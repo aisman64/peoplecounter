@@ -162,6 +162,7 @@ module.exports = {
 
             // core device components:
             'device/DeviceMain',
+            'device/DeviceCapture',
 
             // guest + unregistered pages:
             'ui/guest/GuestPage',

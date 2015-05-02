@@ -75,6 +75,12 @@ module.exports = NoGapDef.component({
                         }
                     }
                 });
+            },
+
+            storePacket: function(packet) {
+                // insert into DB
+                // see: http://docs.sequelizejs.com/en/latest/api/model/#createvalues-options-promiseinstance
+                return this.Model.create(packet);
             }
         };
     }),
