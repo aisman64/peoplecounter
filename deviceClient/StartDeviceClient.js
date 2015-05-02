@@ -23,12 +23,18 @@ var Running = true;
 // #############################################################################
 // Includes
 
+// invaluable general-purpose utilities
 GLOBAL.Promise = require('bluebird');
 GLOBAL._ = require('lodash');
 require('squishy');
 
-var request = require('request');	// get HTTP client module
-var touch = require("touch");
+// OS modules
+var path = require('path');
+var fs = require('fs');
+var touch = require('touch');
+
+// HTTP + networking modules
+var request = require('request');	// HTTP client module
 var FileCookieStore = require('tough-cookie-filestore');
 
 // need to expose our XMLHttpRequest wrapper so NoGap will function properly
@@ -40,6 +46,7 @@ GLOBAL.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 // Connect to server and get started
 
 // create cookies file if it does not exist, and wait for request to finish
+fs.mkdirSync(path.dirname(Config.CookiesFile));
 touch.sync(Config.CookiesFile);
 
 // create and set file-backed cookie jar
