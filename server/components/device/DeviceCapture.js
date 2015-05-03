@@ -76,6 +76,13 @@ module.exports = NoGapDef.component({
             	console.log('Let\'s capture something!');
             },
 
+            /**
+             * This method is called by DeviceMain, once we are logged into the server!
+             */
+            startCapturing: function() {
+                
+            },
+
             storePacket: function(packet) {
                 return this.host.storePacket(packet);
             },

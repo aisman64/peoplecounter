@@ -1272,9 +1272,23 @@ module.exports = NoGapDef.component({
                         var wrappedObjects = this._applyChanges(objects, queryInput, queryData);
 
                         if (!dontSendToClient) {
-                            this.Instance.CacheUtil.client.applyChanges(this.name, objects);
+                            this._sendChangesToClient(objects);
                         }
                         return wrappedObjects;
+                    },
+
+                    _sendChangesToClient: function(objects) {
+                        if (!this.Instance.CacheUtil.client) return;
+
+                        if (this.filterClientObjects) {
+                            var filteredObjects = [];
+                            for (var i = 0; i < objects.length; ++i) {
+                                var filteredObject = this.filterClientObject(_.clone(objects[i]));
+                                filteredObjects.push(filteredObject);
+                            };
+                            objects = filteredObjects;
+                        }
+                        this.Instance.CacheUtil.client.applyChanges(this.name, objects);
                     },
 
                     /**
@@ -1341,9 +1355,9 @@ module.exports = NoGapDef.component({
                                 objects = newObjects;
                             }
 
-                            if (sendToClient && this.Instance.CacheUtil.client) {
+                            if (sendToClient) {
                                 // if on host, we might want to send this stuff straight to the client
-                                this.Instance.CacheUtil.client.applyChanges(this.name, objects);
+                                this._sendChangesToClient(objects);
                             }
                             return objects;
                         });

@@ -214,8 +214,8 @@ module.exports = NoGapDef.component({
                         allowNull: false
                     },
 
-                    authSecret: Sequelize.STRING(256),
-                    authToken: Sequelize.STRING(256),       // a transformation of the user's password
+                    // a transformation of the user's password (which is unknown to the server)
+                    sharedSecret: Sequelize.STRING(256),
 
                     realName: Sequelize.STRING(100),
                     email: Sequelize.STRING(100),
@@ -246,7 +246,9 @@ module.exports = NoGapDef.component({
                 Caches: {
                     users: {
                         members: {
-                            onWrapObject: function(user) {
+                            filterClientObject: function(user) {
+                                // remove sensitive information before sending to client
+                                user.sharedSecret = null;
                             },
 
                             /**
@@ -393,6 +395,10 @@ module.exports = NoGapDef.component({
                  * Query DB to validate user-provided credentials.
                  */
                 tryLogin: function(authData) {
+                    if (!authData) {
+                        return Promise.reject('error.login.auth');
+                    }
+
                     // query user from DB
                     var queryInput;
                     var hasSpecialPermission = this.Context.clientIsLocal || Shared.AppConfig.getValue('dev');
@@ -405,7 +411,7 @@ module.exports = NoGapDef.component({
                     else if (!!authData.uid) {
                         queryInput = { uid: authData.uid };
                     }
-                    else if (hasSpecialPermission) {
+                    else if (!!userName: authData.userName) {
                         // login using userName
                         queryInput = { userName: authData.userName };
                     }
@@ -458,20 +464,21 @@ module.exports = NoGapDef.component({
                             }
                         }
                         else if (!user) {
-                            // invalid user credentials
+                            // invalid user information
                             return Promise.reject('error.login.auth');
                         }
                         else {
-                            if (this.isLoginLocked(user)) {
-                                return Promise.reject('error.login.locked');
-                            }
-
                             if (!hasAlreadyProvenCredentials) {
                                 // verify credentials
                                 if (!this.verifyCredentials(authData, user)) {
                                     // invalid user credentials
                                     return Promise.reject('error.login.auth');
                                 }
+                            }
+
+                            if (this.isLoginLocked(user)) {
+                                // "normals" cannot login when server is locked
+                                return Promise.reject('error.login.locked');
                             }
                             
                             // set current user data

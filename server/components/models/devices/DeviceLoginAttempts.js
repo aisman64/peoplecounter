@@ -1,5 +1,5 @@
 /**
- * Each device is deployed in a physical location and captures WifiPackets in bundles of WifiDataSets.
+ * We need to viciously track device login attempts, so as to easily identify and fix broken devices.
  */
 "use strict";
 
@@ -10,21 +10,21 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
+            LoginAttemptStatus: squishy.makeEnum({
+                LoginOk: 1,
+                LoginFailed: 2,
+                LoginFailedIdentityToken: 3,
+
+                LoginReset: 11,
+                LoginResetFailed: 12,
+            }),
+
 	    	Private: {
 	    		Caches: {
-	    			wifiSnifferDevices: {
-	    				idProperty: 'deviceId',
-
-                        hasHostMemorySet: 1,    // keep devices in Host memory (for now)
+	    			deviceLoginAttempts: {
+	    				idProperty: 'deviceLoginAttemptId',
 
                         InstanceProto: {
-                            /**
-                             * Get user from cache (or null, if not cached).
-                             * On Host, need to reach in context (since this is a globally shared object).
-                             */
-                            getUserNow: function(Instance) {
-                                return (Instance || Shared).User.users.getObjectNowById(this.uid);
-                            }
                         },
 
                         members: {
@@ -55,25 +55,23 @@ module.exports = NoGapDef.component({
                 /**
                  * 
                  */
-                return sequelize.define('WifiSnifferDevice', {
-                    deviceId: { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+                return sequelize.define('DeviceLoginAttempt', {
+                    deviceLoginAttemptId: { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
 
-                    uid: Sequelize.INTEGER.UNSIGNED,
+                    // deviceId sent
+                    deviceId: Sequelize.INTEGER.UNSIGNED,
 
-                    // the time when the device has last contacted the server
-                    lastSeen: { type: Sequelize.DATE },
+                    // whether login was ok
+                    loginStatus: { type: Sequelize.INTEGER.UNSIGNED },
 
-                    // physical location (latitude + longitude)
-                    lat: Sequelize.FLOAT,
-                    lon: Sequelize.FLOAT,
-
-                    host: Sequelize.STRING(255),    // do we need this?
+                    // IP used
+                    loginIp: { type: Sequelize.STRING(63) },
                 },{
                     classMethods: {
                         onBeforeSync: function(models) {
-                            // setup foreign key Association between user and device (one-to-one relationship)
-                            this.belongsTo(models.User,
-                                { foreignKey: 'uid', as: 'user', foreignKeyConstraint: true,
+                            // setup foreign key Association between device and login attempts
+                            this.belongsTo(models.WifiSnifferDevice,
+                                { foreignKey: 'deviceId', as: 'device', foreignKeyConstraint: true,
                                 onDelete: 'cascade', onUpdate: 'cascade' });
                         },
 
@@ -81,7 +79,7 @@ module.exports = NoGapDef.component({
                             var tableName = this.getTableName();
                             return Promise.join(
                                 // create indices
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['uid'])
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['deviceId'])
                             );
                         }
                     }
