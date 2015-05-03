@@ -114,6 +114,21 @@ module.exports = NoGapDef.component({
              * Host commands can be directly called by the client
              */
             Public: {
+                generateDeviceConfigPublic: function(deviceId) {
+                    if (!this.Instance.User.isStaff()) {
+                        return Promise.reject('error.invalid.permissions');
+                    }
+
+                    return this.Instance.WifiSnifferDevice.wifiSnifferDevices.getObject(deviceId)
+                    .bind(this)
+                    .then(function(device) {
+                        return {
+                            cfg: this.generateDeviceConfig(device),
+                            identityToken: device.identityToken
+                        };
+                    });
+                },
+
                 /**
                  * Client ACKnowledged identityToken update
                  */
