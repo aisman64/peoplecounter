@@ -7,11 +7,13 @@ module.exports = {
     // Device config
 
     'DeviceConfigDefaults': {
-        'CookiesFile': 'data/cookies.json',
-        'AuthFile': 'data/auth.json',
         'HostUrl': 'http://localhost:9123',
-        'ReconnectDelay': 5 * 1000,           // a few seconds
+        'CookiesFile': 'data/cookies.json',
+        'IdentityTokenFile': 'data/identityToken',
+        'ReconnectDelay': '5000'           // a few seconds
     },
+
+    'DeviceDefaultResetTimeout': 60 * 1000,// a few minutes
 
     // ########################################################################################################################
     // User feature locks
@@ -161,6 +163,7 @@ module.exports = {
             'models/wifi/WifiDataset',
             'models/wifi/WifiPacket',
             'models/devices/WifiSnifferDevice',
+            'models/devices/DeviceStatus',
 
             // misc utilities
             'util/Auth',

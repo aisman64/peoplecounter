@@ -17,6 +17,13 @@ module.exports = NoGapDef.component({
 
                         hasHostMemorySet: 1,    // keep devices in Host memory (for now)
 
+                        indices: [
+                            {
+                                unique: true,
+                                key: ['uid']
+                            },
+                        ],
+
                         InstanceProto: {
                             /**
                              * Get user from cache (or null, if not cached).
@@ -35,6 +42,7 @@ module.exports = NoGapDef.component({
                                 if (!this.Instance.User.isStaff()) {
                                     device.resetTimeout = null;
                                 }
+                                return device;
                             }
                         }
 	    			}
@@ -67,13 +75,6 @@ module.exports = NoGapDef.component({
 
                     uid: Sequelize.INTEGER.UNSIGNED,
 
-                    // the time when the device has last contacted the server
-                    lastSeen: { type: Sequelize.DATE },
-
-                    // physical location (latitude + longitude)
-                    lat: Sequelize.FLOAT,
-                    lon: Sequelize.FLOAT,
-
                     host: Sequelize.STRING(256),    // do we need this?
 
                     // randomly generated token
@@ -83,6 +84,8 @@ module.exports = NoGapDef.component({
                     // whether (and until when) to automatically re-configure the device upon next login
                     resetTimeout: Sequelize.DATE,
                 },{
+                    freezeTableName: true,
+                    tableName: 'WifiSnifferDevice',
                     classMethods: {
                         onBeforeSync: function(models) {
                             // setup foreign key Association between user and device (one-to-one relationship)
@@ -134,13 +137,32 @@ module.exports = NoGapDef.component({
                         // then create the device
                         return this.wifiSnifferDevices.createObject({
                             uid: newUser.uid,
-                            lastSeen: Date.now(),
+                            identityToken: this.Instance.DeviceConfiguration.generateIdentityToken(),
                         });
                     });
+                },
 
+                resetDevice: function(deviceId) {
+                    // must have staff privileges
+                    if (!this.Instance.User.isStaff()) return Promise.reject('error.invalid.permissions');
+
+                    return this.wifiSnifferDevices.getObject(deviceId)
+                    .bind(this)
+                    .then(function(device) {
+                        var timeoutDelay = Shared.AppConfig.getValue('DeviceDefaultResetTimeout') || (60 * 1000);
+
+                        // reset identityToken and allow device to get the new one without logging in
+                        device.identityToken = this.Instance.DeviceConfiguration.generateIdentityToken();
+                        device.resetTimeout = new Date(new Date().getTime() + timeoutDelay);
+
+                        return this.wifiSnifferDevices.updateObject(device);
+                    });
                 },
 
                 downloadImageFileForDevice: function(deviceId) {
+                    // must have staff privileges
+                    if (!this.Instance.User.isStaff()) return Promise.reject('error.invalid.permissions');
+                    
                     // TODO!
                 }
             }

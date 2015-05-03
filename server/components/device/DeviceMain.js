@@ -38,11 +38,6 @@ module.exports = NoGapDef.component({
 
         Private: {
             onClientBootstrap: function() {
-                if (!this.Context.IsDevice) return;
-
-                this.Tools.log('Device connected!!');
-
-                return 'Host says hi!';
             },
         },
         
@@ -51,51 +46,61 @@ module.exports = NoGapDef.component({
          */
         Public: {
             tryLogin: function(authData) {
-                var deviceId = authData && authData.deviceId;
-                if (!deviceId) return Promise.reject('error.login.auth');
+                if (!authData) return Promise.reject('error.invalid.request');
 
-                var LoginStatus = this.Instance.DeviceLoginAttempt.LoginAttemptStatus;
+                var DeviceStatusId = Shared.DeviceStatus.DeviceStatusId;
+                var deviceCache = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
 
+                var deviceId = authData.deviceId;
                 var ipOrUserName = this.Instance.Libs.ComponentCommunications.getUserIdentifier();
                 var loginAttempt = {
                     deviceId: deviceId,
-                    loginStatus: 0,
-                    loginIp: ipOrUserName,
-                    identityTokenMatch: -1
+                    deviceStatus: 0,
+                    loginIp: ipOrUserName
                 };
 
-                return this.Instance.WifiSnifferDevice.wifiSnifferDevices.getObject(deviceId, true, false, true)
+                var resetAttempt = false;
+
+                return deviceCache.getObject(deviceId, true, false, true)
                 .bind(this)
                 .then(function(device) {
                     if (!device) {
-                        // invalid deviceId
-                        return Promise.reject();
+                        // TODO: Add option to Admin interface to give invalidly registered devices a new id
+                        return Promise.reject('error.device.invalidDevice');
                     }
 
                     if (device.resetTimeout) {
                         var resetTimeout = new Date(device.resetTimeout);
-                        var now = Date.now();
+                        var now = new Date();
                         if (resetTimeout.getTime() < now.getTime()) {
                             // fail: reset time is already up!
-                            loginAttempt.loginStatus = LoginStatus.LoginResetFailed;
-                            return Promise.reject();
+                            loginAttempt.deviceStatus = DeviceStatusId.LoginResetFailed;
+                            return Promise.reject('device reset expired');
                         }
 
                         // device is scheduled for a reset! Initialize reset procedure.
-                        loginAttempt.loginStatus = LoginStatus.LoginReset;
-                        return this.Instance.DeviceConfiguration.resetConfiguration(device)
+                        loginAttempt.deviceStatus = DeviceStatusId.LoginReset;
+                        resetAttempt = true;
+
+                        // NOTE: We cannot "return" the following promise, since that would block itself!
+                        this.Instance.DeviceConfiguration.startResetConfiguration(device)
+                        .bind(this)
+                        .then(function() {
+                            // update reset status in DB
+                            device.resetTimeout = null;
+                            return deviceCache.updateObject(device, true);
+                        })
                         .catch(function(err) {
                             // fail: Could not reset
-                            loginAttempt.loginStatus = LoginStatus.LoginResetFailed;
+                            loginAttempt.deviceStatus = DeviceStatusId.LoginResetFailed;
                             return Promise.reject(err);
                         });
                     }
                     else {
-                        loginAttempt.identityTokenMatch = (device.identityToken !== authData.identityToken);
-                        if (!loginAttempt.identityTokenMatch) {
+                        if (device.identityToken !== authData.identityToken) {
                             // fail: invalid identity token
-                            loginAttempt.loginStatus = LoginStatus.LoginFailedIdentityToken;
-                            return Promise.reject();
+                            loginAttempt.deviceStatus = DeviceStatusId.LoginFailedIdentityToken;
+                            return Promise.reject('invalid identity token');
                         }
 
                         // all good! Now, try to login using the device's user account (so it fits in with our permission system)
@@ -106,22 +111,36 @@ module.exports = NoGapDef.component({
                         return this.Instance.User.tryLogin(userAuthData);
                     }
                 })
+                .then(function() {
+                    loginAttempt.deviceStatus = loginAttempt.deviceStatus || DeviceStatusId.LoginOk;
+                    return null;
+                })
                 .catch(function(err) {
-                    // TODO: Allow admin to re-configure gone-bad devices easily...
-
                     // always delay bad login requests
-                    this.Tools.handleError(err, 'Device failed to login. - ' + authData);
+                    this.Tools.handleError(err, 'Device failed to login (deviceId = ' + deviceId + ')');
+                    loginAttempt.deviceStatus = DeviceStatusId.LoginFailed;
 
                     return Promise.delay(500)
-                    .reject('error.login.auth');
-                })
-                .then(function() {
-                    // try storing login attempt
-                    return this.Instance.DeviceLoginAttempt.Model.create(loginAttempt)
-                    .catch(function(err) {
-                        this.Tools.handleError(err, 'Could not store DeviceLoginAttempt');
+                    .then(function() {
+                        return Promise.reject('error.login.auth');
                     });
+                })
+                .finally(function() {
+                    // try storing login attempt
+                    return this.Instance.DeviceStatus.deviceStatuses.createObject(loginAttempt, true, true)
+                    .bind(this)
+                    .catch(function(err) {
+                        this.Tools.handleError(err, 'Could not store DeviceStatus');
+                    });
+                })
+                .then(function(res) {
                 });
+                // .then(function() {
+                //     if (resetAttempt) return;
+
+                //     // finally, reset identityToken to avoid replay attacks (if it has not already been reset)
+                //     return this.Instance.DeviceConfiguration.startRefreshingIdentityToken(device);
+                // });
             }
         },
     }}),
@@ -144,19 +163,48 @@ module.exports = NoGapDef.component({
             initClient: function() {
             },
 
+            tryLogin: function() {
+                // TODO: Private/Public key authentication
+
+                // no previous session -> try logging in!
+                var identityToken;
+                try {
+                    identityToken = Instance.DeviceConfiguration.readIdentityToken();
+                }
+                catch (err) {
+                    // that's ok...
+                    console.error('Could not read identityToken from file');
+                }
+
+                var authData = {
+                    deviceId: DEVICE.Config.deviceId,
+                    sharedSecret: DEVICE.Config.sharedSecret,
+                    identityToken: identityToken
+                };
+                return ThisComponent.host.tryLogin(authData)
+                .then(function() {
+                    // IMPORTANT: We might not be logged in yet, due to a pending reset!
+                    //   Instead, add "post-login logic" to `onLogin`.
+                })
+                .catch(function(err) {
+                    console.error('Could not login: ' + (err.message || err));
+                });
+            },
+
+            onLogin: function() {
+                // let's get to it!
+                Instance.DeviceCapture.startCapturing();
+            },
+
             onCurrentUserChanged: function(privsChanged) {
                 var user = Instance.User.currentUser;
                 console.log('I am: ' + (user && user.userName || '<UNKNOWN>'));
 
-                if (user) {
-                    Instance.DeviceCapture.startCapturing();
+                if (user && privsChanged) {
+                    this.onLogin();
                 }
                 else {
-                    // try logging in!
-                    var authData = {
-
-                    };
-                    Instance.User.host.tryLogin(authData);
+                    this.tryLogin();
                 }
             },
             

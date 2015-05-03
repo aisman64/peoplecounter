@@ -912,7 +912,7 @@ module.exports = NoGapDef.component({
                         }
 
                         // notify
-                        this.onRemovedObject.call(this, obj);
+                        this.onRemovedObject(obj);
                         this.events.removed.fire(obj);
                     }
 
@@ -1280,7 +1280,7 @@ module.exports = NoGapDef.component({
                     _sendChangesToClient: function(objects) {
                         if (!this.Instance.CacheUtil.client) return;
 
-                        if (this.filterClientObjects) {
+                        if (this.filterClientObject) {
                             var filteredObjects = [];
                             for (var i = 0; i < objects.length; ++i) {
                                 var filteredObject = this.filterClientObject(_.clone(objects[i]));
@@ -1847,7 +1847,8 @@ module.exports = NoGapDef.component({
                                 // update failed -> rollback
                                 this.applyChange(origObj);
                             }
-                            this.Instance.CacheUtil.Tools.handleError(err);
+
+                            return Promise.reject(err);
                         });
                     },
 
@@ -1880,8 +1881,7 @@ module.exports = NoGapDef.component({
                             // deletion failed -> rollback
                             this.applyChange(origObj);
 
-                            // TODO: Handle error better
-                            this.Instance.CacheUtil.Tools.handleError(err);
+                            return Promise.reject(err);
                         });
                     }
                 });

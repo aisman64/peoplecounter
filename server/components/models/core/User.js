@@ -43,6 +43,14 @@ module.exports = NoGapDef.component({
                 return role && role > this.UserRole.Device;
             },
 
+            isDevice: function(roleOrUser) {
+                roleOrUser = roleOrUser || this.currentUser;
+                if (!roleOrUser) return false;
+                
+                var role = roleOrUser.displayRole || roleOrUser;
+                return role && role == this.UserRole.Device;
+            },
+
             isStandardUser: function(roleOrUser) {
                 roleOrUser = roleOrUser || this.currentUser;
                 if (!roleOrUser) return false;
@@ -249,6 +257,18 @@ module.exports = NoGapDef.component({
                             filterClientObject: function(user) {
                                 // remove sensitive information before sending to client
                                 user.sharedSecret = null;
+
+                                return user;
+                            },
+
+                            onRemovedObject: function(user) {
+                                // due to a foreign key, devices of user account will also be deleted
+                                // so we will need to update the device cache manually
+                                var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                                var device = devices.indices.uid.get(user.uid);
+                                if (device) {
+                                    devices.applyRemove(device);
+                                }
                             },
 
                             /**
@@ -325,6 +345,10 @@ module.exports = NoGapDef.component({
                  */
                 isStaff: function() {
                     return this.Shared.isStaff(this.currentUser);
+                },
+
+                isDevice: function() {
+                    return this.Shared.isDevice(this.currentUser);
                 },
 
                 /**
@@ -411,7 +435,7 @@ module.exports = NoGapDef.component({
                     else if (!!authData.uid) {
                         queryInput = { uid: authData.uid };
                     }
-                    else if (!!userName: authData.userName) {
+                    else if (!!authData.userName) {
                         // login using userName
                         queryInput = { userName: authData.userName };
                     }

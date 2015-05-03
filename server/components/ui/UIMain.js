@@ -508,6 +508,9 @@ module.exports = NoGapDef.component({
 
                     // some additional, less universal utilities
                     $rootScope.util = {
+                        Math: Math,
+                        Date: Date,
+
                         /**
                          * Library for date + time representation.
                          * @see http://momentjs.com/
@@ -521,12 +524,16 @@ module.exports = NoGapDef.component({
                             return new ThisComponent.SelectionState(idProperty);
                         },
 
-                        getCountdown: function(date) {
+                        getCountdownMillis: function(date) {
                             var now = new Date();
                             var date = moment(date).toDate();
                             var millis = date.getTime() - now.getTime();
 
-                            return this.formatTimeSpan(millis);
+                            return millis;
+                        },
+
+                        getCountdown: function(date) {
+                            return this.formatTimeSpan(this.getCountdownMillis(date));
                         },
 
                         formatTimeSpan: function(millis) {

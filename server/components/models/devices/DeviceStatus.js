@@ -10,7 +10,7 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
-            LoginAttemptStatus: squishy.makeEnum({
+            DeviceStatusId: squishy.makeEnum({
                 LoginOk: 1,
                 LoginFailed: 2,
                 LoginFailedIdentityToken: 3,
@@ -21,12 +21,8 @@ module.exports = NoGapDef.component({
 
 	    	Private: {
 	    		Caches: {
-	    			deviceLoginAttempts: {
-	    				idProperty: 'deviceLoginAttemptId',
-
-                        InstanceProto: {
-                        },
-
+	    			deviceStatuses: {
+	    				idProperty: 'deviceStatusId',
                         members: {
 
                         }
@@ -41,12 +37,10 @@ module.exports = NoGapDef.component({
         var componentsRoot = '../../';
         var libRoot = componentsRoot + '../lib/';
         var SequelizeUtil;
-        var TokenStore;
 
         return {
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
-                TokenStore = require(libRoot + 'TokenStore');
             },
 
             initModel: function() {
@@ -55,24 +49,22 @@ module.exports = NoGapDef.component({
                 /**
                  * 
                  */
-                return sequelize.define('DeviceLoginAttempt', {
-                    deviceLoginAttemptId: { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
+                return sequelize.define('DeviceStatus', {
+                    deviceStatusId: { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
 
                     // deviceId sent
                     deviceId: Sequelize.INTEGER.UNSIGNED,
 
                     // whether login was ok
-                    loginStatus: { type: Sequelize.INTEGER.UNSIGNED },
+                    deviceStatus: { type: Sequelize.INTEGER.UNSIGNED },
 
                     // IP used
                     loginIp: { type: Sequelize.STRING(63) },
                 },{
+                    freezeTableName: true,
+                    tableName: 'DeviceStatus',
                     classMethods: {
                         onBeforeSync: function(models) {
-                            // setup foreign key Association between device and login attempts
-                            this.belongsTo(models.WifiSnifferDevice,
-                                { foreignKey: 'deviceId', as: 'device', foreignKeyConstraint: true,
-                                onDelete: 'cascade', onUpdate: 'cascade' });
                         },
 
                         onAfterSync: function(models) {

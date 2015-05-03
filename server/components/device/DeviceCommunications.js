@@ -58,7 +58,7 @@ module.exports = NoGapDef.component({
 					return new Promise(function(resolve, reject) {
 						var Context = this.Context;
 			            var serializer = this.Serializer;
-			            var completeUrl = DeviceConfig.HostUrl + path;	// Context.remoteUrl + path,
+			            var completeUrl = DEVICE.Config.HostUrl + path;	// Context.remoteUrl + path,
 
 			            if (serialize) {
 			                headers['Content-type'] = 'application/json; charset=' + (Context.charset || 'utf-8') + ';';
