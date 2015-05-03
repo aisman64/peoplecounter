@@ -44,6 +44,9 @@ module.exports = NoGapDef.component({
                      */
                     ssidId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
                     ssidName: { type: Sequelize.STRING(32), unique: true }
+                }, {
+                    freezeTableName: true,
+                    tableName: 'SSID',
                 });
             }
         };

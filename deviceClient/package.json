@@ -27,14 +27,15 @@
 	    "log4js": "*",
 
 	    "request": "*",
-	    "tough-cookie": "*",
 	    "tough-cookie-filestore": "*",
-	    "touch": "*",
-	    "xmlhttprequest": "1.7.0",
+	    "touch": "*"
+	}, 
 
+	"optionalDependencies": {
 		"pcap": "git+https://github.com/mranney/node_pcap.git",
 		"file-queue": "*"
-	}, 
+	},
+
 	"preferGlobal": true, 
 	"private": true 
 }
