@@ -131,6 +131,7 @@ module.exports = NoGapDef.component({
             {
                 otherComponents: [
                     // core utilities
+                    'DeviceConfiguration'
                 ],
 
                 pageComponents: [
@@ -510,6 +511,7 @@ module.exports = NoGapDef.component({
                     $rootScope.util = {
                         Math: Math,
                         Date: Date,
+                        JSON: JSON,
 
                         /**
                          * Library for date + time representation.

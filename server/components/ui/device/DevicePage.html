@@ -6,6 +6,12 @@
 	    <div class="panel-heading">
 	        <div class="panel-title">
 	            <span class="">All Devices<span style="color:#DDDDDD"> ({{deviceCache.list.length || 0}}) </span></span>
+
+                <span class="pull-right" 
+                    style="vertical-align: middle"
+                    ng-style="{visibility: PC.busy && 'visible' || 'hidden'}">
+                        <i class="fa fa-spinner fa-spin"></i>
+                </span>
 	        </div>
 	    </div>
 	    <div class="panel-body no-padding"><ul class="list-group">
@@ -16,7 +22,7 @@
 
             	<!-- Show device Info -->
 		        <div class="table table-striped some-padding"
-	            	ng-click="PC.selection.toggleSelection(device)">
+	            	ng-click="PC.selection.toggleSelection(device); onChange(); PC.showConfig = false;">
 		        	<div class="row">
                         <div class="col-xs-8">
                             <span>{{user.userName}}</span>
@@ -45,9 +51,21 @@
 	                    <input type="text" ng-model="user.userName"
 	                        ng-change="onChange()">
 
-	                    <!-- Save indicators -->
-	                    <span ng-style="{visibility: PC.deviceSaving && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
-	                    <span ng-style="{visibility: PC.deviceSaved && 'visible' || 'hidden'}" class="label label-default">saved</span>
+                        <!-- Save indicators -->
+                        <span ng-style="{visibility: PC.deviceSaving && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+                        <span ng-style="{visibility: PC.deviceSaved && 'visible' || 'hidden'}" class="label label-default">saved</span>
+
+                        <div class="vertical-space"></div>
+
+                        <div class="some-padding"
+                            style="border: solid black 1px; background-color: white;"
+                            ng-if="PC.showConfig && PC.currentDeviceSettings">
+                            <h4>data/DeviceConfig.json</h4>
+                            <pre>{{util.JSON.stringify(PC.currentDeviceSettings.cfg, null, '\t')}}</pre>
+
+                            <h4>{{PC.currentDeviceSettings.cfg.IdentityTokenFile}}</h4>
+                            <pre>{{PC.currentDeviceSettings.identityToken}}</pre>
+                        </div>
                     </div>
 
                     <!-- Buttons -->
@@ -64,10 +82,15 @@
                             ng-click="clickSave(device, true)">
                             <localize key="Done"></localize>
                         </a>
-                        <a style="visibility:hidden;"
-                            class="btn btn-default col-xs-4"
+                        <a  ng-disabled="PC.deviceSaving"
+                            class="btn btn-default col-xs-3"
                             style="display:inline-block" 
-                            ng-click="">
+                            ng-click="showDeviceConfig(device);">
+                            <span>Show Config</span>
+                        </a>
+                        <a  ng-disabled="PC.deviceSaving"
+                            class="btn btn-default col-xs-1"
+                            style="display:inline-block; visibility: hidden;" >
                             <span></span>
                         </a>
                         <span dropdown class="col-xs-2"
@@ -109,7 +132,7 @@
         </span>
     </div>
 
-    <div class="alert alert-info" ng-if="!PC.loading && deviceCache.list.length == 0">
+    <div class="alert alert-info" ng-if="!PC.busy && deviceCache.list.length == 0">
         There are no registered devices yet...
     </div>
 
@@ -118,6 +141,6 @@
         ng-click="registerNewDevice('new device')">
         Add Device!
 
-        <span ng-style="{visibility: PC.loading && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+        <span ng-style="{visibility: PC.busy && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
     </button>
 </div>

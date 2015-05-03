@@ -88,7 +88,7 @@ module.exports = NoGapDef.component({
                         ThisComponent.deviceSaved = true;
 
                         Promise.join(
-                            Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject(device),
+                            //Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject(device)
                             Instance.User.users.updateObject(device.getUserNow())
                         )
                         .finally(function() {
@@ -171,6 +171,27 @@ module.exports = NoGapDef.component({
                     };
 
 
+                    $scope.showDeviceConfig = function(device) {
+                        ThisComponent.showConfig = !ThisComponent.showConfig;
+                        if (!ThisComponent.showConfig) {
+                            // toggled it off
+                            return;
+                        }
+
+                        ThisComponent.busy = true;
+
+                        Instance.DeviceConfiguration.host.generateDeviceConfigPublic(device.deviceId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function(deviceSettings) {
+                            ThisComponent.currentDeviceSettings = deviceSettings;
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+
 
                     $scope.onChange = function() {
                         $scope.errorMessage = null;
@@ -201,11 +222,11 @@ module.exports = NoGapDef.component({
             cacheEventHandlers: {
                 wifiSnifferDevices: {
                     sendingReadQueryToHost: function(queryInput) {
-                        ThisComponent.loading = true;
+                        ThisComponent.busy = true;
                         ThisComponent.page.invalidateView();
                     },
                     updated: function(newValues) {
-                        ThisComponent.loading = false;
+                        ThisComponent.busy = false;
                         ThisComponent.page.invalidateView();
                     }
                 },
