@@ -172,9 +172,9 @@ module.exports = NoGapDef.component({
 
 
                     $scope.showDeviceConfig = function(device) {
-                        ThisComponent.showConfig = !ThisComponent.showConfig;
-                        if (!ThisComponent.showConfig) {
-                            // toggled it off
+                        if (ThisComponent.showConfig) {
+                            // toggle it off
+                            ThisComponent.showConfig = false;
                             return;
                         }
 
@@ -186,6 +186,7 @@ module.exports = NoGapDef.component({
                         })
                         .then(function(deviceSettings) {
                             ThisComponent.currentDeviceSettings = deviceSettings;
+                            ThisComponent.showConfig = true;
                             ThisComponent.page.invalidateView();
                         })
                         .catch($scope.handleError.bind($scope));
