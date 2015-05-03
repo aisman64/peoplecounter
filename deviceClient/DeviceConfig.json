@@ -1,7 +1,0 @@
-{
-	"HostUrl": "http://localhost:9123",
-	"CookiesFile": "data/cookies.json",
-	"IdentityTokenFile": "data/identityToken",
-	"ReconnectDelay": "5000",
-	"deviceId": 4
-}
