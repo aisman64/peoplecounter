@@ -1,2 +1,3 @@
 # ignore personal cookies
-data/cookies.json
+data/*
+DeviceConfig.json

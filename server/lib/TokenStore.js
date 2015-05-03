@@ -82,7 +82,7 @@ var TokenStore = Object.create({
         // only get `len` characters
         for (var i = 0; i < len; ++i) {
             var nextByte = buf[i];
-            res += symbols[nextByte%nSymbols];      // map bytes to our given set of symbols
+            res += symbols.charAt(nextByte%nSymbols);      // map bytes to our given set of symbols
         }
         return res;
     },
@@ -117,7 +117,7 @@ var TokenStore = Object.create({
             //mode: parseInt('0600', 10)
         };
         try {
-            var content = fs.readFileSync(fpath, foptions);
+            var content = fs.readFileSync(fpath, foptions).toString();
             if (content.length > 0) {
                 return eval(content.toString('utf8')) || {};
             }

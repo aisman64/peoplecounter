@@ -42,10 +42,9 @@ module.exports = NoGapDef.component({
          */
         Public: {
             storePacket: function(packet) {
-                // TODO: Require authentication
-                //if (!this.isAuthenticated) return Promise.reject('error.invalid.permissions');
+                if (!this.Instance.User.isDevice()) return Promise.reject('error.invalid.permissions');
 
-                this.Instance.WifiPacket.storePacket(packet);
+                return this.Instance.WifiPacket.storePacket(packet);
             }
         },
     }}),
@@ -63,17 +62,12 @@ module.exports = NoGapDef.component({
             },
 
             /**
-             * Device has initialized
+             * This method is called by DeviceMain, once we are logged into the server!
              */
-            initClient: function() {
+            startCapturing: function() {
                 // TODO: Start capturing packets
 
-                // this.host.test()
-                // .then(function(result) {
-                //     console.log('Host said: ' + result);
-                // });
-
-            	console.log('Let\'s capture something!');
+                // this.storePacket(packet);
             },
 
             storePacket: function(packet) {
