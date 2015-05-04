@@ -162,7 +162,9 @@ module.exports = {
             // user pages:
             'ui/home/HomePage',
             'ui/device/DevicePage',
-            'ui/account/AccountPage'
+            'ui/account/AccountPage',
+            'ui/map/MapPage',
+            'ui/result/ResultPage'
         ]
     },
 };
