@@ -1,0 +1,21 @@
+{ 
+	"name": "peoplecounter-image", 
+	"version": "0.0.1", 
+	"description": "Peoplecounter", 
+	"author": "TODO", 
+	"contributors": [], 
+	"private": true,
+	"scripts": {
+		"start": "nodejs test.js",
+		"deb": "nodejs --debug test.js"
+	},
+	"main": "test.js",
+	 
+	"dependencies": {
+		"fs-extra": "*",
+		"tmp": "*",
+		"sleep": "*"		
+	}, 
+	"preferGlobal": true, 
+	"private": true 
+}
