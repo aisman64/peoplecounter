@@ -54,7 +54,7 @@ Object.prototype.toString = function() {
 
 
 // ####################################################################################
-// merge in user config
+// merge user config
 
 var appConfigUser;
 try {

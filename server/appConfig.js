@@ -94,7 +94,6 @@ module.exports = {
     },
 
     // these are the login details to connect to your MySQL DB
-    // it should usually be the same as in your `LocalSettings.php`
     'db' : {
         'host'     : 'localhost',
         'user'     : 'root',
