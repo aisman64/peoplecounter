@@ -1,0 +1,3 @@
+#remove all image files
+*.img
+*.img.gz
