@@ -396,7 +396,12 @@ module.exports = NoGapDef.component({
 
                     // copy data into object
                     for (var propName in data) {
-                        this[propName] = data[propName];
+                        if (!data.hasOwnProperty(propName)) continue;
+
+                        var prop = data[propName];
+                        if (prop instanceof Function) continue; // never copy functions
+
+                        this[propName] = prop;
                     }
                 },{
                     // methods
