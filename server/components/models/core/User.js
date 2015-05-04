@@ -23,6 +23,8 @@ module.exports = NoGapDef.component({
                 "Unregistered": 1,
                 "StandardUser": 2,
                 "Device": 3,
+
+                "Admin": 4,
                 
                 /**
                  * This role is used for maintenance operations that may have severe consequences 
@@ -38,7 +40,15 @@ module.exports = NoGapDef.component({
                 if (!roleOrUser) return false;
                 
                 var role = roleOrUser.displayRole || roleOrUser;
-                return role && role > this.UserRole.StandardUser;
+                return role && role > this.UserRole.Device;
+            },
+
+            isDevice: function(roleOrUser) {
+                roleOrUser = roleOrUser || this.currentUser;
+                if (!roleOrUser) return false;
+                
+                var role = roleOrUser.displayRole || roleOrUser;
+                return role && role == this.UserRole.Device;
             },
 
             isStandardUser: function(roleOrUser) {
@@ -46,7 +56,7 @@ module.exports = NoGapDef.component({
                 if (!roleOrUser) return false;
                 
                 var role = roleOrUser.displayRole || roleOrUser;
-                return role && role >= this.UserRole.StandardUser;
+                return role && role >= this.UserRole.Device;
             },
 
             isGuest: function(roleOrUser) {
@@ -212,6 +222,9 @@ module.exports = NoGapDef.component({
                         allowNull: false
                     },
 
+                    // a transformation of the user's password (which is unknown to the server)
+                    sharedSecret: Sequelize.STRING(256),
+
                     realName: Sequelize.STRING(100),
                     email: Sequelize.STRING(100),
                     locale: Sequelize.STRING(20),
@@ -241,7 +254,21 @@ module.exports = NoGapDef.component({
                 Caches: {
                     users: {
                         members: {
-                            onWrapObject: function(user) {
+                            filterClientObject: function(user) {
+                                // remove sensitive information before sending to client
+                                user.sharedSecret = null;
+
+                                return user;
+                            },
+
+                            onRemovedObject: function(user) {
+                                // due to a foreign key, devices of user account will also be deleted
+                                // so we will need to update the device cache manually
+                                var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                                var device = devices.indices.uid.get(user.uid);
+                                if (device) {
+                                    devices.applyRemove(device);
+                                }
                             },
 
                             /**
@@ -320,6 +347,10 @@ module.exports = NoGapDef.component({
                     return this.Shared.isStaff(this.currentUser);
                 },
 
+                isDevice: function() {
+                    return this.Shared.isDevice(this.currentUser);
+                },
+
                 /**
                  * 
                  */
@@ -379,20 +410,38 @@ module.exports = NoGapDef.component({
                     });
                 },
 
+                verifyCredentials: function(authData, userData) {
+                    // TODO: Use crypto and SHA1
+                    return true;                    
+                },
+
                 /**
                  * Query DB to validate user-provided credentials.
                  */
                 tryLogin: function(authData) {
+                    if (!authData) {
+                        return Promise.reject('error.login.auth');
+                    }
+
                     // query user from DB
                     var queryInput;
+                    var hasSpecialPermission = this.Context.clientIsLocal || Shared.AppConfig.getValue('dev');
                     var isFacebookLogin = !!authData.facebookID;
+                    var hasAlreadyProvenCredentials = isFacebookLogin;
                     if (isFacebookLogin) {
                         // login using FB
                         queryInput = { facebookID: authData.facebookID };
                     }
-                    else {
+                    else if (!!authData.uid) {
+                        queryInput = { uid: authData.uid };
+                    }
+                    else if (!!authData.userName) {
                         // login using userName
                         queryInput = { userName: authData.userName };
+                    }
+                    else {
+                        // invalid user credentials
+                        return Promise.reject('error.login.auth');
                     }
 
                     var logLoginAttempt = function(user, result) {
@@ -409,12 +458,11 @@ module.exports = NoGapDef.component({
                     return this.findUser(queryInput)
                     .bind(this)
                     .then(function(user) {
-                        if (!user) {
-                            // user does not exist
-                            if (this.Context.clientIsLocal || Shared.AppConfig.getValue('dev')) {
-                                // dev mode always allows admin accounts
-                                // localhost may create Admin accounts
-                                authData.role = UserRole.Admin;
+                        if (!user && authData.userName) {
+                            // user does not exist: Check for special cases
+                            if (hasSpecialPermission) {
+                                // dev mode and localhost always allow admin accounts
+                                authData.role = UserRole.Developer;
                                 return this.createAndLogin(authData);
                             }
                             else {
@@ -423,8 +471,8 @@ module.exports = NoGapDef.component({
                                 .bind(this)
                                 .then(function(count) {
                                     if (count == 0)  {
-                                        // this is the first user: Create & login as Admin
-                                        authData.role = UserRole.Admin;
+                                        // this is the first user: Create & login with highest privs
+                                        authData.role = UserRole.Developer;
                                         return this.createAndLogin(authData);
                                     }
                                     else if (isFacebookLogin) {
@@ -439,8 +487,21 @@ module.exports = NoGapDef.component({
                                 });
                             }
                         }
+                        else if (!user) {
+                            // invalid user information
+                            return Promise.reject('error.login.auth');
+                        }
                         else {
+                            if (!hasAlreadyProvenCredentials) {
+                                // verify credentials
+                                if (!this.verifyCredentials(authData, user)) {
+                                    // invalid user credentials
+                                    return Promise.reject('error.login.auth');
+                                }
+                            }
+
                             if (this.isLoginLocked(user)) {
+                                // "normals" cannot login when server is locked
                                 return Promise.reject('error.login.locked');
                             }
                             
@@ -703,7 +764,7 @@ module.exports = NoGapDef.component({
                 }
 
                 if (!localizer.localeExists(locale)) {
-                    locale = Instance.MiscUtil.guessBrowserLanguage();
+                    locale = Instance.MiscUtil.guessClientLanguage();
 
                     if (!localizer.localeExists(locale)) {
                         // check if region-independent locale exists
@@ -786,6 +847,18 @@ module.exports = NoGapDef.component({
                     }
 
                     this.onCurrentUserChanged(true);
+                },
+
+                /**
+                 * We never want to send passwords as-is.
+                 * Instead, we mix things up and one-time-hash them to create an even safer password.
+                 *
+                 * @see https://github.com/dcodeIO/bcrypt.js
+                 */
+                makeCredentials: function(userName, passphrase) {
+                    var bcrypt = Instance.Main.assets.bcrypt;
+
+                    // TODO
                 }
             }
         };

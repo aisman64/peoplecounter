@@ -93,10 +93,11 @@ squishy.CodeBuilder = {
             codeString += ' ';
         }
         codeString += code.toString() + ')';
-        codeString += "\n//# sourceURL=" + this.prettyFileNameUrl(creationFrame.fileName);
+        codeString += "\n//@ sourceURL=" + this.prettyFileNameUrl(creationFrame.fileName);
         //codeString = 'eval(eval(' + this.escapeCode(codeString) + '))';
 
         var completeCode = '(eval(eval(' + JSON.stringify(codeString) + ')))';
+        //completeCode += "\n//@ sourceURL=" + this.prettyFileNameUrl(creationFrame.fileName);
         //var completeCode = 'eval(eval(' + JSON.stringify('(function() { return 1; })') + '))';
         
         // test serializing of functions

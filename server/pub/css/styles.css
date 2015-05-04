@@ -440,6 +440,10 @@ title, tt, u, var {
   border: 0 !important;
 }
 
+.vertical-space {
+  margin-top: 1em;
+}
+
 /*.dropdown-toggle::after {
   content: ""
 }*/

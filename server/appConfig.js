@@ -4,6 +4,18 @@
 module.exports = {
 
     // ########################################################################################################################
+    // Device config
+
+    'DeviceConfigDefaults': {
+        'HostUrl': 'http://localhost:9123',
+        'CookiesFile': 'data/cookies.json',
+        'IdentityTokenFile': 'data/identityToken',
+        'ReconnectDelay': '5000'           // a few seconds
+    },
+
+    'DeviceDefaultResetTimeout': 60 * 1000,// a few minutes
+
+    // ########################################################################################################################
     // User feature locks
 
 
@@ -67,6 +79,8 @@ module.exports = {
 
     // ########################################################################################################################
     // Mostly constant options
+
+    'title': 'People Counter',
 
     // folder containing files, accessible by clients
     'uploadFolder': 'uploads/',
@@ -143,18 +157,32 @@ module.exports = {
             'models/core/AppConfig',
             'models/core/User',
 
+            // all kinds of model components
+            'models/wifi/MacAddress',
+            'models/wifi/SSID',
+            'models/wifi/WifiDataset',
+            'models/wifi/WifiPacket',
+            'models/devices/WifiSnifferDevice',
+            'models/devices/DeviceStatus',
+
             // misc utilities
             'util/Auth',
             'util/MiscUtil',
             'util/Localizer',
             'util/Log',
             'util/ValidationUtil',
-            'util/SimpleBooleanExpressions',
             'util/FacebookApi',
+            
+            // this one kicks off Instance code
+            'Main',
 
             // core UI components:
             'ui/UIMgr',
-            'ui/Main',
+            'ui/UIMain',
+
+            // core device components:
+            'device/DeviceMain',
+            'device/DeviceCapture',
 
             // guest + unregistered pages:
             'ui/guest/GuestPage',

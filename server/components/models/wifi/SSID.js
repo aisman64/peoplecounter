@@ -13,7 +13,7 @@ module.exports = NoGapDef.component({
     	return {
 	    	Private: {
 	    		Caches: {
-	    			wifiPackets: {
+	    			ssids: {
 	    				idProperty: 'ssidId'
 	    			}
 	    		}
@@ -43,7 +43,10 @@ module.exports = NoGapDef.component({
                      * The ssidId is a number, uniquely identifying the given ssid (which is actually a name string)
                      */
                     ssidId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-                    ssidName: { type: Sequelize.TEXT, unique: true }
+                    ssidName: { type: Sequelize.STRING(32), unique: true }
+                }, {
+                    freezeTableName: true,
+                    tableName: 'SSID',
                 });
             }
         };
@@ -51,6 +54,8 @@ module.exports = NoGapDef.component({
 
 
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
+        return {
 
+        };
     })
 });

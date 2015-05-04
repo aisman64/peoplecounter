@@ -14,7 +14,7 @@ module.exports = NoGapDef.component({
     	return {
 	    	Private: {
 	    		Caches: {
-	    			wifiPackets: {
+	    			macAddresses: {
 	    				idProperty: 'macId'
 	    			}
 	    		}
@@ -45,7 +45,10 @@ module.exports = NoGapDef.component({
                      * TODO: OUI?
                      */
                     macId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-                    macAddress: Sequelize.VARCHAR(16)
+                    macAddress: Sequelize.STRING(16)
+                }, {
+                    freezeTableName: true,
+                    tableName: 'MACAddress',
                 });
             }
         };
@@ -53,6 +56,8 @@ module.exports = NoGapDef.component({
 
 
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
+        return {
 
+        };
     })
 });

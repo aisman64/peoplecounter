@@ -13,7 +13,7 @@ module.exports = NoGapDef.component({
     	return {
 	    	Private: {
 	    		Caches: {
-	    			wifiPackets: {
+	    			wifiDatasets: {
 	    				idProperty: 'datasetId'
 	    			}
 	    		}
@@ -40,7 +40,10 @@ module.exports = NoGapDef.component({
                  */
                 return sequelize.define('WifiDataset', {
                     datasetId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-                    datasetName: {type: Sequelize.TEXT, unique: true },
+                    datasetName: {type: Sequelize.STRING(256) },
+                }, {
+                    freezeTableName: true,
+                    tableName: 'WifiDataset',
                 });
             }
         };
@@ -48,6 +51,8 @@ module.exports = NoGapDef.component({
 
 
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
+        return {
 
+        };
     })
 });

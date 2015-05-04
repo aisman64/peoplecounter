@@ -14,6 +14,13 @@
 -- SELECT COUNT(*) c, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` WHERE macid = 11015 GROUP BY `t` ORDER BY `t` LIMIT 30;
 -- SELECT COUNT(*) c, `macId`, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` GROUP BY `macId`, `t` ORDER BY `macId`, `t` LIMIT 30;
 
+# Most active SSIDs
+# SELECT c count, ssidName FROM (SELECT COUNT(*) c, ssidId s FROM WifiPacket GROUP BY ssidId ORDER BY c DESC LIMIT 10) j INNER JOIN (SSID) ON (s = ssidId);
+
+
+# Most active MACAddresses
+# SELECT COUNT(*) c, macId m FROM WifiPacket GROUP BY macId ORDER BY c DESC LIMIT 10;
+
 
 ###################################################################################################
 # move and rename tables
@@ -41,16 +48,18 @@ USE `peoplecounter`;
 # rename columns
 ###################################################################################################
 
-ALTER TABLE WifiPacket CHANGE id packetId INTEGER UNSIGNED;
+ALTER TABLE WifiPacket CHANGE id packetId INTEGER UNSIGNED AUTO_INCREMENT;
 ALTER TABLE WifiPacket CHANGE sigstr signalStrength INTEGER;
+ALTER TABLE WifiPacket CHANGE dataset datasetId INTEGER UNSIGNED;
 
-ALTER TABLE WifiDataset CHANGE COLUMN dataset datasetName varchar(255);
+ALTER TABLE WifiDataset CHANGE id datasetId INTEGER UNSIGNED AUTO_INCREMENT;
+ALTER TABLE WifiDataset CHANGE name datasetName varchar(255);
 
-ALTER TABLE WifiSnifferDevice CHANGE COLUMN id deviceId INTEGER UNSIGNED;
-ALTER TABLE WifiSnifferDevice CHANGE COLUMN device deviceName varchar(255);
+ALTER TABLE WifiSnifferDevice CHANGE id deviceId INTEGER UNSIGNED AUTO_INCREMENT;
+ALTER TABLE WifiSnifferDevice CHANGE device deviceName varchar(255);
 
-ALTER TABLE SSID CHANGE COLUMN id ssidId INTEGER UNSIGNED;
-ALTER TABLE SSID CHANGE COLUMN ssid ssidName varchar(32);
+ALTER TABLE SSID CHANGE id ssidId INTEGER UNSIGNED AUTO_INCREMENT;
+ALTER TABLE SSID CHANGE ssid ssidName varchar(32);
 
 
 ###################################################################################################
@@ -78,7 +87,6 @@ INSERT INTO `SSID` (`ssidName`) (
     WHERE SSID.ssidName IS NULL
 );
 
-
 ###################################################################################################
 # convert all kinds of names to ids in WifiPacket table
 ###################################################################################################
@@ -88,9 +96,10 @@ ALTER TABLE WifiPacket ADD `deviceId` INTEGER UNSIGNED;
 
 UPDATE `WifiPacket`
 INNER JOIN `WifiSnifferDevice`
-ON `WifiSnifferDevice`.`deviceName` = `WifiPacket`.`device`
-SET `WifiPacket`.`deviceId` = `WifiSnifferDevice`.`deviceId`;
+ON `WifiSnifferDevice`.`host` = `WifiPacket`.`device`
+SET `WifiPacket`.`deviceId` = `WifiSnifferDevice`.`id`;
 
+ CREATE INDEX WifiPacket_deviceId ON WifiPacket (deviceId);
 
 # convert `mac` string to `macId`
 ALTER TABLE WifiPacket ADD `macId` INTEGER UNSIGNED;
@@ -100,21 +109,26 @@ INNER JOIN `MACAddress`
 ON `MACAddress`.`macAddress` = `WifiPacket`.`mac`
 SET `WifiPacket`.`macId` = `MACAddress`.`macId`;
 
+ CREATE INDEX WifiPacket_macId ON WifiPacket (macId);
 
 # convert `ssid` string to `ssidId`
 ALTER TABLE WifiPacket ADD `ssidId` INTEGER UNSIGNED;
 
 UPDATE `WifiPacket`
 INNER JOIN `SSID`
-ON `SSID`.`ssid` = `WifiPacket`.`ssid`
+ON `SSID`.`ssidName` = `WifiPacket`.`ssid`
 SET `WifiPacket`.`ssidId` = `SSID`.`ssidId`;
 
+ CREATE INDEX WifiPacket_ssidId ON WifiPacket (ssidId);
 
-# TODO: Make sure, all WifiPackets have a valid deviceId!
-# TODO: Make sure, all WifiPackets have a valid macId!
-# TODO: Make sure, all WifiPackets have a valid ssidId!
-SELECT * FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL OR ssidId IS NULL);
+SHOW INDEX FROM WifiPacket;
 
+# All WifiPackets have a valid deviceId!
+# All WifiPackets have a valid macId!
+# NOTE: Not all WifiPackets have a valid ssidId!
+SELECT COUNT(*) FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL); # == 0
+
+#DONE!?
 
 ###################################################################################################
 # delete unused/useless stuff

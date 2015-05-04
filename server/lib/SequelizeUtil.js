@@ -125,7 +125,7 @@ var SequelizeUtil = {
 
         // exit if Model setup failed
         .catch(function(err) {
-            throw new Error("DB setup failed: " + err.stack);
+            throw new Error('DB setup failed' + (err.sql && ' (SQL: ' + err.sql + ')') + ' - ' + err.stack);
         });
     },
 

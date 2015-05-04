@@ -1,0 +1,41 @@
+{ 
+	"name": "peoplecounter", 
+	"version": "0.0.1", 
+	"description": "Peoplecounter", 
+	"author": "TODO", 
+	"contributors": [], 
+	"private": true,
+	"scripts": {
+		"start": "node StartDeviceClient.js",
+		"deb": "node-debug StartDeviceClient.js"
+	},
+	"main": "StartDeviceClient.js",
+	 
+	"dependencies": {
+	    "lodash": "*",
+	    "squishy": "*",
+	    "bluebird": "*",
+	    "promisify-node": "*",
+
+	    "debug": "~0.7.4",
+	    "mime": "*",
+
+	    "process": "*",
+	    "mkdirp": "*",
+	    "rimraf": "*",
+	    "URIjs": "*",
+	    "log4js": "*",
+
+	    "request": "*",
+	    "tough-cookie-filestore": "*",
+	    "touch": "*"
+	}, 
+
+	"optionalDependencies": {
+		"pcap": "git+https://github.com/mranney/node_pcap.git",
+		"file-queue": "*"
+	},
+
+	"preferGlobal": true, 
+	"private": true 
+}
