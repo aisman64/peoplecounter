@@ -126,7 +126,7 @@ module.exports = NoGapDef.component({
              * Host commands can be directly called by the client
              */
             Public: {
-                getDeviceConfigPublic: function(deviceId, newRootPassword) {
+                getDeviceConfigPublic: function(deviceId) {
                     if (!this.Instance.User.isStaff()) {
                         return Promise.reject('error.invalid.permissions');
                     }
