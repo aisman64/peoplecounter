@@ -60,10 +60,13 @@
                         <div class="some-padding"
                             style="border: solid black 1px; background-color: white;"
                             ng-if="PC.showConfig && PC.currentDeviceSettings">
-                            <h4>data/DeviceConfig.json</h4>
+                            <h4>Root password</h4>
+                            <pre>{{PC.currentDeviceSettings.rootPassword}}</pre>
+
+                            <h4>{{DEVICE.ConfigFilePath}}</h4>
                             <pre>{{util.JSON.stringify(PC.currentDeviceSettings.cfg, null, '\t')}}</pre>
 
-                            <h4>{{PC.currentDeviceSettings.cfg.IdentityTokenFile}}</h4>
+                            <h4>{{PC.currentDeviceSettings.cfg.HostIdentityTokenFile}}</h4>
                             <pre>{{PC.currentDeviceSettings.identityToken}}</pre>
                         </div>
                     </div>

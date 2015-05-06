@@ -30,7 +30,6 @@ var FileCookieStore = require('tough-cookie-filestore');
 // Config handling
 
 GLOBAL.DEVICE = {};
-
 GLOBAL.DEVICE.ConfigFilePath = './data/DeviceConfig.json';
 
 GLOBAL.DEVICE.readDeviceConfig = function readDeviceConfig() {

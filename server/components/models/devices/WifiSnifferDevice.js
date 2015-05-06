@@ -81,6 +81,9 @@ module.exports = NoGapDef.component({
                     // this refreshes upon every login to avoid replay-attack logins
                     identityToken: Sequelize.STRING(256),
 
+                    // randomly generated password
+                    rootPassword: Sequelize.STRING(256),
+
                     // whether (and until when) to automatically re-configure the device upon next login
                     resetTimeout: Sequelize.DATE,
                 },{
@@ -113,8 +116,6 @@ module.exports = NoGapDef.component({
                     // must have staff privileges
                     if (!this.Instance.User.isStaff()) return Promise.reject('error.invalid.permissions');
 
-                    // TODO: Generate authentication credentials
-
                     // first, make sure, the name does not exist yet
                     return this.Instance.User.users.getObject({userName: name}, true, false, true)
                     .bind(this)
@@ -124,6 +125,7 @@ module.exports = NoGapDef.component({
                         }
 
                         // then, create a new user
+                        // TODO: User authentication (publicKey + privateKey)
                         var role = Shared.User.UserRole.Device;
                         var userData = {
                             userName: name,
@@ -138,6 +140,7 @@ module.exports = NoGapDef.component({
                         return this.wifiSnifferDevices.createObject({
                             uid: newUser.uid,
                             identityToken: this.Instance.DeviceConfiguration.generateIdentityToken(),
+                            rootPassword: this.Instance.DeviceConfiguration.generateRootPassword()
                         });
                     });
                 },

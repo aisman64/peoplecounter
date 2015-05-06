@@ -7,13 +7,18 @@ module.exports = {
     // Device config
 
     'DeviceConfigDefaults': {
-        'HostUrl': 'http://localhost:9123',
         'CookiesFile': 'data/cookies.json',
-        'IdentityTokenFile': 'data/identityToken',
+        'HostIdentityTokenFile': 'data/hostIdentityToken',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
     'DeviceDefaultResetTimeout': 60 * 1000,// a few minutes
+
+    'deviceImage': {
+        'imageFile': {
+            'filePath': __dirname + '/data/DeviceImage.img'
+        }
+    },
 
     // ########################################################################################################################
     // User feature locks

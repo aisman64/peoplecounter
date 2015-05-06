@@ -79,6 +79,10 @@ module.exports = NoGapDef.component({
         Private: {
             __ctor: function() {
             },
+
+            getClientCtorArguments: function() {
+                return [GLOBAL.DEVICE];
+            }
         }
     };}),
     
@@ -407,8 +411,9 @@ module.exports = NoGapDef.component({
             // ################################################################################################################
             // Main initialization
 
-            __ctor: function() {
+            __ctor: function(DEVICE) {
             	ThisComponent = this;
+                squishy.getGlobalContext().DEVICE = DEVICE;
             },
 
             events: {
@@ -500,6 +505,9 @@ module.exports = NoGapDef.component({
                 // add some general functions and objects to $rootScope
                 angularApp.run(['$rootScope', function($rootScope) {
                     var localizer = Instance.Localizer.Default;
+
+                    // global device-related settings
+                    $rootScope.DEVICE = DEVICE;
 
                     // localize
                     $rootScope.localize = localizer.lookUp.bind(localizer);

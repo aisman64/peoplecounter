@@ -180,7 +180,7 @@ module.exports = NoGapDef.component({
 
                         ThisComponent.busy = true;
 
-                        Instance.DeviceConfiguration.host.generateDeviceConfigPublic(device.deviceId)
+                        Instance.DeviceConfiguration.host.getDeviceConfigPublic(device.deviceId)
                         .finally(function() {
                             ThisComponent.busy = false;
                         })

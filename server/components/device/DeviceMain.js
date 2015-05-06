@@ -65,7 +65,7 @@ module.exports = NoGapDef.component({
                 .bind(this)
                 .then(function(device) {
                     if (!device) {
-                        // TODO: Add option to Admin interface to give invalidly registered devices a new id
+                        // TODO: Use a device flag to get device ready for grabs!
                         return Promise.reject('error.device.invalidDevice');
                     }
 

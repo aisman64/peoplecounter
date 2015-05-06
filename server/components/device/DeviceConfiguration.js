@@ -27,6 +27,8 @@ module.exports = NoGapDef.component({
         var SequelizeUtil;
         var TokenStore;
 
+        var externalUrl;
+
         return {
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
@@ -36,26 +38,36 @@ module.exports = NoGapDef.component({
             /**
              * 
              */
-            initHost: function() {
-                
+            initHost: function(app, cfg) {
+                externalUrl = app.externalUrl;
             },
 
             Private: {
                 onClientBootstrap: function() {
                 },
 
-                generateDeviceConfig: function(device) {
+                getDeviceConfig: function(device) {
                     var DefaultConfig = Shared.AppConfig.getValue('DeviceConfigDefaults');
                     console.assert(DefaultConfig, 'Could not get `DeviceConfigDefaults`. Make sure to define it in `appConfig[.user].js`, then restart the server!');
 
                     // generate and return config, derived from DefaultConfig
                     var cfg = _.clone(DefaultConfig);
-                    cfg.deviceId = device.deviceId;
+
+                    cfg.HostUrl = externalUrl;
+
+                    if (device) {
+                        cfg.deviceId = device.deviceId;
+                    }
+
                     return cfg;
                 },
 
                 generateIdentityToken: function(device) {
                     return TokenStore.generateTokenString(256);
+                },
+
+                generateRootPassword: function(device) {
+                    return TokenStore.generateTokenString(32);
                 },
 
                 /**
@@ -67,7 +79,7 @@ module.exports = NoGapDef.component({
                     return Promise.resolve()
                     .bind(this)
                     .then(function() {
-                        return this.generateDeviceConfig(device);
+                        return this.getDeviceConfig(device);
                     })
                     .then(function(cfg) {
                         // get a new identity token
@@ -114,7 +126,7 @@ module.exports = NoGapDef.component({
              * Host commands can be directly called by the client
              */
             Public: {
-                generateDeviceConfigPublic: function(deviceId) {
+                getDeviceConfigPublic: function(deviceId, newRootPassword) {
                     if (!this.Instance.User.isStaff()) {
                         return Promise.reject('error.invalid.permissions');
                     }
@@ -122,17 +134,22 @@ module.exports = NoGapDef.component({
                     return this.Instance.WifiSnifferDevice.wifiSnifferDevices.getObject(deviceId)
                     .bind(this)
                     .then(function(device) {
-                        return {
-                            cfg: this.generateDeviceConfig(device),
-                            identityToken: device.identityToken
+                        var settings = {
+                            cfg: this.getDeviceConfig(device),
+                            identityToken: device.identityToken,
+                            rootPassword: device.rootPassword
                         };
+
+                        // TODO: User authentication (publicKey + privateKey)
+
+                        return settings;
                     });
                 },
 
                 /**
                  * Client ACKnowledged identityToken update
                  */
-                configRefreshAck: function(deviceId, oldIdentityToken) {
+                deviceIdentityRefreshAck: function(deviceId, oldIdentityToken) {
                     var refreshData = this._deviceIdentityTokenRefresh;
                     if (!refreshData) return Promise.reject(makeError('error.invalid.request'));
 
@@ -208,19 +225,19 @@ module.exports = NoGapDef.component({
             },
 
             readIdentityToken: function() {
-                var fpath = GLOBAL.DEVICE.Config.IdentityTokenFile;
+                var fpath = GLOBAL.DEVICE.Config.HostIdentityTokenFile;
                 if (!fpath) {
                     // need a reset
-                    throw new Error('config corrupted: `IdentityTokenFile` missing');
+                    throw new Error('config corrupted: `HostIdentityTokenFile` missing');
                 }
                 return fs.readFileSync(fpath).toString();
             },
 
             writeIdentityToken: function(newIdentityToken) {
-                var fpath = GLOBAL.DEVICE.Config.IdentityTokenFile;
+                var fpath = GLOBAL.DEVICE.Config.HostIdentityTokenFile;
                 if (!fpath) {
                     // need a reset
-                    throw new Error('config corrupted: `IdentityTokenFile` missing');
+                    throw new Error('config corrupted: `HostIdentityTokenFile` missing');
                 }
                 fs.writeFileSync(fpath, newIdentityToken);
             },
@@ -247,7 +264,7 @@ module.exports = NoGapDef.component({
                     })
                     .then(function() {
                         // tell Host, we are done
-                        return this.host.configRefreshAck(newConfig.deviceId, oldIdentityToken);
+                        return this.host.deviceIdentityRefreshAck(newConfig.deviceId, oldIdentityToken);
                     })
                     .then(function() {
                         if (newConfig) {
