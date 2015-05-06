@@ -219,6 +219,27 @@ module.exports = NoGapDef.component({
                     };
 
 
+                    $scope.showDeviceConfig = function(device) {
+                        ThisComponent.showConfig = !ThisComponent.showConfig;
+                        if (!ThisComponent.showConfig) {
+                            // toggled it off
+                            return;
+                        }
+
+                        ThisComponent.busy = true;
+
+                        Instance.DeviceConfiguration.host.generateDeviceConfigPublic(device.deviceId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function(deviceSettings) {
+                            ThisComponent.currentDeviceSettings = deviceSettings;
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+
 
                     $scope.onChange = function() {
                         $scope.errorMessage = null;

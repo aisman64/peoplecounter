@@ -34,11 +34,11 @@ module.exports = NoGapDef.component({
          * 
          */
         initHost: function() {
-            
         },
 
         Private: {
             onClientBootstrap: function() {
+
             },
         },
         
@@ -221,8 +221,10 @@ module.exports = NoGapDef.component({
             },
 
             onLogin: function() {
-                // let's get to it!
-                Instance.DeviceCapture.startCapturing();
+                // TODO: Send device info to client after session resumed
+                // TODO: Get current device from cache
+                // TODO: Don't let server login a "device user", if it's the user account of an invalid (or reset) device
+                
             },
 
             onCurrentUserChanged: function(privsChanged) {
@@ -230,9 +232,11 @@ module.exports = NoGapDef.component({
                 console.log('I am: ' + (user && user.userName || '<UNKNOWN>'));
 
                 if (user && privsChanged) {
+                    // logged in successfully
                     this.onLogin();
                 }
                 else {
+                    // not logged in yet
                     this.tryLogin();
                 }
             },
