@@ -108,6 +108,28 @@ module.exports = NoGapDef.component({
                     };
 
 
+                    $scope.showDeviceConfig = function(device) {
+                        if (ThisComponent.showConfig) {
+                            // toggle it off
+                            ThisComponent.showConfig = false;
+                            return;
+                        }
+
+                        ThisComponent.busy = true;
+
+                        Instance.DeviceConfiguration.host.getDeviceConfigPublic(device.deviceId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function(deviceSettings) {
+                            ThisComponent.currentDeviceSettings = deviceSettings;
+                            ThisComponent.showConfig = true;
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+
                     $scope.tryResetDevice = function(device) {
                         $scope.errorMessage = null;
 
@@ -170,6 +192,32 @@ module.exports = NoGapDef.component({
                         .catch($scope.handleError.bind($scope));
                     };
 
+                    $scope.downloadImage = function(device) {
+                        // start downloading image
+                        Instance.DeviceImage.downloadDeviceImage();
+                    };
+
+
+                    $scope.showDeviceConfig = function(device) {
+                        ThisComponent.showConfig = !ThisComponent.showConfig;
+                        if (!ThisComponent.showConfig) {
+                            // toggled it off
+                            return;
+                        }
+
+                        ThisComponent.busy = true;
+
+                        Instance.DeviceConfiguration.host.getDeviceConfigPublic(device.deviceId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function(deviceSettings) {
+                            ThisComponent.currentDeviceSettings = deviceSettings;
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
 
                     $scope.showDeviceConfig = function(device) {
                         ThisComponent.showConfig = !ThisComponent.showConfig;
@@ -217,7 +265,6 @@ module.exports = NoGapDef.component({
                     ThisComponent.page.invalidateView();
                 });
             },
-
 
             cacheEventHandlers: {
                 wifiSnifferDevices: {

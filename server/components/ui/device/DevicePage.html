@@ -28,8 +28,7 @@
                             <span>{{user.userName}}</span>
                         </div>
                         <div class="col-xs-4">
-                            <span
-                                ng-if="device.resetTimeout"
+                            <span ng-if="device.resetTimeout"
                                 pulse-clock="util.getCountdownMillis(device.resetTimeout)">
                                 <span ng-if="clockValue > 0"
                                      class="alert-warning">
@@ -38,6 +37,11 @@
                                 <span ng-if="clockValue <= 0"
                                      class="alert-danger">
                                     reset expired
+                                </span>
+                            </span>
+                            <span ng-if="!device.resetTimeout && !device.isAssigned()">
+                                <span class="alert-danger">
+                                    device needs reset
                                 </span>
                             </span>
                         </div>
@@ -60,10 +64,13 @@
                         <div class="some-padding"
                             style="border: solid black 1px; background-color: white;"
                             ng-if="PC.showConfig && PC.currentDeviceSettings">
-                            <h4>data/DeviceConfig.json</h4>
+                            <h4>Root password</h4>
+                            <pre>{{PC.currentDeviceSettings.rootPassword}}</pre>
+
+                            <h4>{{DEVICE.ConfigFilePath}}</h4>
                             <pre>{{util.JSON.stringify(PC.currentDeviceSettings.cfg, null, '\t')}}</pre>
 
-                            <h4>{{PC.currentDeviceSettings.cfg.IdentityTokenFile}}</h4>
+                            <h4>{{PC.currentDeviceSettings.cfg.HostIdentityTokenFile}}</h4>
                             <pre>{{PC.currentDeviceSettings.identityToken}}</pre>
                         </div>
                     </div>
@@ -106,16 +113,16 @@
                                 <li>
                                     <a ng-if="currentUserIsStaff" href=""
                                         ng-click="tryResetDevice(device)">
-                                        Reset!
+                                        <i class="fa fa-rotate-left"></i>&nbsp; Reset
                                     </a>
-                                </li>                
+                                </li>         
 
                                 <hr />
 
                                 <li>
                                     <a ng-if="currentUserIsStaff" href=""
                                         ng-click="tryDeleteDevice(device)">
-                                        <localize key="Delete"></localize>
+                                        <i class="fa fa-trash"></i>&nbsp; <localize key="Delete"></localize>
                                     </a>
                                 </li>
                             </ul>
@@ -133,14 +140,46 @@
     </div>
 
     <div class="alert alert-info" ng-if="!PC.busy && deviceCache.list.length == 0">
-        There are no registered devices yet...
+        <span>There are no registered devices yet...</span>
     </div>
 
-    <button class="btn btn-block btn-default"
-        ng-if="!PC.selection.hasSelection()"
-        ng-click="registerNewDevice('new device')">
-        Add Device!
+    <div style="position:relative;">
+        <div style="margin: 0 auto; 
+        display: -webkit-box;
+          display: -moz-box;
+          display: -ms-flexbox;
+          display: -webkit-flex;
+          display: flex;
+          position:absolute; top:0; bottom:0; right:0; left:0;"
+            ng-if="!PC.selection.hasSelection()">
+            <div style="margin:auto; position:relative;">
+                <a class="btn btn-default" href=""
+                    ng-if="currentUserIsStaff"
+                    ng-click="registerNewDevice('new device')">
+                    <i class="fa fa-plus"></i>&nbsp; Add Device!
 
-        <span ng-style="{visibility: PC.busy && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
-    </button>
+                    <span ng-style="{visibility: PC.busy && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+                </a>
+
+                <span dropdown class="no-padding" style="position:relative;">
+                    <a href=""
+                      type="button"
+                      class="btn btn-default dropdown-toggle"
+                      title="More">
+                      <i class="fa fa-navicon"></i>
+                    </a>
+
+                    <ul class="dropdown-menu" role="menu">
+                        <li>
+                            <a href=""
+                                ng-if="currentUserIsStaff"
+                                ng-click="downloadImage()">
+                                <i class="fa fa-download"></i>&nbsp; Download image
+                            </a>
+                        </li>
+                    </ul>
+                </span>
+            </div>
+        </div>
+    </div>
 </div>

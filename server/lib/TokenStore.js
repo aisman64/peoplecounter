@@ -72,19 +72,20 @@ var TokenStore = Object.create({
      * @param {Number} len Total length of result string.
      * @param {String} symbols The symbols that the token string should be composed of.
      */
-    generateTokenString: function(len, symbols) {
+    generateTokenString: function(len) {
         len = len || this.options.defaultLen;
-        symbols = symbols || '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        var nSymbols = symbols.length;
+        //symbols = symbols || '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_#!';
         var buf = crypto.randomBytes(len);
-        var res = '';
         
         // only get `len` characters
-        for (var i = 0; i < len; ++i) {
-            var nextByte = buf[i];
-            res += symbols.charAt(nextByte%nSymbols);      // map bytes to our given set of symbols
-        }
-        return res;
+        return buf.toString('base64').substring(0, len);
+
+        // var res = '';
+        // for (var i = 0; i < len; ++i) {
+        //     var nextByte = buf[i];
+        //     res += symbols.charAt(nextByte%nSymbols);      // map bytes to our given set of symbols
+        // }
+        // return res;
     },
     
     /**

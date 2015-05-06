@@ -6,14 +6,21 @@ module.exports = {
     // ########################################################################################################################
     // Device config
 
-    'DeviceConfigDefaults': {
-        'HostUrl': 'http://localhost:9123',
-        'CookiesFile': 'data/cookies.json',
-        'IdentityTokenFile': 'data/identityToken',
+    'deviceConfigDefaults': {
+        'CookiesFile': './data/cookies.json',
+        'HostIdentityTokenFile': './data/hostIdentityToken',
+        'DeviceClientCacheFile': './data/deviceClientCache.js',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
-    'DeviceDefaultResetTimeout': 60 * 1000,// a few minutes
+    'deviceDefaultResetTimeout': 60 * 1000,// a few minutes
+
+    'deviceImage': {
+        'downloadPath': '/Device/Image',
+
+        // absolute file path
+        'filePath': __dirname + '/data/DeviceImage.img'
+    },
 
     // ########################################################################################################################
     // User feature locks
@@ -94,7 +101,6 @@ module.exports = {
     },
 
     // these are the login details to connect to your MySQL DB
-    // it should usually be the same as in your `LocalSettings.php`
     'db' : {
         'host'     : 'localhost',
         'user'     : 'root',

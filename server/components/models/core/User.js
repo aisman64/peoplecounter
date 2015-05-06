@@ -707,6 +707,7 @@ module.exports = NoGapDef.component({
                             this.Tools.handleError(new Error('Cache error'));
                         };
                     }
+                    
                     this.client.setCurrentUser(uid);
                 },
             },
