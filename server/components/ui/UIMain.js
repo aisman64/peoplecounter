@@ -82,6 +82,11 @@ module.exports = NoGapDef.component({
 
             getClientCtorArguments: function() {
                 return [GLOBAL.DEVICE];
+            },
+
+           	onClientBootstrap: function() {
+                // resume user session
+                return this.Instance.User.resumeSession();
             }
         }
     };}),

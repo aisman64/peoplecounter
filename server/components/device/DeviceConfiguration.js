@@ -70,6 +70,44 @@ module.exports = NoGapDef.component({
                     return TokenStore.generateTokenString(32);
                 },
 
+                tryResetDevice: function(device, newDeviceStatus) {
+                	var DeviceStatusId = Shared.DeviceStatus.DeviceStatusId;
+                	var resetTimeout = new Date(device.resetTimeout);
+                    var now = new Date();
+
+                    if (resetTimeout.getTime() < now.getTime()) {
+                        // fail: reset time is already up!
+                        newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
+                        return Promise.reject('device reset expired');
+                    }
+
+                    // device is scheduled for reset
+                    newDeviceStatus.deviceStatus = DeviceStatusId.LoginReset;
+
+                    this.Tools.logWarn('Resetting device #' + device.deviceId + '`...');
+
+                    // NOTE: We cannot "return" the following promise, since it requires a reply from the client;
+                    //      however, the client cannot reply, if we are blocking on this promise.
+                    // Instead, after a successful reset, the device will call `tryLogin` again.
+                    this.Instance.DeviceConfiguration.startResetConfiguration(device)
+                    .bind(this)
+                    .then(function() {
+                        // update reset status in DB
+                        device.resetTimeout = null;
+                        device.isAssigned = 1;
+                        return deviceCache.updateObject(device, true);
+                    })
+                    .catch(function(err) {
+                        // fail: Could not reset
+                        newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
+
+                        // store device status a second time
+                        this.Instance.DeviceStatus.logStatus(newDeviceStatus);
+
+                        return Promise.reject(err);
+                    });
+                },
+
                 /**
                  * Starts resetting configuration of the given device on the current client.
                  * Will not complete since it requires client-side acks, which can (currently) only be sent
@@ -167,7 +205,7 @@ module.exports = NoGapDef.component({
                     }
 
                     else if (oldIdentityToken !== device.identityToken) {
-                        // invalid deviceId
+                        // invalid identityToken
                         return monitor.notifyReject(makeError('error.invalid.request', 'invalid `identityToken`'));
                     }
 
@@ -178,7 +216,7 @@ module.exports = NoGapDef.component({
                         return this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject({
                             deviceId: device.deviceId,
                             identityToken: refreshData.newIdentityToken,
-                            isIdAssigned: 1,
+                            isAssigned: 1,
                             resetTimeout: null
                         }, true)
                         .bind(this)
@@ -186,7 +224,8 @@ module.exports = NoGapDef.component({
                             return monitor.notifyResolve();
                         })
                         .catch(function(err) {
-                            this.Tools.handleError(err, '`identityToken` refresh failed for device `' + device.deviceName + '` (#' + device.deviceId + ')');
+                            this.Tools.handleError(err, 
+                            	'`identityToken` refresh failed for device #' + device.deviceId + '');
 
                             return monitor.notifyReject(makeError('error.internal'));
                         })

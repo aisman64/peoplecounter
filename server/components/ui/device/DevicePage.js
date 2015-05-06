@@ -81,6 +81,12 @@ module.exports = NoGapDef.component({
                         });
                     };
 
+                    $scope.downloadImage = function(device) {
+                        // start downloading image
+                        Instance.DeviceImage.downloadDeviceImage();
+                    };
+                    
+
                     $scope.clickSave = function(device, done) {
                         $scope.onChange();
 
@@ -106,7 +112,6 @@ module.exports = NoGapDef.component({
                             $scope.handleError(err);
                         });
                     };
-
 
                     $scope.showDeviceConfig = function(device) {
                         if (ThisComponent.showConfig) {
@@ -191,55 +196,6 @@ module.exports = NoGapDef.component({
                         })
                         .catch($scope.handleError.bind($scope));
                     };
-
-                    $scope.downloadImage = function(device) {
-                        // start downloading image
-                        Instance.DeviceImage.downloadDeviceImage();
-                    };
-
-
-                    $scope.showDeviceConfig = function(device) {
-                        ThisComponent.showConfig = !ThisComponent.showConfig;
-                        if (!ThisComponent.showConfig) {
-                            // toggled it off
-                            return;
-                        }
-
-                        ThisComponent.busy = true;
-
-                        Instance.DeviceConfiguration.host.getDeviceConfigPublic(device.deviceId)
-                        .finally(function() {
-                            ThisComponent.busy = false;
-                        })
-                        .then(function(deviceSettings) {
-                            ThisComponent.currentDeviceSettings = deviceSettings;
-                            ThisComponent.page.invalidateView();
-                        })
-                        .catch($scope.handleError.bind($scope));
-                    };
-
-
-                    $scope.showDeviceConfig = function(device) {
-                        ThisComponent.showConfig = !ThisComponent.showConfig;
-                        if (!ThisComponent.showConfig) {
-                            // toggled it off
-                            return;
-                        }
-
-                        ThisComponent.busy = true;
-
-                        Instance.DeviceConfiguration.host.generateDeviceConfigPublic(device.deviceId)
-                        .finally(function() {
-                            ThisComponent.busy = false;
-                        })
-                        .then(function(deviceSettings) {
-                            ThisComponent.currentDeviceSettings = deviceSettings;
-                            ThisComponent.page.invalidateView();
-                        })
-                        .catch($scope.handleError.bind($scope));
-                    };
-
-
 
                     $scope.onChange = function() {
                         $scope.errorMessage = null;

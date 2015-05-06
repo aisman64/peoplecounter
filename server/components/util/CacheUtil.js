@@ -273,9 +273,14 @@ module.exports = NoGapDef.component({
 
                     if (!indexDef.unique) {
                         var arr = node[leafValue];
-                        console.assert(arr, 'Tried to remove object from index ' +
-                            'which has not been added in the first place: ' + obj);
+                        if (!arr) {
+                        	console.error('INTERNAL ERROR: Tried to remove object from index `' + indexDef.name + '` ' +
+                            'which has not been added in the first place - ' + obj);
+                            return;
+                        }
 
+                        // TODO: This can become very slow...
+                    	//		(good thing, deletion is usually not performance critical)
                         var len = arr.length;
                         _.remove(arr, obj);
                         if (arr.length == len) {

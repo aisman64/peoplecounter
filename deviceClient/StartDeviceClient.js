@@ -76,7 +76,16 @@ connectToServerNow();
 
 
 // #############################################################################
-// Client cache
+// Device client code execution and caching
+
+function runCode(jsCode) {
+	// compile and execute server-sent code
+	var Instance = eval(jsCode);
+
+	// compilation worked!
+
+	// TODO: Write to cache, after checking version?
+}
 
 /**
  * Try loading and running previously cached script
@@ -113,18 +122,19 @@ function connectToServerNow() {
 					'X-NoGap-NoHTML': '1'
 				},
 			},
-			function (error, response, body) {
+			function (error, response, jsonEncodedJsCode) {
 				if (error) {
 					reject(error);
 					return;
 				}
 
-				console.log('Connected to server. Received client script (' + body.length + ' bytes). Compiling...');
+				console.log('Connected to server. Received client script (' + jsonEncodedJsCode.length + ' bytes). Compiling...');
 
 				// start running client sent through NoGap
 				//console.log(body);
-				var jsonString = eval(body);
-				var Instance = eval(jsonString);
+				var jsCode = eval(jsonEncodedJsCode);
+				
+				runCode(jsCode);
 			}
 		);
 	})

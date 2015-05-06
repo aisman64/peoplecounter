@@ -78,6 +78,16 @@ module.exports = NoGapDef.component({
                 });
             },
 
+            Private: {
+            	logStatus: function(newDeviceStatus) {
+                    return this.deviceStatuses.createObject(newDeviceStatus, true, true)
+                    .bind(this)
+                    .catch(function(err) {
+                        this.Tools.handleError(err, 'Could not store DeviceStatus');
+                    });
+            	}
+            },
+
             Public: {
                 registerDevice: function(name) {
                     // must have staff privileges

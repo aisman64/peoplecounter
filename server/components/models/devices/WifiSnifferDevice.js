@@ -23,7 +23,7 @@ module.exports = NoGapDef.component({
                                 key: ['uid']
                             },
                             {
-                                key: ['isIdAssigned']
+                                key: ['isAssigned']
                             },
                         ],
 
@@ -34,10 +34,6 @@ module.exports = NoGapDef.component({
                              */
                             getUserNow: function(Instance) {
                                 return (Instance || Shared).User.users.getObjectNowById(this.uid);
-                            },
-
-                            isAssigned: function() {
-                                return !!this.isIdAssigned;
                             }
                         },
 
@@ -54,44 +50,54 @@ module.exports = NoGapDef.component({
 
                             getObjectNow: function(queryInput, ignoreAccessCheck) {
                                 if (!queryInput) return null;
-                                if (!queryInput.isIdAssigned && !queryInput.deviceId) return null;
+                                if (!queryInput.isAssigned && !queryInput.deviceId) return null;
 
                                 if (queryInput.deviceId) {
                                     // get object by deviceId
                                     var obj = this.byId[queryInput.deviceId];
-                                    if (obj && queryInput.isIdAssigned !== undefined) {
-                                        if (obj.isIdAssigned !== queryInput.isIdAssigned) {
-                                            // device object does not match "isIdAssigned condition"
+                                    if (obj && queryInput.isAssigned !== undefined) {
+                                        if (obj.isAssigned !== queryInput.isAssigned) {
+                                            // device object does not match "isAssigned condition"
                                             return null;
                                         }
                                     }
                                     return obj;
                                 }
-                                else if (queryInput.isIdAssigned !== undefined) {
+                                else if (queryInput.uid) {
+                                	return this.indices.uid.get(queryInput.uid);
+                                }
+                                else if (queryInput.isAssigned !== undefined) {
                                     // get first unassigned device
-                                    return this.indices.isIdAssigned.get(queryInput.isIdAssigned)[0] || null;
+                                    return this.indices.isAssigned.get(queryInput.isAssigned)[0] || null;
                                 }
                             },
 
                             getObjectsNow: function(queryInput, ignoreAccessCheck) {
                                 if (queryInput) {
-                                    if (queryInput.isIdAssigned !== undefined) {
-                                        return this.indices.isIdAssigned.get(queryInput.isIdAssigned);
+                                    if (queryInput.isAssigned !== undefined) {
+                                        return this.indices.isAssigned.get(queryInput.isAssigned);
                                     }
                                 }
                                 return this.list;
                             },
 
                             compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
-                                if (!queryInput) return Promise.reject('error.invalid.request');
-                                if (queryInput.isIdAssigned === undefined && !queryInput.deviceId) return Promise.reject('error.invalid.request');
+                                if (!queryInput || 
+                                	(queryInput.isAssigned === undefined && 
+                            			!queryInput.deviceId &&
+                            			!queryInput.uid)) {
+                                	return Promise.reject(makeError('error.invalid.request', queryInput));
+                                }
 
                                 var queryData = { where: {} };
-                                if (queryInput.isIdAssigned !== undefined) {
-                                    queryData.where.isIdAssigned = queryInput.isIdAssigned;
+                                if (queryInput.isAssigned !== undefined) {
+                                    queryData.where.isAssigned = queryInput.isAssigned;
                                 }
                                 if (queryInput.deviceId) {
                                     queryData.where.deviceId = queryInput.deviceId;
+                                }
+                                else if (queryInput.uid) {
+                                	queryData.where.uid = queryInput.uid;
                                 }
                                 return queryData;
                             },
@@ -99,8 +105,8 @@ module.exports = NoGapDef.component({
                             compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
                                 var queryData = { where: {} };
                                 if (queryInput) {
-                                    if (queryInput.isIdAssigned !== undefined) {
-                                        queryData.where.isIdAssigned = queryInput.isIdAssigned;
+                                    if (queryInput.isAssigned !== undefined) {
+                                        queryData.where.isAssigned = queryInput.isAssigned;
                                     }
                                 }
                                 return queryData;
@@ -147,7 +153,7 @@ module.exports = NoGapDef.component({
 
                     // boolean: Whether this device is currently deployed physically.
                     //          If not, then a new physical device can be assigned to it.
-                    isIdAssigned: Sequelize.INTEGER.UNSIGNED,
+                    isAssigned: Sequelize.INTEGER.UNSIGNED,
 
                     // whether (and until when) to automatically re-configure the device upon next login
                     resetTimeout: Sequelize.DATE,
@@ -167,7 +173,7 @@ module.exports = NoGapDef.component({
                             return Promise.join(
                                 // create indices
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['uid']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['isIdAssigned']),
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['isAssigned']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['resetTimeout'])
                             );
                         }
@@ -178,7 +184,7 @@ module.exports = NoGapDef.component({
             Private: {
                 _resetDevice: function(device) {
                     var timeoutDelay = Shared.AppConfig.getValue('deviceDefaultResetTimeout') || (60 * 1000);
-                    device.isIdAssigned = 0;
+                    device.isAssigned = 0;
                     device.resetTimeout = new Date(new Date().getTime() + timeoutDelay);
                 }
             },
