@@ -71,9 +71,11 @@ module.exports = NoGapDef.component({
                 .then(function(device) {
                     var promise;
                     if (!device) {
+                        this.Tools.logWarn('Unidentified device connected. Looking for unassigned device configuration...');
+
                         // get a device that does not have an assigned device id
-                        promise = Instance.WifiSnifferDevice.wifiSnifferDevices.readObject({
-                            isIdAssigned: 1
+                        promise = this.Instance.WifiSnifferDevice.wifiSnifferDevices.getObject({
+                            isIdAssigned: 0
                         }, true, false, true);
                     }
                     else {
@@ -81,13 +83,16 @@ module.exports = NoGapDef.component({
                     }
 
                     return promise
+                    .bind(this)
                     .then(function(device) {
+                        console.log(device);
+
                         if (!device) {
                             // there is really no device!
                             return Promise.reject('error.device.invalidDevice');
                         }
 
-                        if (device.resetTimeout) {
+                        if (!device.isAssigned()) {
                             var resetTimeout = new Date(device.resetTimeout);
                             var now = new Date();
 
@@ -101,6 +106,8 @@ module.exports = NoGapDef.component({
                             loginAttempt.deviceStatus = DeviceStatusId.LoginReset;
                             resetAttempt = true;
 
+                            this.Tools.logWarn('Resetting device #' + device.deviceId + '`...');
+
                             // NOTE: We cannot "return" the following promise, since it requires a reply from the client;
                             //      however, the client cannot reply, if we are blocking on this promise.
                             this.Instance.DeviceConfiguration.startResetConfiguration(device)
@@ -108,6 +115,7 @@ module.exports = NoGapDef.component({
                             .then(function() {
                                 // update reset status in DB
                                 device.resetTimeout = null;
+                                device.isIdAssigned = 1;
                                 return deviceCache.updateObject(device, true);
                             })
                             .catch(function(err) {

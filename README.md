@@ -9,6 +9,19 @@
   - Extract `*.sql` file to `backup/*.sql`
   - Go to `bin/` folder: `cd bin`
   - Run: `sh import.sh` [To import the sql file. This might take a few hours.]
+* Deploying a device:
+	* Start server
+	* Go to "Device" page
+	* Setup device
+		* Download an image file (if you have not done so before) and copy it to the device (tested only on Galileo)
+		* Boot up the device
+		* Once it has finished initializing, it will connect to the server.
+	* Add a new device configuration through the "Add device" button, give it a new name and hit "Apply"
+		* Make sure that it is currently in the "reset pending" state. If not, hit "Reset"
+		* Upon the next connection attempt, your new device will be assigned the first configuration with "reset pending" state
+		* From then on, the device will use the given configuration to log into the server (until you reset it again)
+	* Once initialized and authenticated, the device will start capturing packets and send them to the server
+	* TODO: More info and diagrams here
 
 
 ## OrientDB Experiment

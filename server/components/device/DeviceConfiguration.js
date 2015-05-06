@@ -131,7 +131,9 @@ module.exports = NoGapDef.component({
                         return Promise.reject('error.invalid.permissions');
                     }
 
-                    return this.Instance.WifiSnifferDevice.wifiSnifferDevices.getObject(deviceId)
+                    return this.Instance.WifiSnifferDevice.wifiSnifferDevices.getObject({
+                        deviceId: deviceId
+                    })
                     .bind(this)
                     .then(function(device) {
                         var settings = {
@@ -204,6 +206,7 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
+        var request;
 
         return {
             __ctor: function() {
@@ -247,8 +250,15 @@ module.exports = NoGapDef.component({
              * Client commands can be directly called by the host
              */
             Public: {
+                /**
+                 * Called by server to reset identityToken and (optionally) configuration.
+                 * This is also called when a new device connects to the server for the first time, and is assigned a new configuration.
+                 */
                 updateIdentityToken: function(newIdentityToken, oldIdentityToken, newConfig) {
                     // TODO: Update root password
+                    console.warn('Resetting device configuration...');
+
+                    request = require('request');   // HTTP client module
 
                     return Promise.resolve()
                     .bind(this)
@@ -260,6 +270,16 @@ module.exports = NoGapDef.component({
                             // then, read config (to make sure it worked!)
                             GLOBAL.DEVICE.readDeviceConfig();
                         }
+                    })
+                    .then(function() {
+                        // then delete cookies on file and in memory
+
+                        // empty cookies file
+                        fs.writeFileSync(DEVICE.Config.CookiesFile, '');
+
+                        // reset cookies jar
+                        var jar = request.jar(new FileCookieStore(DEVICE.Config.CookiesFile));
+                        request = request.defaults({ jar : jar })
                     })
                     .then(function() {
                         // then update identityToken

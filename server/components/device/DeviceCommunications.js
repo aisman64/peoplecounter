@@ -44,7 +44,7 @@ module.exports = NoGapDef.component({
 
         return {
         	CommLayer: {
-				 sendCustomClientRequestToHost: function(path, clientRequestData, serialize, headers) {
+				 sendRequestToHost: function(clientRequestData, path, dontSerialize, headers) {
 			        var ComponentCommunications = this.Instance.Libs.ComponentCommunications;
 			        if (ComponentCommunications.hasRefreshBeenRequested()) {
 			            // already out of sync with server
@@ -58,9 +58,15 @@ module.exports = NoGapDef.component({
 					return new Promise(function(resolve, reject) {
 						var Context = this.Context;
 			            var serializer = this.Serializer;
-			            var completeUrl = DEVICE.Config.HostUrl + path;	// Context.remoteUrl + path,
+			            var completeUrl = DEVICE.Config.HostUrl;	// Context.remoteUrl + path,
+			            if (!completeUrl.endsWith('/')) {
+			            	completeUrl += '/';
+			            }
+			            if (path) {
+			            	completeUrl += path;
+			            }
 
-			            if (serialize) {
+			            if (!dontSerialize) {
 			                headers['Content-type'] = 'application/json; charset=' + (Context.charset || 'utf-8') + ';';
 			                clientRequestData = serializer.serialize(clientRequestData);
 			            }

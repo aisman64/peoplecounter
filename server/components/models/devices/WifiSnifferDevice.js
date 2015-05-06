@@ -22,6 +22,9 @@ module.exports = NoGapDef.component({
                                 unique: true,
                                 key: ['uid']
                             },
+                            {
+                                key: ['isIdAssigned']
+                            },
                         ],
 
                         InstanceProto: {
@@ -31,6 +34,10 @@ module.exports = NoGapDef.component({
                              */
                             getUserNow: function(Instance) {
                                 return (Instance || Shared).User.users.getObjectNowById(this.uid);
+                            },
+
+                            isAssigned: function() {
+                                return !!this.isIdAssigned;
                             }
                         },
 
@@ -44,26 +51,60 @@ module.exports = NoGapDef.component({
                                 }
                                 return device;
                             },
-                        },
 
-                        compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
-                            var queryData = { where: {} };
-                            if (queryInput) {
-                                if (queryInput.isIdAssigned) {
-                                    queryData.where.isIdAssigned = queryData.where.isIdAssigned;
-                                }
-                            }
-                            return queryData;
-                        },
+                            getObjectNow: function(queryInput, ignoreAccessCheck) {
+                                if (!queryInput) return null;
+                                if (!queryInput.isIdAssigned && !queryInput.deviceId) return null;
 
-                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
-                            var queryData = { where: {} };
-                            if (queryInput) {
-                                if (queryInput.isIdAssigned) {
-                                    queryData.where.isIdAssigned = queryData.where.isIdAssigned;
+                                if (queryInput.deviceId) {
+                                    // get object by deviceId
+                                    var obj = this.byId[queryInput.deviceId];
+                                    if (obj && queryInput.isIdAssigned !== undefined) {
+                                        if (obj.isIdAssigned !== queryInput.isIdAssigned) {
+                                            // device object does not match "isIdAssigned condition"
+                                            return null;
+                                        }
+                                    }
+                                    return obj;
                                 }
+                                else if (queryInput.isIdAssigned !== undefined) {
+                                    // get first unassigned device
+                                    return this.indices.isIdAssigned.get(queryInput.isIdAssigned)[0] || null;
+                                }
+                            },
+
+                            getObjectsNow: function(queryInput, ignoreAccessCheck) {
+                                if (queryInput) {
+                                    if (queryInput.isIdAssigned !== undefined) {
+                                        return this.indices.isIdAssigned.get(queryInput.isIdAssigned);
+                                    }
+                                }
+                                return this.list;
+                            },
+
+                            compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
+                                if (!queryInput) return Promise.reject('error.invalid.request');
+                                if (queryInput.isIdAssigned === undefined && !queryInput.deviceId) return Promise.reject('error.invalid.request');
+
+                                var queryData = { where: {} };
+                                if (queryInput.isIdAssigned !== undefined) {
+                                    queryData.where.isIdAssigned = queryInput.isIdAssigned;
+                                }
+                                if (queryInput.deviceId) {
+                                    queryData.where.deviceId = queryInput.deviceId;
+                                }
+                                return queryData;
+                            },
+
+                            compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
+                                var queryData = { where: {} };
+                                if (queryInput) {
+                                    if (queryInput.isIdAssigned !== undefined) {
+                                        queryData.where.isIdAssigned = queryInput.isIdAssigned;
+                                    }
+                                }
+                                return queryData;
                             }
-                            return queryData;
                         }
 	    			}
 	    		}
@@ -125,7 +166,9 @@ module.exports = NoGapDef.component({
                             var tableName = this.getTableName();
                             return Promise.join(
                                 // create indices
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['uid'])
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['uid']),
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['isIdAssigned']),
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['resetTimeout'])
                             );
                         }
                     }
@@ -133,6 +176,11 @@ module.exports = NoGapDef.component({
             },
 
             Private: {
+                _resetDevice: function(device) {
+                    var timeoutDelay = Shared.AppConfig.getValue('deviceDefaultResetTimeout') || (60 * 1000);
+                    device.isIdAssigned = 0;
+                    device.resetTimeout = new Date(new Date().getTime() + timeoutDelay);
+                }
             },
 
             Public: {
@@ -161,11 +209,15 @@ module.exports = NoGapDef.component({
                     })
                     .then(function(newUser) {
                         // then create the device
-                        return this.wifiSnifferDevices.createObject({
+                        var timeoutDelay = Shared.AppConfig.getValue('deviceDefaultResetTimeout') || (60 * 1000);
+
+                        var newDevice = {
                             uid: newUser.uid,
                             identityToken: this.Instance.DeviceConfiguration.generateIdentityToken(),
                             rootPassword: this.Instance.DeviceConfiguration.generateRootPassword()
-                        });
+                        };
+                        this._resetDevice(newDevice);
+                        return this.wifiSnifferDevices.createObject(newDevice);
                     });
                 },
 
@@ -173,17 +225,17 @@ module.exports = NoGapDef.component({
                     // must have staff privileges
                     if (!this.Instance.User.isStaff()) return Promise.reject('error.invalid.permissions');
 
-                    return this.wifiSnifferDevices.getObject(deviceId)
+                    return this.wifiSnifferDevices.getObject({
+                        deviceId: deviceId
+                    })
                     .bind(this)
                     .then(function(device) {
-                        var timeoutDelay = Shared.AppConfig.getValue('deviceDefaultResetTimeout') || (60 * 1000);
 
                         // reset identityToken and allow device to get the new one without logging in
                         device.identityToken = this.Instance.DeviceConfiguration.generateIdentityToken();
 
                         // let any device looking for a new id come in and grab it!
-                        device.isIdAssigned = 0;
-                        device.resetTimeout = new Date(new Date().getTime() + timeoutDelay);
+                        this._resetDevice(device);
 
                         return this.wifiSnifferDevices.updateObject(device);
                     });

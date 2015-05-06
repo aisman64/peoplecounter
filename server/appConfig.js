@@ -7,9 +7,9 @@ module.exports = {
     // Device config
 
     'deviceConfigDefaults': {
-        'CookiesFile': 'data/cookies.json',
-        'HostIdentityTokenFile': 'data/hostIdentityToken',
-        'DeviceClientCacheFile': 'data/deviceClientCache.js',
+        'CookiesFile': './data/cookies.json',
+        'HostIdentityTokenFile': './data/hostIdentityToken',
+        'DeviceClientCacheFile': './data/deviceClientCache.js',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
