@@ -39,7 +39,13 @@ GLOBAL.DEVICE.readDeviceConfig = function readDeviceConfig() {
 
 
 // initialize
-DEVICE.readDeviceConfig();
+try {
+	DEVICE.readDeviceConfig();
+}
+catch (err) {
+	console.error('[ERROR] Could not load config - ' + err.message);
+	return -1;
+}
 
 var Running = true;
 
@@ -66,6 +72,20 @@ connectToServerNow();
 (function wait () {
    if (Running) setTimeout(wait, 1000);
 })();
+
+
+
+// #############################################################################
+// Client cache
+
+/**
+ * Try loading and running previously cached script
+ */
+function tryRunScriptFromCache() {
+	var cacheFileName = DEVICE.Config.DeviceClientCacheFile;
+	
+}
+
 
 
 // #############################################################################

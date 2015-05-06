@@ -23,10 +23,9 @@ module.exports = NoGapDef.component({
      */
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { 
         var fs,
-            express
+            path,
+            express,
             mkdirp;
-
-        var downloadRouter;
 
         return {
             __ctor: function () {
@@ -37,6 +36,7 @@ module.exports = NoGapDef.component({
              */
             initHost: function(app) {
                 fs = require('fs');
+                path = require('path');
                 express = require('express');
                 mkdirp = require('mkdirp');
 
@@ -44,26 +44,34 @@ module.exports = NoGapDef.component({
                 var imageFile = deviceImageCfg.filePath;     // location on disk
                 var downloadPath = deviceImageCfg.downloadPath;     // download path, part of URL
 
-                downloadRouter = express.Router();
-
-                downloadRouter.get(function(req, res, next) {
-                    // var Instance = req.Instance;
-                    // if (!Instance) {
-                    //     // could not look-up instance, meaning, the user has not bootstrapped first
-                    //     res.redirect('/');
-                    //     return;
-                    // }
-
-                    if (!this.doesImageExist()) {
-                        // must generate image file first!
-                        res.redirect('/Device');
+                var downloadHandler = function(req, res, next) {
+                    var Instance = req.Instance;
+                    if (!Instance) {
+                        // could not look-up instance. Meaning: the user has not bootstrapped first
+                        res.redirect('/');
                         return;
                     }
 
-                    res.download(imageFile);
-                }.bind(this));
+                    var ThisInstance = Instance.DeviceImage;
+
+                    var promise;
+                    if (!this.doesImageExist()) {
+                        // must generate image file first!
+                        promise = ThisInstance.generateNewDeviceImage();
+                    }
+                    else {
+                        // image file already exists
+                        promise = Promise.resolve();
+                    }
+                    promise
+                    .then(function() {
+                        // image file has been generated! Go!
+                        ThisInstance.Tools.log('Downloading device image from: ' + req.url);
+                        res.download(imageFile);
+                    });
+                }.bind(this);
  
-                SharedTools.ExpressRouters.before.use(downloadPath, downloadRouter);
+                SharedTools.ExpressRouters.before.get(downloadPath, downloadHandler);
             },
 
             isImageBeingGenerated: function() {
@@ -75,7 +83,7 @@ module.exports = NoGapDef.component({
                 var deviceImageCfg = Shared.AppConfig.getValue('deviceImage');
                 var imageFile = deviceImageCfg.filePath;     // location on disk
 
-                return !this.isImageBeingGenerated() && !fs.existsSync(imageFile);
+                return !this.isImageBeingGenerated() && fs.existsSync(imageFile);
             },
 
             Private: {
@@ -87,10 +95,12 @@ module.exports = NoGapDef.component({
                         return Promise.reject('error.invalid.permissions');
                     }
 
-                    if (this.Shared.isImageBeingGenerated) {
+                    if (this.Shared.isImageBeingGenerated()) {
                         // TODO: Sync on generation?
                         throw new Error('Image still being generated...');
                     }
+
+                    this.Tools.log('Generating device image...');
 
                     if (this.Shared.doesImageExist()) {
                         // TODO: Delete?
@@ -113,6 +123,7 @@ module.exports = NoGapDef.component({
                     })
                     .then(function() {
                         // TODO: Write `imageFile` here
+                        fs.writeFileSync(imageFile, 'hi!');
                     });
                 },
             },
@@ -121,37 +132,6 @@ module.exports = NoGapDef.component({
              * Host commands can be directly called by the client
              */
             Public: {
-
-                /**
-                 * Re-directs to the image's download path.
-                 * TODO: Add a button to DevicePage, to call this function.
-                 */
-                downloadDeviceImage: function() {
-                    if (!this.Instance.User.isStandardUser()) {
-                        // need to be logged in first!
-                        return Promise.reject('error.invalid.permissions');
-                    }
-
-                    var deviceImageCfg = Shared.AppConfig.getValue('deviceImage');
-                    var imageFile = deviceImageCfg.filePath;     // location on disk
-
-                    var doDownload = function() {
-                        // start downloading!
-                        res.redirect(deviceImageCfg.downloadPath);
-                    }.bind(this);
-
-                    return Promise.resolve()
-                    .bind(this)
-                    .then(function() {
-                        if (!this.Shared.doesImageExist()) {
-                            // must generate image file first!
-                            return this.generateNewDeviceImage();
-                        }
-                    })
-
-                    // once finished -> start downloading!
-                    .then(doDownload);
-                }
             },
         };
     }),
@@ -173,6 +153,14 @@ module.exports = NoGapDef.component({
              */
             initClient: function() {
             },
+
+            /**
+             * Re-directs to the image's download path.
+             */
+            downloadDeviceImage: function() {
+                var deviceImageCfg = Shared.AppConfig.getValue('deviceImage');
+                this.Instance.Libs.ComponentCommunications.redirect(deviceImageCfg.downloadPath, false);
+            }
         };
     })
 });

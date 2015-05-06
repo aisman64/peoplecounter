@@ -43,7 +43,27 @@ module.exports = NoGapDef.component({
                                     device.resetTimeout = null;
                                 }
                                 return device;
+                            },
+                        },
+
+                        compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
+                            var queryData = { where: {} };
+                            if (queryInput) {
+                                if (queryInput.isIdAssigned) {
+                                    queryData.where.isIdAssigned = queryData.where.isIdAssigned;
+                                }
                             }
+                            return queryData;
+                        },
+
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
+                            var queryData = { where: {} };
+                            if (queryInput) {
+                                if (queryInput.isIdAssigned) {
+                                    queryData.where.isIdAssigned = queryData.where.isIdAssigned;
+                                }
+                            }
+                            return queryData;
                         }
 	    			}
 	    		}
@@ -83,6 +103,10 @@ module.exports = NoGapDef.component({
 
                     // randomly generated password
                     rootPassword: Sequelize.STRING(256),
+
+                    // boolean: Whether this device is currently deployed physically.
+                    //          If not, then a new physical device can be assigned to it.
+                    isIdAssigned: Sequelize.INTEGER.UNSIGNED,
 
                     // whether (and until when) to automatically re-configure the device upon next login
                     resetTimeout: Sequelize.DATE,
@@ -152,21 +176,17 @@ module.exports = NoGapDef.component({
                     return this.wifiSnifferDevices.getObject(deviceId)
                     .bind(this)
                     .then(function(device) {
-                        var timeoutDelay = Shared.AppConfig.getValue('DeviceDefaultResetTimeout') || (60 * 1000);
+                        var timeoutDelay = Shared.AppConfig.getValue('deviceDefaultResetTimeout') || (60 * 1000);
 
                         // reset identityToken and allow device to get the new one without logging in
                         device.identityToken = this.Instance.DeviceConfiguration.generateIdentityToken();
+
+                        // let any device looking for a new id come in and grab it!
+                        device.isIdAssigned = 0;
                         device.resetTimeout = new Date(new Date().getTime() + timeoutDelay);
 
                         return this.wifiSnifferDevices.updateObject(device);
                     });
-                },
-
-                downloadImageFileForDevice: function(deviceId) {
-                    // must have staff privileges
-                    if (!this.Instance.User.isStaff()) return Promise.reject('error.invalid.permissions');
-                    
-                    // TODO!
                 }
             }
         };

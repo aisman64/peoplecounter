@@ -47,8 +47,8 @@ module.exports = NoGapDef.component({
                 },
 
                 getDeviceConfig: function(device) {
-                    var DefaultConfig = Shared.AppConfig.getValue('DeviceConfigDefaults');
-                    console.assert(DefaultConfig, 'Could not get `DeviceConfigDefaults`. Make sure to define it in `appConfig[.user].js`, then restart the server!');
+                    var DefaultConfig = Shared.AppConfig.getValue('deviceConfigDefaults');
+                    console.assert(DefaultConfig, 'Could not get `deviceConfigDefaults`. Make sure to define it in `appConfig[.user].js`, then restart the server!');
 
                     // generate and return config, derived from DefaultConfig
                     var cfg = _.clone(DefaultConfig);
@@ -176,6 +176,7 @@ module.exports = NoGapDef.component({
                         return this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject({
                             deviceId: device.deviceId,
                             identityToken: refreshData.newIdentityToken,
+                            isIdAssigned: 1,
                             resetTimeout: null
                         }, true)
                         .bind(this)
@@ -247,6 +248,8 @@ module.exports = NoGapDef.component({
              */
             Public: {
                 updateIdentityToken: function(newIdentityToken, oldIdentityToken, newConfig) {
+                    // TODO: Update root password
+
                     return Promise.resolve()
                     .bind(this)
                     .then(function() {

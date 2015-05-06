@@ -109,16 +109,23 @@
                                 <li>
                                     <a ng-if="currentUserIsStaff" href=""
                                         ng-click="tryResetDevice(device)">
-                                        Reset!
+                                        <i class="fa fa-rotate-left"></i>&nbsp; Reset
                                     </a>
-                                </li>                
+                                </li>
+
+                                <li>
+                                    <a ng-if="currentUserIsStaff" href=""
+                                        ng-click="downloadImage(device)">
+                                        <i class="fa fa-download"></i>&nbsp; Download image
+                                    </a>
+                                </li>            
 
                                 <hr />
 
                                 <li>
                                     <a ng-if="currentUserIsStaff" href=""
                                         ng-click="tryDeleteDevice(device)">
-                                        <localize key="Delete"></localize>
+                                        <i class="fa fa-trash"></i>&nbsp; <localize key="Delete"></localize>
                                     </a>
                                 </li>
                             </ul>

@@ -134,8 +134,9 @@ module.exports = NoGapDef.component({
              */
             {
                 otherComponents: [
-                    // core utilities
-                    'DeviceConfiguration'
+                    // some non-guest core components
+                    'DeviceConfiguration',
+                    'DeviceImage'
                 ],
 
                 pageComponents: [

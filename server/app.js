@@ -225,9 +225,9 @@ Promise.resolve()
 
     for (var i = 0; i < hosts.length; ++i) {
         var host = hosts[i];
-        var url = protocol + '://' + host + ':' + port;
 
         (function(host) {
+            var url = protocol + '://' + host + ':' + port;
             app.listen(port, host, function() {
                 console.log(appConfig.title + ' is online at: ' + url);
             }).on('error', function (err) {

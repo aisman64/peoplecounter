@@ -67,6 +67,8 @@ module.exports = NoGapDef.component({
             startCapturing: function() {
                 // TODO: Start capturing packets
 
+                console.log("Let's capture something!");
+
                 // this.storePacket(packet);
             },
 

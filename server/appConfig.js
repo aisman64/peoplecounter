@@ -6,18 +6,20 @@ module.exports = {
     // ########################################################################################################################
     // Device config
 
-    'DeviceConfigDefaults': {
+    'deviceConfigDefaults': {
         'CookiesFile': 'data/cookies.json',
         'HostIdentityTokenFile': 'data/hostIdentityToken',
+        'DeviceClientCacheFile': 'data/deviceClientCache.js',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
-    'DeviceDefaultResetTimeout': 60 * 1000,// a few minutes
+    'deviceDefaultResetTimeout': 60 * 1000,// a few minutes
 
     'deviceImage': {
-        'imageFile': {
-            'filePath': __dirname + '/data/DeviceImage.img'
-        }
+        'downloadPath': '/Device/Image',
+
+        // absolute file path
+        'filePath': __dirname + '/data/DeviceImage.img'
     },
 
     // ########################################################################################################################
