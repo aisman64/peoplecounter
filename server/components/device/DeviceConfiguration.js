@@ -95,6 +95,8 @@ module.exports = NoGapDef.component({
                         // update reset status in DB
                         device.resetTimeout = null;
                         device.isAssigned = 1;
+
+                		var deviceCache = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
                         return deviceCache.updateObject(device, true);
                     })
                     .catch(function(err) {
@@ -153,7 +155,7 @@ module.exports = NoGapDef.component({
 
                     // we cannot generate a reliable promise chain here because we need all promises to be 
                     //      fulfilled before the client will actually call the next method.
-                    this.Tools.log('Refreshing device identity for device `' + device.deviceName + '` (#' + device.deviceId + ')');
+                    this.Tools.log('Refreshing device identity for device #' + device.deviceId + '...');
                     this.client.updateIdentityToken(newIdentityToken, oldIdentityToken, cfg);
 
                     return this._deviceIdentityTokenRefresh.monitor;

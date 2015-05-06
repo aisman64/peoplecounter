@@ -55,12 +55,22 @@ module.exports = NoGapDef.component({
         		//		and if so, send that device entry to the client.
         		var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
         		return devices.getObject({uid: user.uid}, true, true, true)
+        		.bind(this)
         		.then(function(device) {
         			if (!device) {
-        				return Promise.reject('uid sent by device did not match any device configuration');
+                   		this.Tools.handleError('uid sent by device did not match any device configuration: ' + user.userName);
+        				return Promise.reject('error.login.auth');
         			}
         			else if (!device.isAssigned) {
-        				return Promise.reject('uid used by device matched a device that has been reset');
+		                // var ipOrUserName = this.Instance.Libs.ComponentCommunications.getUserIdentifier();
+		                // var newDeviceStatus = {
+		                //     deviceId: device.deviceId,
+		                //     loginIp: ipOrUserName
+		                // };
+		                // this.Instance.DeviceConfiguration.tryResetDevice(device, newDeviceStatus);
+
+                   		this.Tools.handleError('uid used by device matched a device that has been reset: ' + user.userName);
+        				return Promise.reject('error.login.auth');
         			}
         			return user;
         		});
@@ -104,7 +114,7 @@ module.exports = NoGapDef.component({
                         this.Tools.logWarn('Unidentified device connected. Looking for unassigned device configuration...');
 
                         // get a device that does not have an assigned device id
-                        promise = this.Instance.WifiSnifferDevice.wifiSnifferDevices.getObject({
+                        promise = deviceCache.getObject({
                             isAssigned: 0
                         }, true, false, true);
                     }
