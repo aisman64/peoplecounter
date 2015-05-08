@@ -16,7 +16,7 @@ module.exports = {
     'deviceDefaultResetTimeout': 60 * 1000,// a few minutes
 
     'deviceImage': {
-        'downloadPath': '/Device/Image',
+        'downloadPath': '/Download/DeviceImage',
 
         // absolute file path
         'filePath': __dirname + '/data/DeviceImage.img'
@@ -31,6 +31,9 @@ module.exports = {
      */
     'registrationLocked': 0,
 
+    /**
+     * Whether non-priviliged users can currently login
+     */
     'loginLocked': 0,
 
 

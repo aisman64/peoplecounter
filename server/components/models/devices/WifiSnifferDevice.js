@@ -40,10 +40,10 @@ module.exports = NoGapDef.component({
                         members: {
                             filterClientObject: function(device) {
                                 // remove sensitive information before sending to client
-                                device.identityToken = null;
+                                delete device.identityToken;
 
                                 if (!this.Instance.User.isStaff()) {
-                                    device.resetTimeout = null;
+                                    delete device.resetTimeout;
                                 }
                                 return device;
                             },

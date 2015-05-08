@@ -8,6 +8,11 @@
 var NoGapDef = require('nogap').Def;
 
 
+var componentsRoot = '../../';
+var libRoot = componentsRoot + '../lib/';
+var bcrypt = require(libRoot + 'bcrypt');
+
+
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
@@ -75,6 +80,32 @@ module.exports = NoGapDef.component({
                 
                 var userRole = roleOrUser.displayRole || roleOrUser;
                 return userRole && userRole >= otherRole;
+            },
+
+            /**
+             * We never want to send passphrase as-is.
+             * Instead, we mix things up and one-time-hash them to create an even safer password.
+             *
+             * @see https://github.com/dcodeIO/bcrypt.js
+             * @param pepper Usually the user name or some other user-dependent information that is thrown into the mix to avoid equality of passwords of different users.
+             *
+             * @return A hashed version of the given passphrase
+             */
+            hashPassphrase: function(pepper, passphrase, salt) {
+                var sharedSecretRaw = pepper + ':' + passphrase;
+                bcrypt = typeof(bcrypt) !== undefined ? bcrypt : Shared.Main.assets.bcrypt;
+
+                // create a hash asynchronously, so the actual password is never seen by anyone
+                return new Promise(function(resolve, reject) {
+                    salt = salt || Shared.AppConfig.getValue('userPasswordFirstSalt');
+                    bcrypt.hash(sharedSecretRaw, salt, function(err, sharedSecretV1) {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        resolve(sharedSecretV1);
+                    });
+                }.bind(this));
             },
 
             Private: {
@@ -189,10 +220,7 @@ module.exports = NoGapDef.component({
         var UserModel;
         var UserRole;
 
-        var componentsRoot = '../../';
-        var libRoot = componentsRoot + '../lib/';
-        var SequelizeUtil,
-            bcrypt;
+        var SequelizeUtil;
 
         var CryptWorkFactor = 8;
 
@@ -202,7 +230,6 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
-                bcrypt = require(libRoot + 'bcrypt');
             },
 
             initModel: function() {
@@ -287,10 +314,6 @@ module.exports = NoGapDef.component({
                                 // Possible input: uid, userName, facebookID
                                 if (!queryInput) {
                                     return Promise.reject(makeError('error.invalid.request'));
-                                }
-                                if (!ignoreAccessCheck && !this.Instance.User.isStaff()) {
-                                    // currently, this query cannot be remotely called by client
-                                    return Promise.reject('error.invalid.permissions');
                                 }
 
                                 var queryData = {
@@ -418,7 +441,8 @@ module.exports = NoGapDef.component({
                     });
                 },
 
-                _generateNewUserCredentials: function(sharedSecretV1) {
+                generateNewUserCredentials: function(sharedSecretV1, result) {
+                    result = result || {};
                     return new Promise(function(resolve, reject) {
                         bcrypt.genSalt(CryptWorkFactor, function(err, secretSalt) {
                             if (err) {
@@ -429,7 +453,9 @@ module.exports = NoGapDef.component({
 
                             this._bcryptHash(sharedSecretV1, secretSalt)
                             .then(function(sharedSecretV2) {
-                                resolve([sharedSecretV2, secretSalt]);
+                                result.sharedSecret = sharedSecretV2;
+                                result.secretSalt = secretSalt;
+                                resolve(result);
                             })
                             .catch(reject);
                         }.bind(this));
@@ -492,7 +518,7 @@ module.exports = NoGapDef.component({
                     var hasSpecialPermission = this.Context.clientIsLocal;
                     var isFacebookLogin = !!authData.facebookID;
                     var hasAlreadyProvenCredentials = isFacebookLogin;
-                    
+
                     if (isFacebookLogin) {
                         // login using FB
                         queryInput = { facebookID: authData.facebookID };
@@ -530,11 +556,7 @@ module.exports = NoGapDef.component({
                                 authData.role = UserRole.Developer;
 
                                 var promise = (!authData.sharedSecretV1 && Promise.resolve() ||
-                                    this._generateNewUserCredentials(authData.sharedSecretV1))
-                                    .spread(function(sharedSecret, secretSalt) {
-                                        authData.sharedSecret = sharedSecret;
-                                        authData.secretSalt = secretSalt;
-                                    });
+                                    this.generateNewUserCredentials(authData.sharedSecretV1, authData));
 
                                 return promise.then(this.createAndLogin.bind(this, authData));
                             }
@@ -570,11 +592,15 @@ module.exports = NoGapDef.component({
                                 return Promise.reject('error.login.locked');
                             }
 
-                            // verify credentials
-                            var needsCredentialVerification = !hasAlreadyProvenCredentials && !hasSpecialPermission;
-                            var promise = (!needsCredentialVerification && 
-                                Promise.resolve() ||
-                                this.verifyCredentials(user, authData));
+                            var promise;
+                            if (!hasAlreadyProvenCredentials && !hasSpecialPermission) {
+                                // verify credentials
+                                promise = this.verifyCredentials(user, authData);
+                            }
+                            else {
+                                // this client is (hopefully) trustworthy!
+                                promise = Promise.resolve();
+                            }
 
                             // setCurrentUser, then run onLogin logic
                             return promise.then(this.setCurrentUser.bind(this, user))
@@ -597,6 +623,14 @@ module.exports = NoGapDef.component({
                     });
                 },
 
+                updateUserCredentials: function(user, sharedSecretV1) {
+                    return this.generateNewUserCredentials(sharedSecretV1)
+                    .then(function(update) {
+                        update.uid = user.uid;
+
+                        return this.users.updateObject(update, true);
+                    });
+                },
 
                 /**
                  * Create new account and login right away
@@ -931,29 +965,6 @@ module.exports = NoGapDef.component({
 
                     this.onCurrentUserChanged(true);
                 },
-
-                /**
-                 * We never want to send passwords as-is.
-                 * Instead, we mix things up and one-time-hash them to create an even safer password.
-                 *
-                 * @see https://github.com/dcodeIO/bcrypt.js
-                 */
-                makeCredentials: function(userName, passphrase) {
-                    var bcrypt = Instance.Main.assets.bcrypt;
-                    var sharedSecretRaw = userName + ':' + passphrase;
-
-                    // create a hash asynchronously, so the actual password is never seen by anyone
-                    return new Promise(function(resolve, reject) {
-                        var salt = Instance.AppConfig.getValue('userPasswordFirstSalt');
-                        bcrypt.hash(sharedSecretRaw, salt, function(err, sharedSecretV1) {
-                            if (err) {
-                                return reject(err);
-                            }
-
-                            resolve(sharedSecretV1);
-                        });
-                    }.bind(this));
-                }
             }
         };
     })

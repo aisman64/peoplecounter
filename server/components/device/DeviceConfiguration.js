@@ -55,14 +55,27 @@ module.exports = NoGapDef.component({
 
                     cfg.HostUrl = externalUrl;
 
+                    var promise;
                     if (device) {
-                        cfg.deviceId = device.deviceId;
+                        promise = this.Instance.User.users.getObject({uid: device.uid})
+                        .bind(this)
+                        .then(function(user) {
+                            cfg.deviceId = device.deviceId;
+                            cfg.sharedSecret = user.sharedSecret;
+                        })
+                    }
+                    else {
+                        promise = Promise.resolve();
                     }
 
-                    return cfg;
+                    return promise.return(cfg);
                 },
 
                 generateIdentityToken: function(device) {
+                    return TokenStore.generateTokenString(256);
+                },
+
+                generateDevicePassphrase: function(device) {
                     return TokenStore.generateTokenString(256);
                 },
 
@@ -89,7 +102,7 @@ module.exports = NoGapDef.component({
                     // NOTE: We cannot "return" the following promise, since it requires a reply from the client;
                     //      however, the client cannot reply, if we are blocking on this promise.
                     // Instead, after a successful reset, the device will call `tryLogin` again.
-                    this.Instance.DeviceConfiguration.startResetConfiguration(device)
+                    this.Instance.DeviceConfiguration.startResetDevice(device)
                     .bind(this)
                     .then(function() {
                         // update reset status in DB
@@ -115,7 +128,7 @@ module.exports = NoGapDef.component({
                  * Will not complete since it requires client-side acks, which can (currently) only be sent
                  * after all promises have been fulfilled.
                  */
-                startResetConfiguration: function(device) {
+                startResetDevice: function(device) {
                     return Promise.resolve()
                     .bind(this)
                     .then(function() {
@@ -123,7 +136,7 @@ module.exports = NoGapDef.component({
                     })
                     .then(function(cfg) {
                         // get a new identity token
-                        return this.startRefreshingIdentityToken(device, cfg);
+                        return this.startResetConfiguration(device, cfg);
                     });
                 },
 
@@ -134,31 +147,40 @@ module.exports = NoGapDef.component({
                  *
                  * @param cfg Optional: New configuration object.
                  */
-                startRefreshingIdentityToken: function(device, cfg) {
-                    if (this._deviceIdentityTokenRefresh) {
+                startResetConfiguration: function(device, cfg) {
+                    if (this._configRefreshData) {
                         // already in progress
-                        return Promise.reject(makeError('error.invalid.request', 'Device tried to `startRefreshingIdentityToken` while still refreshing'));
+                        return Promise.reject(makeError('error.invalid.request', 'Device tried to `startResetConfiguration` while still refreshing'));
                     }
 
-                    // re-generate identityToken
-                    var oldIdentityToken = device.identityToken;
-                    var newIdentityToken = this.generateIdentityToken(device);
+                    // re-generate client seccret
+                    return Shared.User.hashPassphrase(device.deviceId, this.generateDevicePassphrase())
+                    .bind(this)
+                    .then(function(sharedSecretV1) {
+                        cfg.sharedSecret = sharedSecretV1;
 
-                    // udpate client side of things
-                    //      and wait for ACK
-                    this._deviceIdentityTokenRefresh = {
-                        device: device,
-                        newIdentityToken: newIdentityToken,
-                        result: null,
-                        monitor: new SharedTools.Monitor(3000)
-                    };
+                        // re-generate identityToken
+                        var oldIdentityToken = device.identityToken;
+                        var newIdentityToken = this.generateIdentityToken(device);
 
-                    // we cannot generate a reliable promise chain here because we need all promises to be 
-                    //      fulfilled before the client will actually call the next method.
-                    this.Tools.log('Refreshing device identity for device #' + device.deviceId + '...');
-                    this.client.updateIdentityToken(newIdentityToken, oldIdentityToken, cfg);
+                        // udpate client side of things
+                        //      and wait for ACK
+                        var timeout = 10 * 1000;    // wait for an ack for 10 seconds
+                        this._configRefreshData = {
+                            device: device,
+                            newIdentityToken: newIdentityToken,
+                            newSharedSecret: sharedSecretV1,
+                            result: null,
+                            monitor: new SharedTools.Monitor(timeout)
+                        };
 
-                    return this._deviceIdentityTokenRefresh.monitor;
+                        // we cannot generate a reliable promise chain here because we need all promises to be 
+                        //      fulfilled before the client will actually call the next method.
+                        this.Tools.log('Refreshing device identity for device #' + device.deviceId + '...');
+                        this.client.updateConfig(newIdentityToken, oldIdentityToken, cfg);
+
+                        return this._configRefreshData.monitor;
+                    });
                 },
             },
             
@@ -176,23 +198,27 @@ module.exports = NoGapDef.component({
                     })
                     .bind(this)
                     .then(function(device) {
-                        var settings = {
-                            cfg: this.getDeviceConfig(device),
-                            identityToken: device.identityToken,
-                            rootPassword: device.rootPassword
-                        };
+                        return this.getDeviceConfig(device)
+                        .bind(this)
+                        .then(function(cfg) {
+                            var settings = {
+                                cfg: cfg,
+                                identityToken: device.identityToken,
+                                rootPassword: device.rootPassword
+                            };
 
-                        // TODO: User authentication (publicKey + privateKey)
+                            // TODO: User authentication (publicKey + privateKey)
 
-                        return settings;
+                            return settings;
+                        });
                     });
                 },
 
                 /**
                  * Client ACKnowledged identityToken update
                  */
-                deviceIdentityRefreshAck: function(deviceId, oldIdentityToken) {
-                    var refreshData = this._deviceIdentityTokenRefresh;
+                deviceResetConfigurationAck: function(deviceId, oldIdentityToken) {
+                    var refreshData = this._configRefreshData;
                     if (!refreshData) return Promise.reject(makeError('error.invalid.request'));
 
                     var device = refreshData.device;
@@ -203,24 +229,27 @@ module.exports = NoGapDef.component({
 
                     if (deviceId != device.deviceId) {
                         // invalid deviceId
-                        return monitor.notifyReject(makeError('error.invalid.request', 'invalid `deviceId`'));
+                        return monitor.notifyReject(makeError('error.invalid.request', 'invalid `deviceId` during reset'));
                     }
 
                     else if (oldIdentityToken !== device.identityToken) {
                         // invalid identityToken
-                        return monitor.notifyReject(makeError('error.invalid.request', 'invalid `identityToken`'));
+                        return monitor.notifyReject(makeError('error.invalid.request', 'invalid `identityToken` during reset'));
                     }
 
                     else {
                         // client-side update was a success!
                             
                         // save to DB
-                        return this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject({
-                            deviceId: device.deviceId,
-                            identityToken: refreshData.newIdentityToken,
-                            isAssigned: 1,
-                            resetTimeout: null
-                        }, true)
+                        return Promise.join(
+                            this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject({
+                                deviceId: device.deviceId,
+                                identityToken: refreshData.newIdentityToken,
+                                isAssigned: 1,
+                                resetTimeout: null
+                            }, true),
+                            this.Instance.User.updateUserCredentials(refreshData.newSharedSecret)
+                        )
                         .bind(this)
                         .then(function() {
                             return monitor.notifyResolve();
@@ -233,7 +262,7 @@ module.exports = NoGapDef.component({
                         })
                         .finally(function() {
                             // everything is over -> unset
-                            this._deviceIdentityTokenRefresh = null;
+                            this._configRefreshData = null;
                         }.bind(this));
                     }
                 }
@@ -295,7 +324,7 @@ module.exports = NoGapDef.component({
                  * Called by server to reset identityToken and (optionally) configuration.
                  * This is also called when a new device connects to the server for the first time, and is assigned a new configuration.
                  */
-                updateIdentityToken: function(newIdentityToken, oldIdentityToken, newConfig) {
+                updateConfig: function(newIdentityToken, oldIdentityToken, newConfig) {
                     // TODO: Update root password
                     console.warn('Resetting device configuration...');
 
@@ -328,7 +357,7 @@ module.exports = NoGapDef.component({
                     })
                     .then(function() {
                         // tell Host, we are done
-                        return this.host.deviceIdentityRefreshAck(newConfig.deviceId, oldIdentityToken);
+                        return this.host.deviceResetConfigurationAck(newConfig.deviceId, oldIdentityToken);
                     })
                     .then(function() {
                         if (newConfig) {

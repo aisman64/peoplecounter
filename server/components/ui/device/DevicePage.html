@@ -155,6 +155,7 @@
             <div style="margin:auto; position:relative;">
                 <a class="btn btn-default" href=""
                     ng-if="currentUserIsStaff"
+                    ng-disabled="PC.busy"
                     ng-click="registerNewDevice('new device')">
                     <i class="fa fa-plus"></i>&nbsp; Add Device!
 
