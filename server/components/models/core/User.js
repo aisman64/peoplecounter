@@ -11,6 +11,8 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
+            CryptWorkFactorClient: 8,
+
             /**
              * @const
              */
@@ -189,7 +191,10 @@ module.exports = NoGapDef.component({
 
         var componentsRoot = '../../';
         var libRoot = componentsRoot + '../lib/';
-        var SequelizeUtil;
+        var SequelizeUtil,
+            bcrypt;
+
+        var CryptWorkFactor = 8;
 
         // TODO: Updates
         // see: http://stackoverflow.com/a/8158485/2228771
@@ -197,6 +202,7 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
+                bcrypt = require(libRoot + 'bcrypt');
             },
 
             initModel: function() {
@@ -223,6 +229,7 @@ module.exports = NoGapDef.component({
                     },
 
                     // a transformation of the user's password (which is unknown to the server)
+                    secretSalt: Sequelize.STRING(256),
                     sharedSecret: Sequelize.STRING(256),
 
                     realName: Sequelize.STRING(100),
@@ -256,7 +263,9 @@ module.exports = NoGapDef.component({
                         members: {
                             filterClientObject: function(user) {
                                 // remove sensitive information before sending to client
-                                user.sharedSecret = null;
+                                delete user.secretSalt;
+                                delete user.sharedSecret;
+                                delete user.facebookToken;
 
                                 return user;
                             },
@@ -302,7 +311,6 @@ module.exports = NoGapDef.component({
                                     queryData.where.userName = queryInput.userName;
                                 }
                                 else {
-                                    console.error(queryInput);
                                     return Promise.reject(makeError('error.invalid.request'));
                                 }
 
@@ -410,9 +418,65 @@ module.exports = NoGapDef.component({
                     });
                 },
 
-                verifyCredentials: function(authData, userData) {
-                    // TODO: Use crypto and SHA1
-                    return true;                    
+                _generateNewUserCredentials: function(sharedSecretV1) {
+                    return new Promise(function(resolve, reject) {
+                        bcrypt.genSalt(CryptWorkFactor, function(err, secretSalt) {
+                            if (err) {
+                                // never share this error with the outside world
+                                this.Tools.handleError(err);
+                                return reject('error.login.auth');
+                            }
+
+                            this._bcryptHash(sharedSecretV1, secretSalt)
+                            .then(function(sharedSecretV2) {
+                                resolve([sharedSecretV2, secretSalt]);
+                            })
+                            .catch(reject);
+                        }.bind(this));
+                    }.bind(this));
+                },
+
+                _bcryptHash: function(secret, secretSalt) {
+                    return new Promise(function(resolve, reject) {
+                        bcrypt.hash(secret || '', secretSalt, function(err, sharedSecretV2) {
+                            if (err) {
+                                // never share this error with the outside world
+                                this.Tools.handleError(err);
+                                return reject('error.login.auth');
+                            }
+
+                            resolve(sharedSecretV2);
+                        }.bind(this));
+                    }.bind(this));
+                },
+
+                _doesUserHavePasswordCredentials: function(user) {
+                    return !!user.secretSalt && !!user.sharedSecret;
+                },
+
+                verifyCredentials: function(user, authData) {
+                    if (!this._doesUserHavePasswordCredentials(user)) {
+                        // never allow password-based authentication for an account without password
+                        this.Tools.handleError('User without password tried to use password authentication');
+
+                        return Promise.reject('error.login.auth');
+                    }
+
+                    return this._bcryptHash(authData.sharedSecretV1, user.secretSalt || '')
+                    .spread(function(secretSalt, sharedSecret) {
+                        if (!user.sharedSecret) {
+                            // never allow password-based authentication for an account without password
+                            return Promise.reject('error.login.auth');
+                        }
+                        if (user.sharedSecret !== sharedSecret) {
+                            // invalid user credentials
+                            return Promise.reject('error.login.auth');
+                        }
+                        else {
+                            // all good!
+                            return Promise.resolve();
+                        }
+                    });
                 },
 
                 /**
@@ -420,14 +484,15 @@ module.exports = NoGapDef.component({
                  */
                 tryLogin: function(authData) {
                     if (!authData) {
-                        return Promise.reject('error.login.auth');
+                        return Promise.reject(makeError('error.invalid.request'));
                     }
 
                     // query user from DB
                     var queryInput;
-                    var hasSpecialPermission = this.Context.clientIsLocal || Shared.AppConfig.getValue('dev');
+                    var hasSpecialPermission = this.Context.clientIsLocal;
                     var isFacebookLogin = !!authData.facebookID;
                     var hasAlreadyProvenCredentials = isFacebookLogin;
+                    
                     if (isFacebookLogin) {
                         // login using FB
                         queryInput = { facebookID: authData.facebookID };
@@ -463,7 +528,15 @@ module.exports = NoGapDef.component({
                             if (hasSpecialPermission) {
                                 // dev mode and localhost always allow admin accounts
                                 authData.role = UserRole.Developer;
-                                return this.createAndLogin(authData);
+
+                                var promise = (!authData.sharedSecretV1 && Promise.resolve() ||
+                                    this._generateNewUserCredentials(authData.sharedSecretV1))
+                                    .spread(function(sharedSecret, secretSalt) {
+                                        authData.sharedSecret = sharedSecret;
+                                        authData.secretSalt = secretSalt;
+                                    });
+
+                                return promise.then(this.createAndLogin.bind(this, authData));
                             }
                             else {
                                 // check if this is the first User
@@ -492,24 +565,20 @@ module.exports = NoGapDef.component({
                             return Promise.reject('error.login.auth');
                         }
                         else {
-                            if (!hasAlreadyProvenCredentials) {
-                                // verify credentials
-                                if (!this.verifyCredentials(authData, user)) {
-                                    // invalid user credentials
-                                    return Promise.reject('error.login.auth');
-                                }
-                            }
-
                             if (this.isLoginLocked(user)) {
                                 // "normals" cannot login when server is locked
                                 return Promise.reject('error.login.locked');
                             }
-                            
-                            // set current user data
-                            this.setCurrentUser(user);
 
-                            // fire login event
-                            return this.onLogin(user, true)
+                            // verify credentials
+                            var needsCredentialVerification = !hasAlreadyProvenCredentials && !hasSpecialPermission;
+                            var promise = (!needsCredentialVerification && 
+                                Promise.resolve() ||
+                                this.verifyCredentials(user, authData));
+
+                            // setCurrentUser, then run onLogin logic
+                            return promise.then(this.setCurrentUser.bind(this, user))
+                            .then(this.onLogin.bind(this, user, true))
                             .return(user);
                         }
                     })
@@ -520,6 +589,7 @@ module.exports = NoGapDef.component({
                     })
                     .catch(function(err) {
                         return logLoginAttempt(null)
+                        .delay(1000)
                         .then(function() {
                             // propagate original error
                             return Promise.reject(err); 
@@ -552,12 +622,16 @@ module.exports = NoGapDef.component({
                         role: role, 
                         displayRole: role,
 
-                        //locale: Shared.AppConfig.getValue('defaultLocale') || 'en'
                         locale: preferredLocale,
+
+                        sharedSecret: authData.sharedSecret,
+                        secretSalt: authData.secretSalt,
 
                         facebookID: authData.facebookID,
                         facebookToken: authData.facebookToken
                     };
+
+                    this.Tools.logWarn('Creating new user account: ' + authData.userName);
 
                     return this.users.createObject(queryData, true)
                     .bind(this)
@@ -630,7 +704,7 @@ module.exports = NoGapDef.component({
                         .then(function(user) {
                             if (!user) {
                                 // could not login -> Invalid session (or User could not be found)
-                                this.Tools.warn('Unable to login user from session -- invalid or expired session');
+                                this.Tools.logWarn('Unable to login user from session -- invalid or expired session');
                                 delete sess.uid;    // delete uid from session
 
                                 return loginAs(null);
@@ -866,8 +940,19 @@ module.exports = NoGapDef.component({
                  */
                 makeCredentials: function(userName, passphrase) {
                     var bcrypt = Instance.Main.assets.bcrypt;
+                    var sharedSecretRaw = userName + ':' + passphrase;
 
-                    // TODO
+                    // create a hash asynchronously, so the actual password is never seen by anyone
+                    return new Promise(function(resolve, reject) {
+                        var salt = Instance.AppConfig.getValue('userPasswordFirstSalt');
+                        bcrypt.hash(sharedSecretRaw, salt, function(err, sharedSecretV1) {
+                            if (err) {
+                                return reject(err);
+                            }
+
+                            resolve(sharedSecretV1);
+                        });
+                    }.bind(this));
                 }
             }
         };

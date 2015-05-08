@@ -441,7 +441,7 @@ title, tt, u, var {
 }
 
 .vertical-space {
-  margin-top: 1em;
+  margin-top: 1em !important;
 }
 
 /*.dropdown-toggle::after {

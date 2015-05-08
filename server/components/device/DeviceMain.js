@@ -221,6 +221,7 @@ module.exports = NoGapDef.component({
                     sharedSecret: DEVICE.Config.sharedSecret,
                     identityToken: identityToken
                 };
+                
                 return ThisComponent.host.tryLogin(authData)
                 .then(function() {
                     // IMPORTANT: We might not be logged in yet, due to a pending reset!

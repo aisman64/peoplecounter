@@ -8,13 +8,13 @@ var NoGapDef = require('nogap').Def;
 
 var appRoot = '../../../';
 var libRoot = appRoot + 'lib/';
-var SequelizeUtil = require(libRoot + 'SequelizeUtil');
 
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
             OverridableConfigKeys: [
                 'currentScriptVersion',
+                'userPasswordFirstSalt'
             ],
 
             __ctor: function() {
@@ -63,11 +63,19 @@ module.exports = NoGapDef.component({
     	var ConfigModel;
         var UserRole;
 
+        var SequelizeUtil,
+            TokenStore,
+            bcrypt;
+
 
         return {
             __ctor: function () {
                 this.defaultConfig = require(appRoot + 'appConfig');
                 this.config = _.clone(this.defaultConfig);
+
+                SequelizeUtil = require(libRoot + 'SequelizeUtil');
+                TokenStore = require(libRoot + 'TokenStore');
+                bcrypt = require(libRoot + 'bcrypt');
             },
 
             serializeConfig: function(cfg) {
@@ -117,7 +125,7 @@ module.exports = NoGapDef.component({
                             return this.findOrCreate({
                                 where: { },       // get any config (for now, we only want one)
                                 defaults: {
-                                    configOverrides: ThisComponent.serializeConfig(configDefaults)
+                                    configOverrides: ThisComponent.serializeConfig(configDefaults),
                                 }
                             })
                             .spread(function(runtimeConfig, created) {
@@ -125,9 +133,22 @@ module.exports = NoGapDef.component({
                                 runtimeConfig = runtimeConfig.get();
 
                                 // merge overrides into config
-                                this.runtimeConfig = runtimeConfig;
-                                this.runtimeConfigOverrides = ThisComponent.deserializeConfig(runtimeConfig.configOverrides);
-                                _.merge(ThisComponent.config, runtimeConfig);
+                                ThisComponent.runtimeConfig = runtimeConfig;
+                                ThisComponent.runtimeConfigOverrides = ThisComponent.deserializeConfig(runtimeConfig.configOverrides);
+
+                                return Promise.resolve()
+                                .then(function() {
+                                    // make sure, `userPasswordFirstSalt` is set
+                                    if (!ThisComponent.runtimeConfigOverrides.userPasswordFirstSalt) {
+                                        var saltGenerator = bcrypt.genSaltSync.bind(bcrypt, 10);
+                                        var salt = TokenStore.getToken('userPasswordFirstSalt', saltGenerator);
+                                        ThisComponent.updateValue('userPasswordFirstSalt', salt);
+                                    }
+                                })
+                                .then(function() {
+                                    // merge things and finish it up
+                                    _.merge(ThisComponent.config, ThisComponent.runtimeConfigOverrides);
+                                });
                             });
                         }
                     }
@@ -162,7 +183,7 @@ module.exports = NoGapDef.component({
                 var selector = {
                     where: {configId: this.runtimeConfig.configId}
                 };
-                return this.Model.update(values, selector);
+                return this.Model.update(this.runtimeConfig, selector);
             },
 
             // ################################################################################################################
@@ -173,6 +194,9 @@ module.exports = NoGapDef.component({
                 },
 
                 getClientCtorArguments: function() {
+                    // TODO: Filter sensitive information from config
+                    // console.error(JSON.stringify(this.Shared.config, null, '\t'));
+
                     return [this.Shared.config, this.Shared.runtimeConfig]
                 },
 

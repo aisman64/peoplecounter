@@ -92,12 +92,22 @@ var TokenStore = Object.create({
      * Gets the token of the given name and calls cb on it when ready.
      * Generates new token if the token does not exist or has the wrong length.
      */
-    getToken: function(name, len, dontWrite) {
+    getToken: function(name, generatorOrLen, dontWrite) {
         len = len || this.options.defaultLen;
         var token = this.tokens[name];
         if (!token || token.length != len) {
             console.debug("Generating new token \"" + name + "\"...");
-            token = this.generateTokenString(len);
+            if (generatorOrLen instanceof Function) {
+                var generator = generatorOrLen;
+                token = generator();
+            }
+            else if (!generatorOrLen || (!isNaN(generatorOrLen) && generatorOrLen > 0)) {
+                var len = generatorOrLen;
+                token = this.generateTokenString(len);
+            }
+            else {
+                throw new Error('Invalid argument to `getToken` - generatorOrLen = ' + generatorOrLen);
+            }
             this.tokens[name] = token;
             
             // rewrite file
