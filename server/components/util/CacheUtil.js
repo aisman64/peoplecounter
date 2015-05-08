@@ -396,7 +396,12 @@ module.exports = NoGapDef.component({
 
                     // copy data into object
                     for (var propName in data) {
-                        this[propName] = data[propName];
+                        if (!data.hasOwnProperty(propName)) continue;
+
+                        var prop = data[propName];
+                        if (prop instanceof Function) continue; // never copy functions
+
+                        this[propName] = prop;
                     }
                 },{
                     // methods
@@ -912,7 +917,7 @@ module.exports = NoGapDef.component({
                         }
 
                         // notify
-                        this.onRemovedObject.call(this, obj);
+                        this.onRemovedObject(obj);
                         this.events.removed.fire(obj);
                     }
 
@@ -1272,9 +1277,23 @@ module.exports = NoGapDef.component({
                         var wrappedObjects = this._applyChanges(objects, queryInput, queryData);
 
                         if (!dontSendToClient) {
-                            this.Instance.CacheUtil.client.applyChanges(this.name, objects);
+                            this._sendChangesToClient(objects);
                         }
                         return wrappedObjects;
+                    },
+
+                    _sendChangesToClient: function(objects) {
+                        if (!this.Instance.CacheUtil.client) return;
+
+                        if (this.filterClientObject) {
+                            var filteredObjects = [];
+                            for (var i = 0; i < objects.length; ++i) {
+                                var filteredObject = this.filterClientObject(_.clone(objects[i]));
+                                filteredObjects.push(filteredObject);
+                            };
+                            objects = filteredObjects;
+                        }
+                        this.Instance.CacheUtil.client.applyChanges(this.name, objects);
                     },
 
                     /**
@@ -1341,9 +1360,9 @@ module.exports = NoGapDef.component({
                                 objects = newObjects;
                             }
 
-                            if (sendToClient && this.Instance.CacheUtil.client) {
+                            if (sendToClient) {
                                 // if on host, we might want to send this stuff straight to the client
-                                this.Instance.CacheUtil.client.applyChanges(this.name, objects);
+                                this._sendChangesToClient(objects);
                             }
                             return objects;
                         });
@@ -1833,7 +1852,8 @@ module.exports = NoGapDef.component({
                                 // update failed -> rollback
                                 this.applyChange(origObj);
                             }
-                            this.Instance.CacheUtil.Tools.handleError(err);
+
+                            return Promise.reject(err);
                         });
                     },
 
@@ -1866,8 +1886,7 @@ module.exports = NoGapDef.component({
                             // deletion failed -> rollback
                             this.applyChange(origObj);
 
-                            // TODO: Handle error better
-                            this.Instance.CacheUtil.Tools.handleError(err);
+                            return Promise.reject(err);
                         });
                     }
                 });

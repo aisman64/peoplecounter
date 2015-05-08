@@ -13,7 +13,19 @@ module.exports = NoGapDef.component({
 	    	Private: {
 	    		Caches: {
 	    			wifiPackets: {
-	    				idProperty: 'packetId'
+	    				idProperty: 'packetId',
+
+                        members: {
+                            compileObjectCreate: function(queryInput, ignoreAccessCheck) {
+                                if (!this.Instance.User.isDevice() && !ignoreAccessCheck) {
+                                    return Promise.reject('error.invalid.permissions');
+                                }
+
+                                // TODO: Pre-processing
+
+                                return queryInput;
+                            }
+                        }
 	    			}
 	    		}
 	    	}
@@ -57,6 +69,8 @@ module.exports = NoGapDef.component({
                      */
                     seqnum: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
                 },{
+                    freezeTableName: true,
+                    tableName: 'WifiPacket',
                     classMethods: {
                         onBeforeSync: function(models) {
                         },
@@ -77,10 +91,12 @@ module.exports = NoGapDef.component({
                 });
             },
 
-            storePacket: function(packet) {
-                // insert into DB
-                // see: http://docs.sequelizejs.com/en/latest/api/model/#createvalues-options-promiseinstance
-                return this.Model.create(packet);
+            Private: {
+                storePacket: function(packet) {
+                    // insert into DB
+                    // see: http://docs.sequelizejs.com/en/latest/api/model/#createvalues-options-promiseinstance
+                    return this.Instance.wifiPackets.createObject(packet, false, true);
+                }
             }
         };
     }),
