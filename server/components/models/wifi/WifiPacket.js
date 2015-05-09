@@ -23,6 +23,19 @@ module.exports = NoGapDef.component({
                             // TODO: Pre-processing
 
                             return queryInput;
+                        },
+
+                        compileReadObjects: function(queryInput, ignoreAccessCheck) {
+                            if (!queryInput.macId) {
+
+                            }
+
+                            var queryData = {
+                                where: {}
+                            };
+
+
+                            return queryData;
                         }
                     }
                 }
@@ -70,6 +83,9 @@ module.exports = NoGapDef.component({
                      */
                     seqnum: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
                 },{
+                    createdAt: false,
+                    // updatedAt: false, // we can use `udpatedAt` for our live-stream
+
                     freezeTableName: true,
                     tableName: 'WifiPacket',
                     classMethods: {
@@ -85,7 +101,9 @@ module.exports = NoGapDef.component({
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['ssidId']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['datasetId']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['time']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['signalStrength'])
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['signalStrength']),
+
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['macId', 'updatedAt'])
                             );
                         }
                     }

@@ -144,8 +144,6 @@ module.exports = NoGapDef.component({
 
                     uid: Sequelize.INTEGER.UNSIGNED,
 
-                    host: Sequelize.STRING(256),    // do we need this?
-
                     // randomly generated token
                     // this refreshes upon every login to avoid replay-attack logins
                     identityToken: Sequelize.STRING(256),
@@ -159,7 +157,12 @@ module.exports = NoGapDef.component({
 
                     // whether (and until when) to automatically re-configure the device upon next login
                     resetTimeout: Sequelize.DATE,
+
+                    // The host name of the device should be unique so that when two devices are in the same network,
+                    //      there won't be any name collision.
+                    hostName: Sequelize.STRING(256)
                 },{
+
                     freezeTableName: true,
                     tableName: 'WifiSnifferDevice',
                     classMethods: {

@@ -132,7 +132,9 @@ module.exports = NoGapDef.component({
                 }]);
 
                 // register page
-                Instance.UIMgr.registerPage(this, 'Guest', this.assets.template);
+                Instance.UIMgr.registerPage(this, 'Guest', this.assets.template, {
+                    iconClasses: 'fa fa-mail-forward'
+                });
             },
             
             

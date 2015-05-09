@@ -43,7 +43,9 @@
     "time.span.days": " days",
 
 
+    "page.Guest": "Login",
     "page.Home": "Home",
+    "page.LookupMAC": "Find me!",
     "page.Group": "Group",
     "page.Activity": "Activity",
     "page.Account": "Account",
@@ -77,6 +79,8 @@
     "account.userInfo": "Username: {1}",
     "account.changeToStandardUserView" : "Change to standard user View",
     "account.currentLanguage": "Language",
+
+    "queries.names.AllDataOfMacAddress": "",
 
     "error.login.auth": "Invalid username or password.",
     "error.login.other": "Failed to login: {1}",

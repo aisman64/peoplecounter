@@ -173,6 +173,7 @@ module.exports = {
             'models/wifi/WifiPacket',
             'models/devices/WifiSnifferDevice',
             'models/devices/DeviceStatus',
+            'models/CommonDBQueries',
 
             // misc utilities
             'util/Auth',
@@ -195,6 +196,7 @@ module.exports = {
 
             // guest + unregistered pages:
             'ui/guest/GuestPage',
+            'ui/lookupMAC/LookupMACPage',
 
             // user pages:
             'ui/home/HomePage',

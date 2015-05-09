@@ -116,6 +116,8 @@ module.exports = NoGapDef.component({
                  * using the given queryData.
                  */
                 checkUpdatedAt: function(updatedAt, queryData) {
+                    if (!updatedAt) return;     // there is no udpatedAt data on this table
+
                     var serializedQueryData = this._serializeQueryData(queryData);
                     var lastUpdatedAt = this._lastUpdatedAtByQueryData[serializedQueryData];
 
@@ -1472,7 +1474,7 @@ module.exports = NoGapDef.component({
                         console.assert(model && model.findAll,
                             '`getModel` did not return a valid Sequelize model.');
 
-                        if (this.hasMemorySet()) {
+                        if (this.hasMemorySet() && model.updatedAt) {
                             // NOTE: This is one of the single most important performance optimization in this entire code
                             var lastUpdatedAt = this._memorySet.getLastUpdatedAt(queryData);
                             if (lastUpdatedAt) {
