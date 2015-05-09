@@ -93,13 +93,18 @@ GLOBAL.Promise = Sequelize.Promise || require('bluebird');
 GLOBAL.Promise.longStackTraces();
 
 // ####################################################################################
-// Node core settings
+// Global error handling
 
 // fix stacktrace length
 // see: http://stackoverflow.com/questions/7697038/more-than-10-lines-in-a-node-js-stack-error
 Error.stackTraceLimit = 100;    // TODO: For some reason, Bluebird node ignores us here
 //Error.stackTraceLimit = Infinity;
 
+// attach default error handler for promises
+// Promise.onPossiblyUnhandledRejection(function(err) {
+//     console.error(err.stack);
+//     //throw err;
+// });
 
 
 // ####################################################################################

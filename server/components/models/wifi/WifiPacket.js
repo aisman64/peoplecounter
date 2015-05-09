@@ -10,24 +10,25 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
-	    	Private: {
-	    		Caches: {
-	    			wifiPackets: {
-	    				idProperty: 'packetId',
+            Caches: {
+                wifiPackets: {
+                    idProperty: 'packetId',
 
-                        members: {
-                            compileObjectCreate: function(queryInput, ignoreAccessCheck) {
-                                if (!this.Instance.User.isDevice() && !ignoreAccessCheck) {
-                                    return Promise.reject('error.invalid.permissions');
-                                }
-
-                                // TODO: Pre-processing
-
-                                return queryInput;
+                    members: {
+                        compileCreateObject: function(queryInput, ignoreAccessCheck) {
+                            if (!this.Instance.User.isDevice() && !ignoreAccessCheck) {
+                                return Promise.reject('error.invalid.permissions');
                             }
+
+                            // TODO: Pre-processing
+
+                            return queryInput;
                         }
-	    			}
-	    		}
+                    }
+                }
+            },
+            
+	    	Private: {
 	    	}
 	    };
 	}),

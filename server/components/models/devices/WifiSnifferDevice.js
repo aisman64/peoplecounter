@@ -10,111 +10,113 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
-	    	Private: {
-	    		Caches: {
-	    			wifiSnifferDevices: {
-	    				idProperty: 'deviceId',
 
-                        hasHostMemorySet: 1,    // keep devices in Host memory (for now)
+            Caches: {
+                wifiSnifferDevices: {
+                    idProperty: 'deviceId',
 
-                        indices: [
-                            {
-                                unique: true,
-                                key: ['uid']
-                            },
-                            {
-                                key: ['isAssigned']
-                            },
-                        ],
+                    hasHostMemorySet: 1,    // keep devices in Host memory (for now)
 
-                        InstanceProto: {
-                            /**
-                             * Get user from cache (or null, if not cached).
-                             * On Host, need to reach in context (since this is a globally shared object).
-                             */
-                            getUserNow: function(Instance) {
-                                return (Instance || Shared).User.users.getObjectNowById(this.uid);
+                    indices: [
+                        {
+                            unique: true,
+                            key: ['uid']
+                        },
+                        {
+                            key: ['isAssigned']
+                        },
+                    ],
+
+                    InstanceProto: {
+                        /**
+                         * Get user from cache (or null, if not cached).
+                         * On Host, need to reach in context (since this is a globally shared object).
+                         */
+                        getUserNow: function(Instance) {
+                            return (Instance || Shared).User.users.getObjectNowById(this.uid);
+                        }
+                    },
+
+                    members: {
+                        filterClientObject: function(device) {
+                            // remove sensitive information before sending to client
+                            delete device.identityToken;
+
+                            if (!this.Instance.User.isStaff()) {
+                                delete device.resetTimeout;
+                            }
+                            return device;
+                        },
+
+                        getObjectNow: function(queryInput, ignoreAccessCheck) {
+                            if (!queryInput) return null;
+                            if (!queryInput.isAssigned && !queryInput.deviceId) return null;
+
+                            if (queryInput.deviceId) {
+                                // get object by deviceId
+                                var obj = this.byId[queryInput.deviceId];
+                                if (obj && queryInput.isAssigned !== undefined) {
+                                    if (obj.isAssigned !== queryInput.isAssigned) {
+                                        // device object does not match "isAssigned condition"
+                                        return null;
+                                    }
+                                }
+                                return obj;
+                            }
+                            else if (queryInput.uid) {
+                                return this.indices.uid.get(queryInput.uid);
+                            }
+                            else if (queryInput.isAssigned !== undefined) {
+                                // get first unassigned device
+                                return this.indices.isAssigned.get(queryInput.isAssigned)[0] || null;
                             }
                         },
 
-                        members: {
-                            filterClientObject: function(device) {
-                                // remove sensitive information before sending to client
-                                delete device.identityToken;
-
-                                if (!this.Instance.User.isStaff()) {
-                                    delete device.resetTimeout;
+                        getObjectsNow: function(queryInput, ignoreAccessCheck) {
+                            if (queryInput) {
+                                if (queryInput.isAssigned !== undefined) {
+                                    return this.indices.isAssigned.get(queryInput.isAssigned);
                                 }
-                                return device;
-                            },
+                            }
+                            return this.list;
+                        },
 
-                            getObjectNow: function(queryInput, ignoreAccessCheck) {
-                                if (!queryInput) return null;
-                                if (!queryInput.isAssigned && !queryInput.deviceId) return null;
+                        compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
+                            if (!queryInput || 
+                                (queryInput.isAssigned === undefined && 
+                                    !queryInput.deviceId &&
+                                    !queryInput.uid)) {
+                                return Promise.reject(makeError('error.invalid.request', queryInput));
+                            }
 
-                                if (queryInput.deviceId) {
-                                    // get object by deviceId
-                                    var obj = this.byId[queryInput.deviceId];
-                                    if (obj && queryInput.isAssigned !== undefined) {
-                                        if (obj.isAssigned !== queryInput.isAssigned) {
-                                            // device object does not match "isAssigned condition"
-                                            return null;
-                                        }
-                                    }
-                                    return obj;
-                                }
-                                else if (queryInput.uid) {
-                                	return this.indices.uid.get(queryInput.uid);
-                                }
-                                else if (queryInput.isAssigned !== undefined) {
-                                    // get first unassigned device
-                                    return this.indices.isAssigned.get(queryInput.isAssigned)[0] || null;
-                                }
-                            },
+                            var queryData = { where: {} };
+                            if (queryInput.isAssigned !== undefined) {
+                                queryData.where.isAssigned = queryInput.isAssigned;
+                            }
+                            if (queryInput.deviceId) {
+                                queryData.where.deviceId = queryInput.deviceId;
+                            }
+                            else if (queryInput.uid) {
+                                queryData.where.uid = queryInput.uid;
+                            }
+                            return queryData;
+                        },
 
-                            getObjectsNow: function(queryInput, ignoreAccessCheck) {
-                                if (queryInput) {
-                                    if (queryInput.isAssigned !== undefined) {
-                                        return this.indices.isAssigned.get(queryInput.isAssigned);
-                                    }
-                                }
-                                return this.list;
-                            },
-
-                            compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
-                                if (!queryInput || 
-                                	(queryInput.isAssigned === undefined && 
-                            			!queryInput.deviceId &&
-                            			!queryInput.uid)) {
-                                	return Promise.reject(makeError('error.invalid.request', queryInput));
-                                }
-
-                                var queryData = { where: {} };
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
+                            var queryData = { where: {} };
+                            if (queryInput) {
                                 if (queryInput.isAssigned !== undefined) {
                                     queryData.where.isAssigned = queryInput.isAssigned;
                                 }
-                                if (queryInput.deviceId) {
-                                    queryData.where.deviceId = queryInput.deviceId;
-                                }
-                                else if (queryInput.uid) {
-                                	queryData.where.uid = queryInput.uid;
-                                }
-                                return queryData;
-                            },
-
-                            compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
-                                var queryData = { where: {} };
-                                if (queryInput) {
-                                    if (queryInput.isAssigned !== undefined) {
-                                        queryData.where.isAssigned = queryInput.isAssigned;
-                                    }
-                                }
-                                return queryData;
                             }
+                            return queryData;
                         }
-	    			}
-	    		}
-	    	}
+                    }
+                }
+            },    // Caches:
+            
+	    	Private: {
+	    	} // Private:
 	    };
 	}),
 

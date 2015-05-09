@@ -32,29 +32,30 @@ module.exports = NoGapDef.component({
                 return this.config;
             },
 
-            Private: {
-                Caches: {
-                    appConfig: {
-                        idProperty: 'configId',
+            Caches: {
+                appConfig: {
+                    idProperty: 'configId',
 
-                        hasHostMemorySet: 1,
+                    hasHostMemorySet: 1,
 
-                        members: {
-                            getObjectNow: function(queryInput, ignoreAccessCheck) {
-                                if (isNaNOrNull(queryInput)) {
-                                    return Promise.reject(makeError('error.invalid.request'));
-                                }
-
-                                return this.indices.byId[queryInput];
-                            },
-
-                            compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
-                                // all config options
-                                if (!queryInput) return {};
+                    members: {
+                        getObjectNow: function(queryInput, ignoreAccessCheck) {
+                            if (isNaNOrNull(queryInput)) {
+                                return Promise.reject(makeError('error.invalid.request'));
                             }
+
+                            return this.indices.byId[queryInput];
+                        },
+
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
+                            // all config options
+                            if (!queryInput) return {};
                         }
                     }
                 }
+            },
+
+            Private: {
             }
         };
     }),

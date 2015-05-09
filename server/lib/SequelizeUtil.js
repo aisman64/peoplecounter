@@ -300,12 +300,4 @@ var SequelizeUtil = {
     }
 };  // SequelizeUtil
 
-// attach Sequelize default error handler
-// see: https://github.com/sequelize/sequelize/issues/2060
-Sequelize.Promise.onPossiblyUnhandledRejection(function(err){
-    SequelizeUtil.reportError(err);
-    //console.error(err.stack);
-    //throw err;
-});
-
 module.exports = SequelizeUtil;

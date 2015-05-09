@@ -62,7 +62,7 @@ module.exports = NoGapDef.component({
                         .then(function(user) {
                             cfg.deviceId = device.deviceId;
                             cfg.sharedSecret = user.sharedSecret;
-                        })
+                        });
                     }
                     else {
                         promise = Promise.resolve();
@@ -83,67 +83,68 @@ module.exports = NoGapDef.component({
                     return TokenStore.generateTokenString(32);
                 },
 
+                /**
+                 * Starts resetting configuration of the given device on the current client.
+                 * Will not complete since it requires client-side acks, which can (currently) only be sent
+                 * after all promises have been fulfilled.
+                 */
                 tryResetDevice: function(device, newDeviceStatus) {
-                	var DeviceStatusId = Shared.DeviceStatus.DeviceStatusId;
-                	var resetTimeout = new Date(device.resetTimeout);
-                    var now = new Date();
+                    var DeviceStatusId = Shared.DeviceStatus.DeviceStatusId;
 
-                    if (resetTimeout.getTime() < now.getTime()) {
-                        // fail: reset time is already up!
-                        newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
-                        return Promise.reject('device reset expired');
-                    }
+                    // this can fail in more than once place
+                    var failed = false;
+                    var onFail = function(err) {
+                        if (failed) return;
+                        failed = true;
 
-                    // device is scheduled for reset
-                    newDeviceStatus.deviceStatus = DeviceStatusId.LoginReset;
-
-                    this.Tools.logWarn('Resetting device #' + device.deviceId + '`...');
-
-                    // NOTE: We cannot "return" the following promise, since it requires a reply from the client;
-                    //      however, the client cannot reply, if we are blocking on this promise.
-                    // Instead, after a successful reset, the device will call `tryLogin` again.
-                    this.Instance.DeviceConfiguration.startResetDevice(device)
-                    .bind(this)
-                    .then(function() {
-                        // update reset status in DB
-                        device.resetTimeout = null;
-                        device.isAssigned = 1;
-
-                		var deviceCache = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
-                        return deviceCache.updateObject(device, true);
-                    })
-                    .catch(function(err) {
                         // fail: Could not reset
                         newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
 
                         // store device status a second time
                         this.Instance.DeviceStatus.logStatus(newDeviceStatus);
 
-                        return Promise.reject(err);
-                    });
-                },
+                        // don't propagate this error! (For now)
+                        // return Promise.reject(err);
+                    }.bind(this);
+                    
 
-                /**
-                 * Starts resetting configuration of the given device on the current client.
-                 * Will not complete since it requires client-side acks, which can (currently) only be sent
-                 * after all promises have been fulfilled.
-                 */
-                startResetDevice: function(device) {
                     return Promise.resolve()
                     .bind(this)
                     .then(function() {
+                    	var resetTimeout = new Date(device.resetTimeout);
+                        var now = new Date();
+
+                        if (resetTimeout.getTime() < now.getTime()) {
+                            // fail: reset time is already up!
+                            newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
+                            return Promise.reject('device reset expired');
+                        }
+
+                        // device is scheduled for reset
+                        newDeviceStatus.deviceStatus = DeviceStatusId.LoginReset;
+
+                        this.Tools.logWarn('Resetting device #' + device.deviceId + '`...');
+
                         return this.getDeviceConfig(device);
                     })
                     .then(function(cfg) {
                         // get a new identity token
                         return this.startResetConfiguration(device, cfg);
-                    });
+                    })
+
+                    // there are two "threads of execution", and either (or maybe even both) can fail!
+                    .then(function(monitor) {
+                        monitor.wait.catch(onFail);
+                    })
+                    .catch(onFail);
                 },
 
                 /**
                  * Send new identityToken to client.
                  * Returns a promise to be resolved when the client replies.
                  * NOTE: Will not block current Client request when using HTTP.
+                 * 
+                 * Returns a monitor object that holds a promise chain to be executed when the client replied with an ack.
                  *
                  * @param cfg Optional: New configuration object.
                  */
@@ -224,47 +225,60 @@ module.exports = NoGapDef.component({
                     var device = refreshData.device;
                     console.assert(device);
 
-                    // Notify on monitor!
+                    // get monitor
                     var monitor = refreshData.monitor;
 
+                    var promise;
                     if (deviceId != device.deviceId) {
-                        // invalid deviceId
-                        return monitor.notifyReject(makeError('error.invalid.request', 'invalid `deviceId` during reset'));
+                        // invalid deviceId (need to notify on both "threads of execution")
+                        promise = Promise.join(
+                            monitor.notifyReject(),
+                            Promise.reject(makeError('error.invalid.request', 'invalid `deviceId` during reset'))
+                        );
                     }
 
                     else if (oldIdentityToken !== device.identityToken) {
-                        // invalid identityToken
-                        return monitor.notifyReject(makeError('error.invalid.request', 'invalid `identityToken` during reset'));
+                        // invalid identityToken (need to notify on both "threads of execution")
+                        promise = Promise.join(
+                            monitor.notifyReject(),
+                            Promise.reject(makeError('error.invalid.request', 'invalid `identityToken` during reset'))
+                        );
                     }
 
                     else {
                         // client-side update was a success!
                             
-                        // save to DB
-                        return Promise.join(
+                        // save to device and user tables
+                        promise = Promise.join(
                             this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject({
                                 deviceId: device.deviceId,
                                 identityToken: refreshData.newIdentityToken,
                                 isAssigned: 1,
                                 resetTimeout: null
                             }, true),
-                            this.Instance.User.updateUserCredentials(refreshData.newSharedSecret)
+
+                            this.Instance.User.updateUserCredentials(device.uid, refreshData.newSharedSecret)
                         )
                         .bind(this)
                         .then(function() {
                             return monitor.notifyResolve();
                         })
                         .catch(function(err) {
-                            this.Tools.handleError(err, 
-                            	'`identityToken` refresh failed for device #' + device.deviceId + '');
+                            this.Tools.handleError(err,
+                            	'Failed to reset configuration for device #' + device.deviceId + '');
 
-                            return monitor.notifyReject(makeError('error.internal'));
-                        })
-                        .finally(function() {
-                            // everything is over -> unset
-                            this._configRefreshData = null;
-                        }.bind(this));
+                            return Promise.join(
+                                monitor.notifyReject(),
+                                Promise.reject('error.internal')
+                            );
+                        });
                     }
+
+                    return promise
+                    .finally(function() {
+                        // always unset refresh status!
+                        this._configRefreshData = null;
+                    }.bind(this));
                 }
             },
         };

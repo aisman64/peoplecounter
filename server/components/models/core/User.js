@@ -108,75 +108,76 @@ module.exports = NoGapDef.component({
                 }.bind(this));
             },
 
-            Private: {
-                // Caches (static member)
-                Caches: {
-                    users: {
-                        idProperty: 'uid',
+            // Caches (static member)
+            Caches: {
+                users: {
+                    idProperty: 'uid',
 
-                        hasHostMemorySet: 1,
+                    hasHostMemorySet: 1,
 
-                        indices: [
-                            {
-                                unique: true,
-                                key: ['userName']
-                            },
-                            {
-                                unique: true,
-                                key: ['facebookID']
-                            },
-                        ],
+                    indices: [
+                        {
+                            unique: true,
+                            key: ['userName']
+                        },
+                        {
+                            unique: true,
+                            key: ['facebookID']
+                        },
+                    ],
 
-                        InstanceProto: {
-                            initialize: function(users) {
-                                // add Instance object to new User instance
-                                Object.defineProperty(this, 'Instance', {
-                                    enumerable: false,
-                                    value: users.Instance
-                                });
+                    InstanceProto: {
+                        initialize: function(users) {
+                            // add Instance object to new User instance
+                            Object.defineProperty(this, 'Instance', {
+                                enumerable: false,
+                                value: users.Instance
+                            });
+                        }
+                    },
+
+                    members: {
+                        getObjectNow: function(queryInput, ignoreAccessCheck) {
+                            if (!this.hasMemorySet()) return null;
+
+                            if (!queryInput) return null;
+                            if (!ignoreAccessCheck && !this.Instance.User.isStaff()) {
+                                // currently, this query cannot be remotely called by client
+                                return null;
                             }
+
+                            if (queryInput.uid) {
+                                return this.byId[queryInput.uid];
+                            }
+                            else if (queryInput.facebookID) {
+                                return this.indices.facebookID.get(queryInput.facebookID);
+                            }
+                            else if (queryInput.userName) {
+                                return this.indices.userName.get(queryInput.userName);
+                            }
+                            return null;
                         },
 
-                        members: {
-                            getObjectNow: function(queryInput, ignoreAccessCheck) {
-                                if (!this.hasMemorySet()) return null;
-
-                                if (!queryInput) return null;
-                                if (!ignoreAccessCheck && !this.Instance.User.isStaff()) {
-                                    // currently, this query cannot be remotely called by client
-                                    return null;
-                                }
-
-                                if (queryInput.uid) {
-                                    return this.byId[queryInput.uid];
-                                }
-                                else if (queryInput.facebookID) {
-                                    return this.indices.facebookID.get(queryInput.facebookID);
-                                }
-                                else if (queryInput.userName) {
-                                    return this.indices.userName.get(queryInput.userName);
-                                }
-                                return null;
-                            },
-
-                            getObjectsNow: function(queryInput) {
-                                if (!this.hasMemorySet()) return null;
-                                if (queryInput && queryInput.uid instanceof Array) {
-                                    var result = [];
-                                    for (var i = 0; i < queryInput.uid.length; ++i) {
-                                        var uid = queryInput.uid[i];
-                                        var user = this.byId[uid];
-                                        if (user) {
-                                            result.push(user);
-                                        }
-                                    };
-                                    return result
-                                }
-                                return this.list;
-                            },
-                        }
+                        getObjectsNow: function(queryInput) {
+                            if (!this.hasMemorySet()) return null;
+                            if (queryInput && queryInput.uid instanceof Array) {
+                                var result = [];
+                                for (var i = 0; i < queryInput.uid.length; ++i) {
+                                    var uid = queryInput.uid[i];
+                                    var user = this.byId[uid];
+                                    if (user) {
+                                        result.push(user);
+                                    }
+                                };
+                                return result
+                            }
+                            return this.list;
+                        },
                     }
-                },
+                }
+            },
+
+            Private: {
 
 
                 // #################################################################################
@@ -284,81 +285,81 @@ module.exports = NoGapDef.component({
                 });
             },
 
-            Private: {
-                Caches: {
-                    users: {
-                        members: {
-                            filterClientObject: function(user) {
-                                // remove sensitive information before sending to client
-                                delete user.secretSalt;
-                                delete user.sharedSecret;
-                                delete user.facebookToken;
+            
+            Caches: {
+                users: {
+                    members: {
+                        filterClientObject: function(user) {
+                            // remove sensitive information before sending to client
+                            delete user.secretSalt;
+                            delete user.sharedSecret;
+                            delete user.facebookToken;
 
-                                return user;
-                            },
+                            return user;
+                        },
 
-                            onRemovedObject: function(user) {
-                                // due to a foreign key, devices of user account will also be deleted
-                                // so we will need to update the device cache manually
-                                var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
-                                var device = devices.indices.uid.get(user.uid);
-                                if (device) {
-                                    devices.applyRemove(device);
-                                }
-                            },
-
-                            /**
-                             * 
-                             */
-                            compileReadObjectQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
-                                // Possible input: uid, userName, facebookID
-                                if (!queryInput) {
-                                    return Promise.reject(makeError('error.invalid.request'));
-                                }
-
-                                var queryData = {
-                                    include: Shared.User.userAssociations,
-                                    where: {},
-
-                                    // ignore sensitive attributes
-                                    attributes: Shared.User.visibleUserAttributes
-                                };
-
-                                if (queryInput.uid) {
-                                    queryData.where.uid = queryInput.uid;
-                                }
-                                else if (queryInput.facebookID) {
-                                    queryData.where.facebookID = queryInput.facebookID;
-                                }
-                                else if (queryInput.userName) {
-                                    queryData.where.userName = queryInput.userName;
-                                }
-                                else {
-                                    return Promise.reject(makeError('error.invalid.request'));
-                                }
-
-                                return queryData;
-                            },
-
-                            compileReadObjectsQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
-                                var queryData = {
-                                    //include: Shared.User.userAssociations,
-
-                                    // ignore sensitive attributes
-                                    attributes: Shared.User.visibleUserAttributes
-                                };
-                                if (queryInput && queryInput.uid instanceof Array) {
-                                    queryData.where = {
-                                        uid: queryInput.uid
-                                    };
-                                }
-                                return queryData;
+                        onRemovedObject: function(user) {
+                            // due to a foreign key, devices of user account will also be deleted
+                            // so we will need to update the device cache manually
+                            var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                            var device = devices.indices.uid.get(user.uid);
+                            if (device) {
+                                devices.applyRemove(device);
                             }
+                        },
+
+                        /**
+                         * 
+                         */
+                        compileReadObjectQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
+                            // Possible input: uid, userName, facebookID
+                            if (!queryInput) {
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            var queryData = {
+                                include: Shared.User.userAssociations,
+                                where: {},
+
+                                // ignore sensitive attributes
+                                attributes: Shared.User.visibleUserAttributes
+                            };
+
+                            if (queryInput.uid) {
+                                queryData.where.uid = queryInput.uid;
+                            }
+                            else if (queryInput.facebookID) {
+                                queryData.where.facebookID = queryInput.facebookID;
+                            }
+                            else if (queryInput.userName) {
+                                queryData.where.userName = queryInput.userName;
+                            }
+                            else {
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            return queryData;
+                        },
+
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
+                            var queryData = {
+                                //include: Shared.User.userAssociations,
+
+                                // ignore sensitive attributes
+                                attributes: Shared.User.visibleUserAttributes
+                            };
+                            if (queryInput && queryInput.uid instanceof Array) {
+                                queryData.where = {
+                                    uid: queryInput.uid
+                                };
+                            }
+                            return queryData;
                         }
                     }
-                },
+                }
+            },
 
-
+            Private: {
                 __ctor: function () {
                     this.events = {
                         create: new squishy.createEvent(),
@@ -623,11 +624,13 @@ module.exports = NoGapDef.component({
                     });
                 },
 
-                updateUserCredentials: function(user, sharedSecretV1) {
-                    return this.generateNewUserCredentials(sharedSecretV1)
-                    .then(function(update) {
-                        update.uid = user.uid;
+                updateUserCredentials: function(userOrUid, sharedSecretV1) {
+                    console.assert(!!userOrUid, 'Invalid arguments for `updateUserCredentials`');
 
+                    return this.generateNewUserCredentials(sharedSecretV1)
+                    .bind(this)
+                    .then(function(update) {
+                        update.uid = userOrUid.uid || userOrUid;
                         return this.users.updateObject(update, true);
                     });
                 },

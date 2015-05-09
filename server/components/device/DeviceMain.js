@@ -137,6 +137,7 @@ module.exports = NoGapDef.component({
 
                         if (!device.isAssigned) {
                     		resetAttempt = true;
+                            
                             return this.Instance.DeviceConfiguration.tryResetDevice(device, newDeviceStatus);
                         }
                         else {
@@ -173,7 +174,7 @@ module.exports = NoGapDef.component({
                 })
                 .finally(function() {
                     // try storing login attempt
-                    this.Instance.DeviceStatus.logStatus(newDeviceStatus);
+                    return this.Instance.DeviceStatus.logStatus(newDeviceStatus);
                 });
                 // .then(function() {
                 //     if (resetAttempt) return;

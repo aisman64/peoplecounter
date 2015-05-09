@@ -11,13 +11,14 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
-	    	Private: {
-	    		Caches: {
-	    			ssids: {
-	    				idProperty: 'ssidId'
-	    			}
-	    		}
-	    	}
+            Caches: {
+                ssids: {
+                    idProperty: 'ssidId'
+                }
+            },
+                
+            Private: {
+            },
 	    };
 	}),
 
