@@ -238,6 +238,8 @@ module.exports = NoGapDef.component({
                     var node = this._getContainerNode(obj);
                     var leafPropertyName = _.last(indexDef.key);
                     var leafValue = obj[leafPropertyName];
+                    if (obj.deviceId)
+                    	console.error(['adding obj ', obj.deviceId,' to ', indexDef.name, ': ', leafValue].join(''));
 
                     if (leafValue === null || leafValue === undefined) return;     // don't index by null objects
 
@@ -251,7 +253,7 @@ module.exports = NoGapDef.component({
                     else {
                         // not an array -> One unique object
                         if (node[leafValue]) {
-                            console.error('Object was added twice to unique index `' + indexDef.name + '` = ' + leafValue + ':');
+                            console.error('Object was added twice to unique indexed `' + indexDef.name + '` = ' + leafValue + ':');
 
                             // separate console line gives us the browser's internal object inspector
                             console.error(obj);
@@ -268,6 +270,8 @@ module.exports = NoGapDef.component({
                     var node = this._getContainerNode(obj);
                     var leafPropertyName = _.last(indexDef.key);
                     var leafValue = obj[leafPropertyName];
+                    if (obj.deviceId)
+                    	console.error(['removing obj ', obj.deviceId,' from ', indexDef.name, ': ', leafValue].join(''));
 
                     if (leafValue === null || leafValue === undefined) return;     // don't index by null objects
 
