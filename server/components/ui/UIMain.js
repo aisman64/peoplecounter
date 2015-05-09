@@ -51,6 +51,8 @@ module.exports = NoGapDef.component({
                     'js/angular_ui/timespan-picker',
                     // Array utilities
                     
+                    'lib/angular/angular-google-maps.min',
+                    
                 ],
                 css: [
                     // bootstrap & font-awesome make things look pretty
@@ -492,12 +494,23 @@ module.exports = NoGapDef.component({
                 // Added modules:
                 var includeModules = [
                     'ui.bootstrap',
-                    'timespanPicker'
+                    'timespanPicker',
+                    'uiGmapgoogle-maps'
                 ];
                 var angularApp = angular.module('app', includeModules);
-
+                angularApp.config(function(uiGmapGoogleMapApiProvider) {
+                uiGmapGoogleMapApiProvider.configure({
+                    //    key: 'your api key',
+                    v: '3.19',
+                libraries: 'weather,geometry,visualization'
+                        });
+                    })
+                
                 // add our custom directives
                 addDirectives(angularApp);
+
+
+                   
 
                 // add some general functions and objects to $rootScope
                 angularApp.run(['$rootScope', function($rootScope) {

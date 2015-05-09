@@ -1,4 +1,8 @@
 
-	<div class="fill container-page" ng-controller="deviceCtrl">
-    	<img src="/pub/img/bl515.png" />
+	<div class="fill container-page" ng-controller="mapCtrl">
+    	 <ui-gmap-google-map center='map.center' zoom='map.zoom'></ui-gmap-google-map>
+    	 <div id="map"></div>
+    <div id="class" ng-repeat="marker in markers | orderBy : 'title'">
+         <a href="#" ng-click="openInfoWindow($event, marker)">{{marker.title}}</a>
+    </div>
 	</div>
