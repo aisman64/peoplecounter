@@ -195,7 +195,7 @@ module.exports = {
             'device/DeviceCapture',
 
             // guest + unregistered pages:
-            'ui/guest/GuestPage',
+            'ui/login/LoginPage',
             'ui/lookupMAC/LookupMACPage',
 
             // user pages:

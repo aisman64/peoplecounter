@@ -122,31 +122,6 @@ module.exports = NoGapDef.component({
 
         // TODO: Set the guest user object; and use `displayRole` instead to determine user access
         var _defaultPageGroups = [
-
-            /**
-             * Everyone can access these components.
-             */
-            {
-                pageComponents: [
-                    'LookupMACPage'
-                ],
-                mayActivate: function() {
-                    return true;
-                } 
-            },
-
-            /**
-             * Guest clients get access to these components.
-             */
-            {
-                pageComponents: [
-                    'GuestPage'
-                ],
-                mayActivate: function() {
-                    return !Instance.User.currentUser;
-                }
-            },
-
             /**
              * Logged in users get access to these components
              */
@@ -181,6 +156,33 @@ module.exports = NoGapDef.component({
                 ],
                 mayActivate: function() {
                     return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.Unregistered;
+                }
+            },
+
+            /**
+             * Everyone can access these components.
+             */
+            {
+                otherComponents: [
+                    'CommonDBQueries'
+                ],
+                pageComponents: [
+                    'LookupMACPage'
+                ],
+                mayActivate: function() {
+                    return true;
+                } 
+            },
+
+            /**
+             * Guest clients get access to these components.
+             */
+            {
+                pageComponents: [
+                    'LoginPage'
+                ],
+                mayActivate: function() {
+                    return !Instance.User.currentUser;
                 }
             },
 

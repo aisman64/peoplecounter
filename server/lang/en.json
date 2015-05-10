@@ -43,7 +43,7 @@
     "time.span.days": " days",
 
 
-    "page.Guest": "Login",
+    "page.Login": "Login",
     "page.Home": "Home",
     "page.LookupMAC": "Find me!",
     "page.Group": "Group",

@@ -20,7 +20,7 @@ module.exports = NoGapDef.component({
                      *
                      * @see https://github.com/dcodeIO/bcrypt.js
                      */
-                    bcrypt: libRoot + 'bcrypt.js'
+                    bcrypt: __dirname + '/' + libRoot + 'bcrypt.js'
                 }
             }
         },
