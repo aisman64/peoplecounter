@@ -54,7 +54,7 @@ module.exports = NoGapDef.component({
                     // model components
                     'MACAddress',
                     'SSID',
-                    'WifiDataSet',
+                    'WifiDataset',
                     'WifiPacket',
                     'MAC_SSID_Relation',
 

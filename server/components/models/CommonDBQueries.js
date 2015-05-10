@@ -19,7 +19,27 @@ module.exports = NoGapDef.component({
                 'MostOftenUsedSSIDs'
             ],
 
+            __ctor: function () {
+                this.GuestQueryWhitelistMap = {};
+                for (var i = 0; i < this.GuestQueryWhitelist.length; ++i) {
+                    this.GuestQueryWhitelistMap[this.GuestQueryWhitelist[i]] = 1;
+                }
+            },
+
 	    	Private: {
+                getAllowedQueriesForUser: function() {
+                    var nameMap;
+                    if (!this.Instance.User.isStandardUser()) {
+                        // Guests can only execute some of the queries
+                        nameMap = this.Shared.GuestQueryWhitelistMap;
+                    }
+                    else {
+                        nameMap = this.Shared.QueryNameMap;
+                    }
+
+                    console.assert(nameMap, '`getAllowedQueriesForUser()` found nothing');
+                    return nameMap;
+                }
 	    	}
 	    };
 	}),
@@ -39,11 +59,6 @@ module.exports = NoGapDef.component({
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
                 fs = require('fs');
-
-                this.GuestQueryWhitelistMap = {};
-                for (var i = 0; i < this.GuestQueryWhitelist.length; ++i) {
-                	this.GuestQueryWhitelistMap[this.GuestQueryWhitelist[i]] = 1;
-                };
             },
 
             initHost: function() {
@@ -118,22 +133,8 @@ module.exports = NoGapDef.component({
 
             Private: {
             	getClientCtorArguments: function() {
-            		return [this.getAllowedQueriesForUser()];
+            		return [this.Shared.QueryNameMap];
             	},
-
-            	getAllowedQueriesForUser: function() {
-                    var nameMap;
-            		if (!this.Instance.User.isStandardUser()) {
-            			// Guests can only execute some of the queries
-            			nameMap = this.Shared.GuestQueryWhitelistMap;
-            		}
-                    else {
-            		    nameMap = this.Shared.QueryNameMap;
-                    }
-
-                    console.assert(nameMap, '`getAllowedQueriesForUser()` found nothing');
-                    return nameMap;
-            	}
             },
 
             Public: {
