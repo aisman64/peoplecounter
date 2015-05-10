@@ -9,18 +9,6 @@
 "use strict";
 
 // #############################################################################
-// Config
-
-var Config = {
-	CookiesFile: 'data/cookies.json',
-	HostUrl: 'http://localhost:9123',
-	ReconnectDelay: 1 * 1000			// 60 seconds
-};
-
-var Running = true;
-
-
-// #############################################################################
 // Includes
 
 // invaluable general-purpose utilities
@@ -37,20 +25,44 @@ var touch = require('touch');
 var request = require('request');	// HTTP client module
 var FileCookieStore = require('tough-cookie-filestore');
 
-// need to expose our XMLHttpRequest wrapper so NoGap will function properly
-//     see: https://github.com/driverdan/node-XMLHttpRequest
-GLOBAL.XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest; 
+
+// #############################################################################
+// Config handling
+
+GLOBAL.DEVICE = {};
+GLOBAL.DEVICE.ConfigFilePath = './data/DeviceConfig.json';
+
+GLOBAL.DEVICE.readDeviceConfig = function readDeviceConfig() {
+	var contentString = fs.readFileSync(GLOBAL.DEVICE.ConfigFilePath).toString();
+	this.Config = JSON.parse(contentString);
+};
+
+
+// initialize
+try {
+	DEVICE.readDeviceConfig();
+}
+catch (err) {
+	console.error('[ERROR] Could not load config - ' + err.message);
+	return -1;
+}
+
+var Running = true;
+
 
 
 // #############################################################################
 // Connect to server and get started
 
 // create cookies file if it does not exist, and wait for request to finish
-fs.mkdirSync(path.dirname(Config.CookiesFile));
-touch.sync(Config.CookiesFile);
+var CookiesFolder = path.dirname(DEVICE.Config.CookiesFile);
+if (!fs.existsSync(CookiesFolder)) {
+	fs.mkdirSync(CookiesFolder);
+}
+touch.sync(DEVICE.Config.CookiesFile);
 
 // create and set file-backed cookie jar
-var jar = request.jar(new FileCookieStore(Config.CookiesFile));
+var jar = request.jar(new FileCookieStore(DEVICE.Config.CookiesFile));
 request = request.defaults({ jar : jar })
 
 // start!
@@ -61,117 +73,68 @@ connectToServerNow();
    if (Running) setTimeout(wait, 1000);
 })();
 
+
+
 // #############################################################################
-// Communication layer
+// Device client code execution and caching
 
-var CommLayer = {
-	 sendCustomClientRequestToHost: function(path, clientRequestData, serialize, headers) {
-        var ComponentCommunications = this.Instance.Libs.ComponentCommunications;
-        if (ComponentCommunications.hasRefreshBeenRequested()) {
-            // already out of sync with server
-            return Promise.reject('Tried to send request to server, but already out of sync');
-        }
+function runCode(jsCode) {
+	// compile and execute server-sent code
+	var Instance = eval(jsCode);
 
-        // add security and other metadata, required by NoGap
-        headers = headers || {};
-        ComponentCommunications.prepareRequestMetadata(headers);
+	// compilation worked!
 
-		return new Promise(function(resolve, reject) {
-			var Context = this.Context;
-            var serializer = this.Serializer;
-            var completeUrl = Config.HostUrl + path;	// Context.remoteUrl + path,
+	// TODO: Write to cache, after checking version?
+}
 
-            if (serialize) {
-                headers['Content-type'] = 'application/json; charset=' + (Context.charset || 'utf-8') + ';';
-                clientRequestData = serializer.serialize(clientRequestData);
-            }
+/**
+ * Try loading and running previously cached script
+ */
+function tryRunScriptFromCache() {
+	var cacheFileName = DEVICE.Config.DeviceClientCacheFile;
+	
+}
 
-            // console.log(jar.getCookieString(completeUrl));
 
-			request({
-					method: 'POST',
-					url: completeUrl,
-					jar: jar,
-					headers: headers,
-					body: clientRequestData
-				},
-				function (error, response, body) {
-		            if (error) {
-		                // TODO: Better error handling
-		                reject(error);
-		                return;
-		            }
 
-                    var hostReply;
-                    try {
-                        // Deserialize reply
-                        hostReply = serializer.deserialize(body || '', true) || {};
-                    }
-                    catch (err) {
-                        console.error(err.stack);
-                        // TODO: Better error handling
-                        err = 'Unable to parse reply sent by host. '
-                            + 'Check out http://jsonlint.com/ to check the formatting. - \n'
-                            + body.substring(0, 1000) + '...';
-                        reject(err);
-                        return;
-                    }
-
-                    // return host-sent data to caller (will usually be eval'ed by NoGap comm layer)
-                    resolve(hostReply);
-		        }
-	        );
-		}.bind(this));
-    },
-	refresh: function() {
-		console.log('Refresh requested...');
-		// call resolve() to stop this thing
-		//resolve();
-	}
-};
+// #############################################################################
+// Basic device connection state initialization
 
 function connectToServerLater() {
 	if (!Running) return;
 
 	return Promise
-	.resolve('Reconnecting in ' + (Config.ReconnectDelay/1000).toFixed(1) + ' seconds...')
+	.resolve('Reconnecting in ' + (DEVICE.Config.ReconnectDelay/1000).toFixed(1) + ' seconds...')
 	.then(console.log.bind(console))
-	.delay(Config.ReconnectDelay)
+	.delay(DEVICE.Config.ReconnectDelay)
 	.then(connectToServerNow);
 }
 
 function connectToServerNow() {
 	if (!Running) return;
 
-	console.log('Connecting to `' + Config.HostUrl + '`...')
+	console.log('Connecting to `' + DEVICE.Config.HostUrl + '`...')
 	return new Promise(function(resolve, reject) {
 		request({
-				url: Config.HostUrl,
-				jar: jar,
+				url: DEVICE.Config.HostUrl,
 				headers: {
 					// don't get HTML, only the pure JS client
 					'X-NoGap-NoHTML': '1'
 				},
 			},
-			function (error, response, body) {
+			function (error, response, jsonEncodedJsCode) {
 				if (error) {
 					reject(error);
 					return;
 				}
 
-				console.log('Connected to server. Received client script (' + body.length + ' bytes). Compiling...');
+				console.log('Connected to server. Received client script (' + jsonEncodedJsCode.length + ' bytes). Compiling...');
 
 				// start running client sent through NoGap
 				//console.log(body);
-				var jsonString = eval(body);
-				var Instance = eval(jsonString);
-
-				// patch the existing (browser-based) communication layer
-	            var connection = Instance.Libs.ComponentCommunications.getDefaultConnection();
-	            for (var methodName in CommLayer) {
-	            	var method = CommLayer[methodName];
-	            	connection[methodName] = method.bind(connection);
-	            }
+				var jsCode = eval(jsonEncodedJsCode);
+				
+				runCode(jsCode);
 			}
 		);
 	})

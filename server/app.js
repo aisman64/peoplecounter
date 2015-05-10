@@ -25,6 +25,13 @@ var appConfig = require('./appConfig');
 
 
 // ####################################################################################
+// shared configuration between server and device
+
+GLOBAL.DEVICE = {};
+GLOBAL.DEVICE.ConfigFilePath = './data/DeviceConfig.json';
+
+
+// ####################################################################################
 // shared JS libraries (used on Host and Client), located in the public folder
 
 // determine publicFolder
@@ -54,7 +61,7 @@ Object.prototype.toString = function() {
 
 
 // ####################################################################################
-// merge in user config
+// merge user config
 
 var appConfigUser;
 try {
@@ -86,13 +93,18 @@ GLOBAL.Promise = Sequelize.Promise || require('bluebird');
 GLOBAL.Promise.longStackTraces();
 
 // ####################################################################################
-// Node core settings
+// Global error handling
 
 // fix stacktrace length
 // see: http://stackoverflow.com/questions/7697038/more-than-10-lines-in-a-node-js-stack-error
 Error.stackTraceLimit = 100;    // TODO: For some reason, Bluebird node ignores us here
 //Error.stackTraceLimit = Infinity;
 
+// attach default error handler for promises
+// Promise.onPossiblyUnhandledRejection(function(err) {
+//     console.error(err.stack);
+//     //throw err;
+// });
 
 
 // ####################################################################################
@@ -108,9 +120,10 @@ var hosts = appConfig.hosts || ['0.0.0.0'];
 console.assert(hosts instanceof Array && hosts.length > 0, 'Invalid `hosts` configuration: ' + hosts);
 
 var port = appConfig.httpd.port || 8080;
+var protocol = appConfig.isHttps && 'https' || 'http';
 
 // we are guessing that the first address is the external address
-var externalListenAddress = app.externalListenAddress = hosts[0] + ':' + port;
+app.externalUrl = protocol + '://' + hosts[0] + ':' + port;
 
 // // for debugging purposes:
 // app.use(function(req, res, next) {
@@ -211,15 +224,21 @@ Promise.resolve()
  * Start HTTP server.
  */
 .then(function startApp() {
+    if (protocol !== 'http') {
+        throw new Error('Unable to start server. Protocol is not implemented yet: ' + protocol);
+    }
+
     for (var i = 0; i < hosts.length; ++i) {
         var host = hosts[i];
+
         (function(host) {
+            var url = protocol + '://' + host + ':' + port;
             app.listen(port, host, function() {
-                console.log(appConfig.title + ' is online at: ' + (host + ':' + port));
+                console.log(appConfig.title + ' is online at: ' + url);
             }).on('error', function (err) {
-                // HTTP listen socket got closed unexpectedly...
+                // server closed unexpectedly...
                 // TODO: Try to re-start
-                console.error(new Error('Server connection error (on ' + (host + ':' + port) + '): ' + (err.stack || err.message || err)).stack);
+                console.error(new Error('Server connection error (on ' + url + '): ' + (err.stack || err.message || err)).stack);
             });
         })(host);
     }

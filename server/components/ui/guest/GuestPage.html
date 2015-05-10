@@ -29,13 +29,23 @@
             <hr />
 
             <!-- User name input -->
-            <validated-text-input tabindex="1" 
+            <validated-text-input tabindex="1"
                 class="container-stretched form-control form-input" 
                 placeholder="{{localize('userName')}}" required autofocus
                 validate-model="loginData.userName"
                 validate-error="nameInvalid"
                 validate-result-invalid="true"
                 ng-enter="clickLogin()"> </validated-text-input>
+
+            <div class="vertical-space"></div>
+
+            <!-- Passphrase input -->
+            <input type="password" tabindex="2"
+                ng-model="loginData.passphrase" 
+                class="container-stretched form-control form-input"
+                placeholder="pass phrase"/>
+
+            <div class="vertical-space"></div>
 
             <!-- Error Messages -->
             <div ng-style="{visibility: nameInvalid && 'visible' || 'hidden'}"
@@ -48,7 +58,8 @@
             </div>
 
             <!-- Login button -->
-            <a ng-disabled="busy || nameInvalid" tabindex="2" class="container-stretched form-control btn btn-lg btn-fancy btn-block" 
+            <a ng-disabled="busy || nameInvalid" tabindex="3"
+                class="container-stretched form-control btn btn-lg btn-fancy btn-block" 
                 ng-click="clickLogin()"
                 ng-enter="clickLogin()">
                 <span>Developer Login</span>

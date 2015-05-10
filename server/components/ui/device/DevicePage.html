@@ -6,6 +6,12 @@
 	    <div class="panel-heading">
 	        <div class="panel-title">
 	            <span class="">All Devices<span style="color:#DDDDDD"> ({{deviceCache.list.length || 0}}) </span></span>
+
+                <span class="pull-right" 
+                    style="vertical-align: middle"
+                    ng-style="{visibility: PC.busy && 'visible' || 'hidden'}">
+                        <i class="fa fa-spinner fa-spin"></i>
+                </span>
 	        </div>
 	    </div>
 	    <div class="panel-body no-padding"><ul class="list-group">
@@ -16,11 +22,29 @@
 
             	<!-- Show device Info -->
 		        <div class="table table-striped some-padding"
-	            	ng-click="PC.selection.toggleSelection(device)">
+	            	ng-click="PC.selection.toggleSelection(device); onChange(); PC.showConfig = false;">
 		        	<div class="row">
-			        	<div class="col-xs-12">
-			                {{user.userName}}
-		                </div>
+                        <div class="col-xs-8">
+                            <span>{{user.userName}}</span>
+                        </div>
+                        <div class="col-xs-4">
+                            <span ng-if="device.resetTimeout"
+                                pulse-clock="util.getCountdownMillis(device.resetTimeout)">
+                                <span ng-if="clockValue > 0"
+                                     class="alert-warning">
+                                    reset pending ({{ util.Math.round(clockValue/1000).toFixed(0) }} s)
+                                </span>
+                                <span ng-if="clockValue <= 0"
+                                     class="alert-danger">
+                                    reset expired
+                                </span>
+                            </span>
+                            <span ng-if="!device.resetTimeout && !device.isAssigned">
+                                <span class="alert-danger">
+                                    not assigned
+                                </span>
+                            </span>
+                        </div>
 	                </div>
 		        </div>
 
@@ -31,9 +55,24 @@
 	                    <input type="text" ng-model="user.userName"
 	                        ng-change="onChange()">
 
-	                    <!-- Save indicators -->
-	                    <span ng-style="{visibility: PC.deviceSaving && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
-	                    <span ng-style="{visibility: PC.deviceSaved && 'visible' || 'hidden'}" class="label label-default">saved</span>
+                        <!-- Save indicators -->
+                        <span ng-style="{visibility: PC.deviceSaving && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+                        <span ng-style="{visibility: PC.deviceSaved && 'visible' || 'hidden'}" class="label label-default">saved</span>
+
+                        <div class="vertical-space"></div>
+
+                        <div class="some-padding"
+                            style="border: solid black 1px; background-color: white;"
+                            ng-if="PC.showConfig && PC.currentDeviceSettings">
+                            <h4>Root password</h4>
+                            <pre>{{PC.currentDeviceSettings.rootPassword}}</pre>
+
+                            <h4>{{DEVICE.ConfigFilePath}}</h4>
+                            <pre>{{util.JSON.stringify(PC.currentDeviceSettings.cfg, null, '\t')}}</pre>
+
+                            <h4>{{PC.currentDeviceSettings.cfg.HostIdentityTokenFile}}</h4>
+                            <pre>{{PC.currentDeviceSettings.identityToken}}</pre>
+                        </div>
                     </div>
 
                     <!-- Buttons -->
@@ -44,16 +83,21 @@
                             ng-click="clickSave(device, false)">
                             <localize key="Apply"></localize>
                         </a>
-                        <a ng-disabled="PC.deviceSaving || PC.deviceSaved"
+                        <a ng-disabled="PC.deviceSaving"
                             class="btn btn-default col-xs-3"
                             style="display:inline-block" 
                             ng-click="clickSave(device, true)">
                             <localize key="Done"></localize>
                         </a>
-                        <a style="visibility:hidden;"
-                            class="btn btn-default col-xs-4"
+                        <a  ng-disabled="PC.deviceSaving"
+                            class="btn btn-default col-xs-3"
                             style="display:inline-block" 
-                            ng-click="">
+                            ng-click="showDeviceConfig(device);">
+                            <span>Show Config</span>
+                        </a>
+                        <a  ng-disabled="PC.deviceSaving"
+                            class="btn btn-default col-xs-1"
+                            style="display:inline-block; visibility: hidden;" >
                             <span></span>
                         </a>
                         <span dropdown class="col-xs-2"
@@ -66,17 +110,19 @@
                               <i class="fa fa-navicon"></i>
                             </a>
                             <ul class="dropdown-menu" role="menu">
-                                <!-- <li>
-                                    <a href="" ng-click="">
-                                        nothing
+                                <li>
+                                    <a ng-if="currentUserIsStaff" href=""
+                                        ng-click="tryResetDevice(device)">
+                                        <i class="fa fa-rotate-left"></i>&nbsp; Reset
                                     </a>
-                                </li>                
+                                </li>         
 
-                                <hr /> -->
+                                <hr />
 
                                 <li>
-                                    <a href="" ng-click="tryDeleteDevice(device)">
-                                        <localize key="Delete"></localize>
+                                    <a ng-if="currentUserIsStaff" href=""
+                                        ng-click="tryDeleteDevice(device)">
+                                        <i class="fa fa-trash"></i>&nbsp; <localize key="Delete"></localize>
                                     </a>
                                 </li>
                             </ul>
@@ -93,14 +139,48 @@
         </span>
     </div>
 
-    <div class="alert alert-info" ng-if="!PC.loading && deviceCache.list.length == 0">
-        There are no registered devices yet...
+    <div class="alert alert-info" ng-if="!PC.busy && deviceCache.list.length == 0">
+        <span>There are no registered devices yet...</span>
     </div>
 
-    <button class="btn btn-block btn-default"
-        ng-click="registerNewDevice('unnamed device')">
-        Add Device!
+    <div style="position:relative;">
+        <div style="margin: 0 auto; 
+        display: -webkit-box;
+          display: -moz-box;
+          display: -ms-flexbox;
+          display: -webkit-flex;
+          display: flex;
+          position:absolute; top:0; bottom:0; right:0; left:0;"
+            ng-if="!PC.selection.hasSelection()">
+            <div style="margin:auto; position:relative;">
+                <a class="btn btn-default" href=""
+                    ng-if="currentUserIsStaff"
+                    ng-disabled="PC.busy"
+                    ng-click="registerNewDevice('new device')">
+                    <i class="fa fa-plus"></i>&nbsp; Add Device!
 
-        <span ng-style="{visibility: PC.loading && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
-    </button>
+                    <span ng-style="{visibility: PC.busy && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+                </a>
+
+                <span dropdown class="no-padding" style="position:relative;">
+                    <a href=""
+                      type="button"
+                      class="btn btn-default dropdown-toggle"
+                      title="More">
+                      <i class="fa fa-navicon"></i>
+                    </a>
+
+                    <ul class="dropdown-menu" role="menu">
+                        <li>
+                            <a href=""
+                                ng-if="currentUserIsStaff"
+                                ng-click="downloadImage()">
+                                <i class="fa fa-download"></i>&nbsp; Download image
+                            </a>
+                        </li>
+                    </ul>
+                </span>
+            </div>
+        </div>
+    </div>
 </div>

@@ -38,19 +38,13 @@ module.exports = NoGapDef.component({
 	            /**
 	             * User clicked on `Login` button.
 	             */
-	            tryLogin: function(userName, preferredLocale) {
-	                userName = Shared.ValidationUtil.validateNameOrTitle(userName);
-	                if (!userName) {
-	                    // tell client that login failed
-	                    return Promise.reject('error.login.auth');
-	                }
-
+	            tryLogin: function(userName, sharedSecretV1, preferredLocale) {
                     var authData = {
                         userName: userName,
+                        sharedSecretV1: sharedSecretV1,
                         preferredLocale: preferredLocale
                     };
 	                return this.Instance.User.tryLogin(authData);
-
 	            }
 	        },
 	    };
@@ -111,7 +105,14 @@ module.exports = NoGapDef.component({
                         $scope.errorMessage = null;
                         $scope.busy = true;
 
-                        ThisComponent.host.tryLogin($scope.loginData.userName, Instance.User.getCurrentLocale())
+                        var passphrase = $scope.loginData.passphrase;
+                        $scope.loginData.passphrase = null;
+
+                        return (!passphrase && Promise.resolve() ||
+                        Instance.User.hashPassphrase($scope.loginData.userName, passphrase))
+                        .then(function(sharedSecretV1) {
+                            return ThisComponent.host.tryLogin($scope.loginData.userName, sharedSecretV1, Instance.User.getCurrentLocale());
+                        })
                         .finally(function() {
                             $scope.busy = false;
                         })
@@ -131,7 +132,9 @@ module.exports = NoGapDef.component({
                 }]);
 
                 // register page
-                Instance.UIMgr.registerPage(this, 'Guest', this.assets.template);
+                Instance.UIMgr.registerPage(this, 'Guest', this.assets.template, {
+                    iconClasses: 'fa fa-mail-forward'
+                });
             },
             
             

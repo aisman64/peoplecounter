@@ -11,12 +11,13 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
+            Caches: {
+                wifiDatasets: {
+                    idProperty: 'datasetId'
+                }
+            },
+            
 	    	Private: {
-	    		Caches: {
-	    			wifiDatasets: {
-	    				idProperty: 'datasetId'
-	    			}
-	    		}
 	    	}
 	    };
 	}),
@@ -41,6 +42,9 @@ module.exports = NoGapDef.component({
                 return sequelize.define('WifiDataSet', {
                     datasetId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
                     datasetName: {type: Sequelize.STRING(256) },
+                }, {
+                    freezeTableName: true,
+                    tableName: 'WifiDataset',
                 });
             }
         };

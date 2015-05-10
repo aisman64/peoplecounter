@@ -14,6 +14,10 @@
 -- SELECT COUNT(*) c, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` WHERE macid = 11015 GROUP BY `t` ORDER BY `t` LIMIT 30;
 -- SELECT COUNT(*) c, `macId`, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` GROUP BY `macId`, `t` ORDER BY `macId`, `t` LIMIT 30;
 
+# Most active SSIDs
+# SELECT c count, ssidName FROM (SELECT COUNT(*) c, ssidId s FROM WifiPacket GROUP BY ssidId ORDER BY c DESC LIMIT 10) j INNER JOIN (SSID) ON (s = ssidId);
+
+
 # Most active MACAddresses
 # SELECT COUNT(*) c, macId m FROM WifiPacket GROUP BY macId ORDER BY c DESC LIMIT 10;
 

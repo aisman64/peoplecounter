@@ -79,6 +79,15 @@ module.exports = NoGapDef.component({
         Private: {
             __ctor: function() {
             },
+
+            getClientCtorArguments: function() {
+                return [GLOBAL.DEVICE];
+            },
+
+           	onClientBootstrap: function() {
+                // resume user session
+                return this.Instance.User.resumeSession();
+            }
         }
     };}),
     
@@ -113,6 +122,19 @@ module.exports = NoGapDef.component({
 
         // TODO: Set the guest user object; and use `displayRole` instead to determine user access
         var _defaultPageGroups = [
+
+            /**
+             * Everyone can access these components.
+             */
+            {
+                pageComponents: [
+                    'LookupMACPage'
+                ],
+                mayActivate: function() {
+                    return true;
+                } 
+            },
+
             /**
              * Guest clients get access to these components.
              */
@@ -130,11 +152,13 @@ module.exports = NoGapDef.component({
              */
             {
                 otherComponents: [
-                    // core utilities
+                    // some non-guest core components
+                    'DeviceConfiguration',
+                    'DeviceImage'
                 ],
 
                 pageComponents: [
-                    'HomePage',
+                    //'HomePage',
                     'DevicePage',
                     'AccountPage'
                 ],
@@ -406,8 +430,9 @@ module.exports = NoGapDef.component({
             // ################################################################################################################
             // Main initialization
 
-            __ctor: function() {
+            __ctor: function(DEVICE) {
             	ThisComponent = this;
+                squishy.getGlobalContext().DEVICE = DEVICE;
             },
 
             events: {
@@ -500,6 +525,9 @@ module.exports = NoGapDef.component({
                 angularApp.run(['$rootScope', function($rootScope) {
                     var localizer = Instance.Localizer.Default;
 
+                    // global device-related settings
+                    $rootScope.DEVICE = DEVICE;
+
                     // localize
                     $rootScope.localize = localizer.lookUp.bind(localizer);
 
@@ -508,6 +536,10 @@ module.exports = NoGapDef.component({
 
                     // some additional, less universal utilities
                     $rootScope.util = {
+                        Math: Math,
+                        Date: Date,
+                        JSON: JSON,
+
                         /**
                          * Library for date + time representation.
                          * @see http://momentjs.com/
@@ -521,12 +553,16 @@ module.exports = NoGapDef.component({
                             return new ThisComponent.SelectionState(idProperty);
                         },
 
-                        getCountdown: function(date) {
+                        getCountdownMillis: function(date) {
                             var now = new Date();
                             var date = moment(date).toDate();
                             var millis = date.getTime() - now.getTime();
 
-                            return this.formatTimeSpan(millis);
+                            return millis;
+                        },
+
+                        getCountdown: function(date) {
+                            return this.formatTimeSpan(this.getCountdownMillis(date));
                         },
 
                         formatTimeSpan: function(millis) {

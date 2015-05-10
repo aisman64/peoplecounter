@@ -10,7 +10,7 @@
  * 
  *
  * =Declare caches=
- * 1. A component can declare caches using the `Base.Private.Caches` property.
+ * 1. A component can declare caches using the `Base.Caches` property.
  * 2. You can add `InstanceProto` to define instance members on all fetched objects available both on `Client` and `Host`.
  * 3. You can customize cache behavior, by providing the `members` property in your cache declaration.
  *  -> E.g. if you want to add associations or access checks, you can override `compileReadObjectsQuery`.
@@ -18,7 +18,7 @@
  *  -> E.g. you can override `onAddedObject` `onRemovedObject` (Client).
  * 4. There are different `CacheEndpoint` classes for `Client` and `Host`.
  * 5. Many methods (such as `getModel` and `compileReadObjectsQuery`) are Host-only.
- *      If they contain sensitive code, you can just declare them in `Host.Private.Caches` instead of `Base`.
+ *      If they contain sensitive code, you can just declare them in `Host.Caches` instead of `Base`.
  *
  * TODO: Make sure, cache does not grow unbounded
  * TODO: Account for paging + better access management
@@ -57,7 +57,7 @@ module.exports = NoGapDef.component({
 
                 if (cacheDescriptor.indices) {
                     // create indices
-                    this.indices = new Shared.CacheUtil.IndexSet(cacheDescriptor.indices);
+                    this.indices = new Shared.CacheUtil.IndexSet(cacheDescriptor);
                 }
                 else {
                     this.indices = null;
@@ -116,6 +116,8 @@ module.exports = NoGapDef.component({
                  * using the given queryData.
                  */
                 checkUpdatedAt: function(updatedAt, queryData) {
+                    if (!updatedAt) return;     // there is no udpatedAt data on this table
+
                     var serializedQueryData = this._serializeQueryData(queryData);
                     var lastUpdatedAt = this._lastUpdatedAtByQueryData[serializedQueryData];
 
@@ -148,10 +150,15 @@ module.exports = NoGapDef.component({
             // ##########################################################################################
             // Memory set indices
 
-            _Index: squishy.createClass(function(indexDef) {
+            _Index: squishy.createClass(function(indexSet, indexDef) {
                 // ctor
+                this._indexSet = indexSet;
                 this._indexDef = indexDef;
                 this._root = {};
+
+                // Store the node of each added object by id.
+                //      This way, we can make sure that we can remove objects later, even if they were altered.
+                this._objectNodeInfo = {};
             },{
                 // methods
 
@@ -251,7 +258,7 @@ module.exports = NoGapDef.component({
                     else {
                         // not an array -> One unique object
                         if (node[leafValue]) {
-                            console.error('Object was added twice to unique index `' + indexDef.name + '` = ' + leafValue + ':');
+                            console.error('Object was added twice to unique indexed `' + indexDef.name + '` = ' + leafValue + ':');
 
                             // separate console line gives us the browser's internal object inspector
                             console.error(obj);
@@ -259,37 +266,56 @@ module.exports = NoGapDef.component({
                         // add object
                         node[leafValue] = obj;
                     }
+
+                    var id = this._indexSet._cacheDescriptor.idGetter(obj);
+                    this._objectNodeInfo[id] = {
+                        node: node,
+                        leafValue: leafValue
+                    };
                 },
 
+                /**
+                 * Remove object from this index.
+                 * Since objects may be modified prior to a call to `update`, this must work, no matter the object's current state.
+                 * That is why, we need to track things explicitly.
+                 */
                 _removeInstance: function(obj) {
                     var indexDef = this._indexDef;
 
                     // get object's container node
-                    var node = this._getContainerNode(obj);
-                    var leafPropertyName = _.last(indexDef.key);
-                    var leafValue = obj[leafPropertyName];
+                    var id = this._indexSet._cacheDescriptor.idGetter(obj);
+                    var nodeInfo = this._objectNodeInfo[id];
 
-                    if (leafValue === null || leafValue === undefined) return;     // don't index by null objects
+                    if (nodeInfo) {
+                        var node = nodeInfo.node;
+                        var leafValue = nodeInfo.leafValue;
+                        delete this._objectNodeInfo[id];
 
-                    if (!indexDef.unique) {
-                        var arr = node[leafValue];
-                        console.assert(arr, 'Tried to remove object from index ' +
-                            'which has not been added in the first place: ' + obj);
+                        if (!indexDef.unique) {
+                            var arr = node[leafValue];
+                            if (!arr) {
+                            	console.error('INTERNAL ERROR: Tried to remove object from index `' + indexDef.name + '` ' +
+                                'which has not been added in the first place - ' + obj);
+                                return;
+                            }
 
-                        var len = arr.length;
-                        _.remove(arr, obj);
-                        if (arr.length == len) {
-                            console.error('Could not remove object from index `' + indexDef.name + '`:');
+                            // TODO: This can become very slow...
+                        	//		(good thing, deletion is usually not performance critical)
+                            var len = arr.length;
+                            _.remove(arr, obj);
+                            if (arr.length == len) {
+                                console.error('Could not remove object from index `' + indexDef.name + '`:');
 
-                            // separate console line gives us the browser's internal object inspector
-                            console.error(obj);
+                                // separate console line gives us the browser's internal object inspector
+                                console.error(obj);
+                            }
                         }
-                    }
-                    else {
-                        // remove object
-                        delete node[leafValue];
+                        else {
+                            // remove object
+                            delete node[leafValue];
 
-                        // TOD: Consider porpagating and deleting parent empty ancestors as well
+                            // TODO: Consider porpagating and deleting parent empty ancestors as well
+                        }
                     }
                 }
             }),
@@ -299,22 +325,27 @@ module.exports = NoGapDef.component({
              * It is the set of all its (for now non-primary) indices.
              * Each of them represented by the `_Index` type.
              */
-            IndexSet: squishy.createClass(function(indexDefs) {
+            IndexSet: squishy.createClass(function(cacheDescriptor) {
                 // ctor
+                this._cacheDescriptor = cacheDescriptor;
+
+                var indexDefs = cacheDescriptor.indices;
 
                 // create additional indices:
                 // Each index declaration is the name of a property.
                 // `byId` stores an array for each unique value of that property, containing all corresponding objects.
-                console.assert(indexDefs instanceof Array,
-                    'Cache definition\'s `indices` must be an array of index definitions.');
+                if (!(indexDefs instanceof Array)) {
+                    throw new Error('Invalid index definition in cache `' + cacheDescriptor.cacheName + '` - `indices` must be an array of index definitions.');
+                }
+
                 this._indexDefs = indexDefs;
                 for (var iDef = 0; iDef < indexDefs.length; ++iDef) {
                     var indexDef = indexDefs[iDef];
 
-                    console.assert(indexDef && indexDef.key instanceof Array, 
-                        'Each entry in cache\'s `indices` must be an object with ' +
-                        'a property `key` representing a composite key in form of ' +
-                        'an array of property names.');
+                    if (!indexDef || !(indexDef.key instanceof Array)) {
+                        throw new Error('Invalid index definition in cache `' + cacheDescriptor.cacheName + '` - Each entry in cache\'s `indices` must be an object with ' +
+                            'a property `key` that is an array of column names (containing at least one column), representing a composite key.');
+                    }
 
                     // make sure, index has a proper name
                     indexDef.name = _.isString(indexDef.name) && 
@@ -322,7 +353,12 @@ module.exports = NoGapDef.component({
                         this._makeIndexName(indexDef.key);
 
                     // create index
-                    this[indexDef.name] = new Shared.CacheUtil._Index(indexDef);
+                    if (this[indexDef.name]) {
+                        throw new Error('Invalid index definition in cache `' + cacheDescriptor.cacheName + 
+                            '` - Invalid or duplicate index name `' + indexDef.name + '`.');
+                    }
+
+                    this[indexDef.name] = new Shared.CacheUtil._Index(this, indexDef);
                 }
             }, {
                 // methods
@@ -396,7 +432,12 @@ module.exports = NoGapDef.component({
 
                     // copy data into object
                     for (var propName in data) {
-                        this[propName] = data[propName];
+                        if (!data.hasOwnProperty(propName)) continue;
+
+                        var prop = data[propName];
+                        if (prop instanceof Function) continue; // never copy functions
+
+                        this[propName] = prop;
                     }
                 },{
                     // methods
@@ -436,7 +477,7 @@ module.exports = NoGapDef.component({
                  * Install caches of given declarations in the given component.
                  */
                 installComponentCaches: function(component, cacheDescriptors, autoInit) {
-                    cacheDescriptors = cacheDescriptors || component.Caches;
+                    cacheDescriptors = cacheDescriptors || component.Shared.Caches;
 
                     if (cacheDescriptors instanceof Function) {
                         cacheDescriptors = cacheDescriptors.call(component, this);
@@ -467,12 +508,21 @@ module.exports = NoGapDef.component({
 
                     // ignore manually initialized caches during auto-init phase
                     if (cacheDescriptor.manualInit) {
-                        console.log(cacheName);
+                        console.error('Manual init of cache: ' + cacheName);
                     }
+
                     if (autoInit && cacheDescriptor.manualInit) return null;
 
+                    cacheDescriptor.cacheName = cacheName;
+
+                    if (!cacheDescriptor.idProperty) {
+                        // for now, we require a single id property that identifies a unique id for each object
+                        // composite id keys are currently not supported...
+                        throw new Error('Invalid cache has no `idProperty`: ' + cacheName);
+                    }
+
                     // ensure correct `idGetter` function
-                    var idGetter = cacheDescriptor.idGetter || 
+                    var idGetter = cacheDescriptor.idGetter = cacheDescriptor.idGetter || 
                         (cacheDescriptor.idProperty ? 
                             eval('(function(obj) { return obj.' + cacheDescriptor.idProperty + '; } )') :
                             cacheDescriptor.idGetter);
@@ -481,15 +531,15 @@ module.exports = NoGapDef.component({
                         'not define Function `idGetter` or String `idProperty`: ' + cacheName + '');
 
                     // ensure correct `idSetter` function
-                    var idSetter = cacheDescriptor.idSetter || 
+                    var idSetter = cacheDescriptor.idSetter = cacheDescriptor.idSetter || 
                         (cacheDescriptor.idProperty ? 
                             eval('(function(obj, value) { obj.' + cacheDescriptor.idProperty + ' = value; } )') :
-                            cacheDescriptor.idGetter);
+                            cacheDescriptor.idSetter);
                     console.assert(idSetter instanceof Function, 
                         'Failed to install cache. Invalid cache declaration did ' +
                         'not define Function `idSetter` or String `idProperty`: ' + cacheName + '');
 
-                    if (cacheDescriptor.InstanceProto) {
+                    if (cacheDescriptor.InstanceProto && (!cacheDescriptor.members || !cacheDescriptor.members.InstanceClass)) {
                         // build InstanceClass and add to cache description
                         console.assert(typeof(cacheDescriptor.InstanceProto) === 'object', 
                             'InstanceProto of cache instances must be an object ' +
@@ -506,8 +556,7 @@ module.exports = NoGapDef.component({
                     var cache;
                     try {
                         // create cache endpoint from cache descriptor
-                        cache = this._createCacheEndpoint(component,
-                            cacheName, idGetter, idSetter, cacheDescriptor);
+                        cache = this._createCacheEndpoint(component, cacheDescriptor);
 
                         // add method to cacheDescriptor object to retrieve cache instance
                         cacheDescriptor.getCache = function() { return cache; };
@@ -521,15 +570,15 @@ module.exports = NoGapDef.component({
                         throw new Error('Failed to install cache. An error occured for `' + cacheName + 
                             '` in component `' + component.Shared + '` - ' + err.stack);
                     }
+
                     this.Tools.traceLog('Initialized cache `' + cacheName + '` in component `' + component.Shared + '`.');
 
                     return cache;
                 },
 
-                _createCacheEndpoint: function(component, cacheName, 
-                        idGetter, idSetter, cacheDescriptor) {
-
+                _createCacheEndpoint: function(component, cacheDescriptor) {
                     // make sure, cache is not yet registered for this instance set
+                    var cacheName = cacheDescriptor.cacheName;
                     if (this.cacheEndpoints[cacheName]) {
                         throw new Error('Tried to register cache with same name twice: ' + cacheName);
                     }
@@ -540,9 +589,6 @@ module.exports = NoGapDef.component({
                     var CacheClass = this.Shared.CacheEndpoint;
 
                     var cache = new CacheClass(cacheName, cacheDescriptor);
-                    cache.idGetter = idGetter;
-                    cache.idSetter = idSetter;
-                    cache.idProperty = cacheDescriptor.idProperty;
                     cache.Instance = component.Instance;
 
                     cache.getModel = function() {
@@ -574,7 +620,7 @@ module.exports = NoGapDef.component({
                  * This will not initialize caches that are explicitly marked as "manualInit".
                  */
                 _autoInstallComponentCaches: function(component) {
-                    var cacheDescriptors = component.Caches;
+                    var cacheDescriptors = component.Shared.Caches;
                     if (!cacheDescriptors || component._Caches_initialized) return;
 
                     this.installComponentCaches(component, cacheDescriptors);
@@ -884,7 +930,7 @@ module.exports = NoGapDef.component({
                     if (isNaNOrNull(objectOrId)) {
                         // argument is not a number: We assume object is given
                         // lookup id
-                        id = this.idGetter.call(this, objectOrId)
+                        id = this._cacheDescriptor.idGetter.call(this, objectOrId)
                     }
                     else {
                         // argument is a number: We assume, id is given
@@ -900,7 +946,7 @@ module.exports = NoGapDef.component({
                         // TODO: This is very slow (but should not be called often, so its ok)...
                         for (var i = 0; i < this.list.length; ++i) {
                             var entry = this.list[i];
-                            if (this.idGetter.call(this, entry) == id) {
+                            if (this._cacheDescriptor.idGetter.call(this, entry) == id) {
                                 this.list.splice(i, 1);
                                 break;
                             }
@@ -912,7 +958,7 @@ module.exports = NoGapDef.component({
                         }
 
                         // notify
-                        this.onRemovedObject.call(this, obj);
+                        this.onRemovedObject(obj);
                         this.events.removed.fire(obj);
                     }
 
@@ -949,7 +995,7 @@ module.exports = NoGapDef.component({
 
                     var list = this.list;
                     var byId = this.byId;
-                    var idGetter = this.idGetter;
+                    var idGetter = this._cacheDescriptor.idGetter;
 
                     // keep track only of changed objects
                     var newData = [];
@@ -1193,7 +1239,7 @@ module.exports = NoGapDef.component({
                         }
                     },
                     
-                    compileObjectCreate: function(queryInput, ignoreAccessCheck) {
+                    compileCreateObject: function(queryInput, ignoreAccessCheck) {
                         if (!ignoreAccessCheck && !this.hasWritePermissions()) {
                             // only for staff members
                             return Promise.reject('error.invalid.permissions');
@@ -1208,25 +1254,22 @@ module.exports = NoGapDef.component({
                     /**
                      * Default Update query
                      */
-                    compileObjectUpdate: function(updateData, ignoreAccessCheck) {
+                    compileUpdateObject: function(updateData, ignoreAccessCheck) {
                         var objId;
                         if (!ignoreAccessCheck && !this.hasWritePermissions()) {
                             // only for staff members
                             return Promise.reject('error.invalid.permissions');
                         }
-                        else if (!this.idProperty) {
-                            console.error('Cache `' + this.name + '` did not define `idProperty` ' +
-                                'but that requires overriding `compileObjectUpdate`.');
-                            return Promise.reject('error.internal');
-                        }
-                        else if (isNaNOrNull(objId = this.idGetter(updateData))) {
+                        else if (isNaNOrNull(objId = this._cacheDescriptor.idGetter(updateData))) {
                             // `updateData` must contain id
-                            return Promise.reject(makeError('error.invalid.request'));
+                            return Promise.reject(makeError('error.invalid.request', 
+                                '`updateData` did not contain idProperty `' + 
+                                this._cacheDescriptor.idProperty + '` for cache `' + this._cacheDescriptor.cacheName + '`.'));
                         }
                         else {
                             // build arguments to update call
                             var selector = { where: {} };
-                            selector.where[this.idProperty] = objId;
+                            selector.where[this._cacheDescriptor.idProperty] = objId;
 
                             return {
                                 values: updateData,
@@ -1235,15 +1278,10 @@ module.exports = NoGapDef.component({
                         }
                     },
 
-                    compileObjectDelete: function(objId, ignoreAccessCheck) {
+                    compileDeleteObject: function(objId, ignoreAccessCheck) {
                         if (!ignoreAccessCheck && !this.hasWritePermissions()) {
                             // only for staff members
                             return Promise.reject('error.invalid.permissions');
-                        }
-                        else if (!this.idProperty) {
-                            console.error('Cache `' + this.name + '` did not define `idProperty` ' +
-                                'but that requires overriding `compileObjectDelete`.');
-                            return Promise.reject('error.internal');
                         }
                         else {
                             return Promise.resolve(objId);
@@ -1272,9 +1310,23 @@ module.exports = NoGapDef.component({
                         var wrappedObjects = this._applyChanges(objects, queryInput, queryData);
 
                         if (!dontSendToClient) {
-                            this.Instance.CacheUtil.client.applyChanges(this.name, objects);
+                            this._sendChangesToClient(objects);
                         }
                         return wrappedObjects;
+                    },
+
+                    _sendChangesToClient: function(objects) {
+                        if (!this.Instance.CacheUtil.client) return;
+
+                        if (this.filterClientObject) {
+                            var filteredObjects = [];
+                            for (var i = 0; i < objects.length; ++i) {
+                                var filteredObject = this.filterClientObject(_.clone(objects[i]));
+                                filteredObjects.push(filteredObject);
+                            };
+                            objects = filteredObjects;
+                        }
+                        this.Instance.CacheUtil.client.applyChanges(this.name, objects);
                     },
 
                     /**
@@ -1283,7 +1335,7 @@ module.exports = NoGapDef.component({
                      */
                     applyRemove: function(objectOrId, dontSendToClient) {
                         var id;
-                        var idGetter = this.idGetter;
+                        var idGetter = this._cacheDescriptor.idGetter;
                         
                         if (isNaNOrNull(objectOrId)) {
                             // argument is not a number: We assume object is given
@@ -1341,9 +1393,9 @@ module.exports = NoGapDef.component({
                                 objects = newObjects;
                             }
 
-                            if (sendToClient && this.Instance.CacheUtil.client) {
+                            if (sendToClient) {
                                 // if on host, we might want to send this stuff straight to the client
-                                this.Instance.CacheUtil.client.applyChanges(this.name, objects);
+                                this._sendChangesToClient(objects);
                             }
                             return objects;
                         });
@@ -1422,7 +1474,7 @@ module.exports = NoGapDef.component({
                         console.assert(model && model.findAll,
                             '`getModel` did not return a valid Sequelize model.');
 
-                        if (this.hasMemorySet()) {
+                        if (this.hasMemorySet() && model.updatedAt) {
                             // NOTE: This is one of the single most important performance optimization in this entire code
                             var lastUpdatedAt = this._memorySet.getLastUpdatedAt(queryData);
                             if (lastUpdatedAt) {
@@ -1462,7 +1514,7 @@ module.exports = NoGapDef.component({
                         return Promise.resolve()
                         .bind(this)
                         .then(function() {
-                            return this.compileObjectCreate(queryInput, ignoreAccessCheck);
+                            return this.compileCreateObject(queryInput, ignoreAccessCheck);
                         })
                         // .tap(function(queryData) {
                         //     console.error('creating: ' + queryData)
@@ -1503,7 +1555,7 @@ module.exports = NoGapDef.component({
                         return Promise.resolve()
                         .bind(this)
                         .then(function() {
-                            return this.compileObjectUpdate(queryInput, ignoreAccessCheck);
+                            return this.compileUpdateObject(queryInput, ignoreAccessCheck);
                         })
                         .then(function(objectUpdateData) {
                             if (!objectUpdateData) {
@@ -1512,16 +1564,18 @@ module.exports = NoGapDef.component({
 
                             var objValues = objectUpdateData.values;
                             var selector = objectUpdateData.selector;
+                            var idGetter = this._cacheDescriptor.idGetter;
 
-                            var id = this.idGetter(objValues) || (selector && selector.where && this.idGetter(selector.where));
+                            var id = idGetter(objValues) || (selector && selector.where && idGetter(selector.where));
                             if (!selector || !selector.where) {
                                 // if no where is given, look up id
                                 if (isNaNOrNull(id)) {
                                     return Promise.reject(makeError('error.invalid.request', 'missing or invalid id in `updateObject` for cache ' + this.name));
                                 }
+
                                 selector = selector || {};
                                 selector.where = selector.where || {};
-                                selector.where[this.idProperty] = id;
+                                selector.where[this._cacheDescriptor.idProperty] = id;
                             }
 
                             // update things in DB
@@ -1530,7 +1584,7 @@ module.exports = NoGapDef.component({
                             .then(function() {
                                 // update memory sets
                                 if (id) {
-                                    this.idSetter(objValues, id);   // make sure, id is set (if it was not in values, but only in selector)
+                                    this._cacheDescriptor.idSetter(objValues, id);   // make sure, id is set (if it was not in values, but only in selector)
                                 }
 
                                 this.applyChange(objValues, queryInput, dontSendToClient);
@@ -1547,17 +1601,17 @@ module.exports = NoGapDef.component({
                         return Promise.resolve()
                         .bind(this)
                         .then(function() {
-                            return this.compileObjectDelete(queryInput, ignoreAccessCheck);
+                            return this.compileDeleteObject(queryInput, ignoreAccessCheck);
                         })
                         .then(function(objId) {
                             //var selector = objectDeleteData.selector;
 
                             if (isNaNOrNull(objId)) {
-                                return Promise.reject(makeError('error.internal', '`compileObjectDelete` did not return an id for cache ' + this.name));
+                                return Promise.reject(makeError('error.internal', '`compileDeleteObject` did not return an id for cache ' + this.name));
                             }
 
                             var selector = { where: {} };
-                            selector.where[this.idProperty] = objId;
+                            selector.where[this._cacheDescriptor.idProperty] = objId;
 
                             // send query to DB
                             return this.getModel().destroy(selector)
@@ -1648,7 +1702,7 @@ module.exports = NoGapDef.component({
                         return dataProvider.createObject(queryInput, false, false)
                         .then(function(newObject) {
                             // only send back new object's id
-                            var newId = dataProvider.idGetter.call(dataProvider, newObject);
+                            var newId = dataProvider._cacheDescriptor.idGetter.call(dataProvider, newObject);
                             return newId;
                         });
                     }
@@ -1794,7 +1848,7 @@ module.exports = NoGapDef.component({
                         .bind(this)
                         .then(function(newObjId) {
                             // set id
-                            this.idSetter(newObj, newObjId);
+                            this._cacheDescriptor.idSetter(newObj, newObjId);
 
                             // add to cache + return
                             return this.applyChange(newObj);
@@ -1813,7 +1867,7 @@ module.exports = NoGapDef.component({
                             }
                         });
 
-                        var id = this.idGetter(_queryInput);
+                        var id = this._cacheDescriptor.idGetter(_queryInput);
                         var origObj = null;
                         var obj = this.getObjectNowById(id);
                         if (obj && obj !== _queryInput) {
@@ -1833,7 +1887,8 @@ module.exports = NoGapDef.component({
                                 // update failed -> rollback
                                 this.applyChange(origObj);
                             }
-                            this.Instance.CacheUtil.Tools.handleError(err);
+
+                            return Promise.reject(err);
                         });
                     },
 
@@ -1845,7 +1900,7 @@ module.exports = NoGapDef.component({
                         if (isNaNOrNull(objectOrId)) {
                             // argument is not a number: We assume object is given
                             // lookup id
-                            id = this.idGetter.call(this, objectOrId)
+                            id = this._cacheDescriptor.idGetter(objectOrId)
                         }
                         else {
                             // argument is a number: We assume, id is given
@@ -1866,8 +1921,7 @@ module.exports = NoGapDef.component({
                             // deletion failed -> rollback
                             this.applyChange(origObj);
 
-                            // TODO: Handle error better
-                            this.Instance.CacheUtil.Tools.handleError(err);
+                            return Promise.reject(err);
                         });
                     }
                 });
@@ -1930,10 +1984,7 @@ module.exports = NoGapDef.component({
                 for (var dataProviderName in requestedIdsByDataProviderName) {
                     var requestedIds = requestedIdsByDataProviderName[dataProviderName];
                     var dataProvider = this.getDataProvider(dataProviderName);
-                    var idProperty = dataProvider.idProperty;
-                    if (!idProperty) throw new Error('Invalid DataProvider `' + dataProviderName  +
-                        '` did not provide `idProperty` ' + 
-                        '(necessary when referenced in Notifications)');
+                    var idProperty = dataProvider._cacheDescriptor.idProperty;
                     var requestInput = {};
                     requestInput[idProperty] = Object.keys(requestedIds);
 

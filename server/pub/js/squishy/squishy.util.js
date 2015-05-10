@@ -270,7 +270,7 @@ squishy.objToString = function(obj, json, maxDepth, layer, indent) {
         return '...';
     }
     else if (!maxDepth && layer > 15) {
-        console.trace('Object is too complex for string conversion.');
+        console.trace('Object is too complex for string conversion: ' + obj);
         return '...';
     }
     

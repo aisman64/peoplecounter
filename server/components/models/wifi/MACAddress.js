@@ -12,12 +12,13 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
+            Caches: {
+                macAddresses: {
+                    idProperty: 'macId'
+                }
+            },
+            
 	    	Private: {
-	    		Caches: {
-	    			macAddresses: {
-	    				idProperty: 'macId'
-	    			}
-	    		}
 	    	}
 	    };
 	}),
@@ -46,6 +47,9 @@ module.exports = NoGapDef.component({
                      */
                     macId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
                     macAddress: Sequelize.STRING(16)
+                }, {
+                    freezeTableName: true,
+                    tableName: 'MACAddress',
                 });
             }
         };

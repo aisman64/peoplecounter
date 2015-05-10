@@ -81,6 +81,12 @@ module.exports = NoGapDef.component({
                         });
                     };
 
+                    $scope.downloadImage = function(device) {
+                        // start downloading image
+                        Instance.DeviceImage.downloadDeviceImage();
+                    };
+                    
+
                     $scope.clickSave = function(device, done) {
                         $scope.onChange();
 
@@ -88,7 +94,7 @@ module.exports = NoGapDef.component({
                         ThisComponent.deviceSaved = true;
 
                         Promise.join(
-                            Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject(device),
+                            //Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject(device)
                             Instance.User.users.updateObject(device.getUserNow())
                         )
                         .finally(function() {
@@ -107,9 +113,80 @@ module.exports = NoGapDef.component({
                         });
                     };
 
+                    $scope.showDeviceConfig = function(device) {
+                        if (ThisComponent.showConfig) {
+                            // toggle it off
+                            ThisComponent.showConfig = false;
+                            return;
+                        }
+
+                        ThisComponent.busy = true;
+
+                        Instance.DeviceConfiguration.host.getDeviceConfigPublic(device.deviceId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function(deviceSettings) {
+                            ThisComponent.currentDeviceSettings = deviceSettings;
+                            ThisComponent.showConfig = true;
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+
+                    $scope.tryResetDevice = function(device) {
+                        $scope.errorMessage = null;
+
+                        // var nProblems = 0;
+                        // if (nProblems > 0) {
+                        // see: http://angular-ui.github.io/bootstrap/#modal
+                        var title = 'WARNING - You are resetting `' + device.getUserNow().userName + '`';
+                        var body = 'Upon next connection attempt, the device will get a new ' +
+                            'configuration and new credentials without having to login first. ' +
+                            'That is why the device has to reset soon, or attackers can use this vulnerability to hi-jack ' +
+                            'device privlege levels. ' +
+                            'Do you really want to reset device `' + device.getUserNow().userName + '`?';
+                        var onOk = function() {
+                            // user pressed Ok -> Tell host to delete it.
+                            doReset(device);
+                        };
+                        var onDismiss;      // don't do anything on dismiss
+                        $scope.okCancelModal('', title, body, onOk, onDismiss);
+                    };
+
+                    var doReset = function(device) {
+                        Instance.WifiSnifferDevice.host.resetDevice(device.deviceId)
+                        .then(function() {
+                            // invalidate view
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+
+
+                    $scope.tryDeleteDevice = function(device) {
+                        $scope.errorMessage = null;
+
+                        // var nProblems = 0;
+                        // if (nProblems > 0) {
+                        // see: http://angular-ui.github.io/bootstrap/#modal
+                        var title = 'WARNING - You are deleting `' + device.getUserNow().userName + '`';
+                        var body = 'This way, the device will not be able to log into the server anymore, ' +
+                            ' and you will need to re-configure it manually for future operation! ' +
+                            'Do you really want to delete device `' + device.getUserNow().userName + '`?';
+                        var onOk = function() {
+                            // user pressed Ok -> Tell host to delete it.
+                            doDelete(device);
+                        };
+                        var onDismiss;      // don't do anything on dismiss
+                        $scope.okCancelModal('', title, body, onOk, onDismiss);
+                    };
+
                     var doDelete = function(device) {
-                        var deviceId = device.deviceId;
-                        $scope.deviceCache.deleteObject(deviceId)
+                        // delete user object (device will be deleted with it)
+                        Instance.User.users.deleteObject(device.getUserNow().uid)
                         .then(function() {
                             // stop editing
                             ThisComponent.selection.unsetSelection();
@@ -118,24 +195,6 @@ module.exports = NoGapDef.component({
                             ThisComponent.page.invalidateView();
                         })
                         .catch($scope.handleError.bind($scope));
-                    };
-
-                    $scope.tryDeleteDevice = function(device) {
-                        $scope.errorMessage = null;
-
-                        // var nProblems = 0;
-                        // if (nProblems > 0) {
-                        // see: http://angular-ui.github.io/bootstrap/#modal
-                        var title = 'WARNING - You are deleting `' + device.name + '`';
-                        var body = 'This way, the device will not be able to log into the server anymore, ' +
-                            ' and you will need to re-configure it manually for future operation! ' +
-                            'Do you really want to delete device `' + device.name + '`?';
-                        var onOk = function() {
-                            // user pressed Ok -> Tell host to delete it.
-                            doDelete(device);
-                        };
-                        var onDismiss;      // don't do anything on dismiss
-                        $scope.okCancelModal('', title, body, onOk, onDismiss);
                     };
 
                     $scope.onChange = function() {
@@ -163,15 +222,14 @@ module.exports = NoGapDef.component({
                 });
             },
 
-
             cacheEventHandlers: {
                 wifiSnifferDevices: {
                     sendingReadQueryToHost: function(queryInput) {
-                        ThisComponent.loading = true;
+                        ThisComponent.busy = true;
                         ThisComponent.page.invalidateView();
                     },
                     updated: function(newValues) {
-                        ThisComponent.loading = false;
+                        ThisComponent.busy = false;
                         ThisComponent.page.invalidateView();
                     }
                 },
