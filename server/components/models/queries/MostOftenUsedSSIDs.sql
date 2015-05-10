@@ -2,8 +2,7 @@ SELECT c count, ssidName
 FROM SSID
 INNER JOIN (
 	SELECT COUNT(*) c, ssidId s 
-	FROM WifiPacket
-	WHERE ssidId IS NOT NULL
+	FROM MAC_SSID_Relation
 	GROUP BY ssidId
 	ORDER BY c DESC
 	LIMIT :limit

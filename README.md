@@ -24,7 +24,15 @@
 	* TODO: More info and diagrams here
 
 
-## OrientDB Experiment
+## Interesting data to look into
+ * AP tracker
+ * Detect general people movement
+ * Cluster by (time and) well known public places (Coffee shops, schools, companies, hotels, airports, temples etc.)
+ * Wi-fi abused for app- or device-specific beacons (e.g. [Nintendo 3DS](http://sc-wifi.com/2012/11/) and [Onavo](https://github.com/rixgit/wifisniff))
+ * Look at relationships through private SSIDs used by very few people (two to five) and also look at timestamps?
+
+
+## OrientDB Experiment (IGNORE THIS FOR NOW)
 To better support graph-analysis on large datasets, we might want to eventually migrate toward OrientDB.
 
 To get it working:

@@ -73,6 +73,9 @@ ALTER TABLE WifiSnifferDevice ADD `updatedAt` DATETIME;
 ALTER TABLE SSID CHANGE id ssidId INTEGER UNSIGNED AUTO_INCREMENT;
 ALTER TABLE SSID CHANGE ssid ssidName varchar(32);
 
+ALTER TABLE OUI ADD `updatedAt` DATETIME;
+ALTER TABLE OUI ADD `createdAt` DATETIME;
+
 
 ###################################################################################################
 # add missing names to name lookup tables

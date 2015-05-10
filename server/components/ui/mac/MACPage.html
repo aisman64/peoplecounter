@@ -1,33 +1,39 @@
 <div class="fill container-page" ng-controller="macCtrl">
-	<h4>
-		most popular MAC addresses
-		<i class="fa fa-spinner fa-spin"
-			ng-if="PC.busy"></i>
-	</h4>
-	<table class="table">
-		<thead>
-			<th class="col-xs-1">
-				
-			</th>
-			<th class="col-xs-3">
-				number seen
-			</th>
-			<th class="col-xs-8">
-				MAC
-			</th>
-		</thead>
-		<tbody>
-			<tr ng-repeat="ssidEntry in PC.mostOftenSeenMACs">
-				<td class="col-xs-1">
-					{{$index + 1}}.
-				</td>
-				<td class="col-xs-3">
-					{{ssidEntry.count}}
-				</td>
-				<td class="col-xs-8">
-					{{ssidEntry.macAddress}}
-				</td>
-			</tr>
-		</tbody>
-	</table>
+	<div class="panel panel-info">
+		<div class="panel-heading">
+			<div class="panel-title"><span>
+				most often seen MAC addresses
+				<i class="fa fa-spinner fa-spin"
+					ng-if="PC.busy"></i>
+			</span></div>
+		</div>
+		<div class="panel-body">
+			<table class="table">
+				<thead>
+					<th class="col-xs-1">
+						
+					</th>
+					<th class="col-xs-3">
+						number seen
+					</th>
+					<th class="col-xs-8">
+						MAC
+					</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="macEntry in PC.mostOftenSeenMACs">
+						<td class="col-xs-1">
+							{{$index + 1}}.
+						</td>
+						<td class="col-xs-3">
+							{{macEntry.count}}
+						</td>
+						<td class="col-xs-8">
+							{{macEntry.macAddress}}
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
 </div>

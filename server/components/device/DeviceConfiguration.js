@@ -163,6 +163,10 @@ module.exports = NoGapDef.component({
                         // re-generate identityToken
                         var oldIdentityToken = device.identityToken;
                         var newIdentityToken = this.generateIdentityToken(device);
+                        var newRootPassword;
+                        if (!device.rootPassword) {
+                            newRootPassword = this.generateRootPassword(device);
+                        }
 
                         // udpate client side of things
                         //      and wait for ACK
@@ -171,6 +175,7 @@ module.exports = NoGapDef.component({
                             device: device,
                             newIdentityToken: newIdentityToken,
                             newSharedSecret: sharedSecretV1,
+                            newRootPassword: newRootPassword,
                             result: null,
                             monitor: new SharedTools.Monitor(timeout)
                         };
@@ -249,13 +254,21 @@ module.exports = NoGapDef.component({
                         // client-side update was a success!
                             
                         // save to device and user tables
+                        var deviceUpdate = {
+                            deviceId: device.deviceId,
+                            identityToken: refreshData.newIdentityToken,
+                            isAssigned: 1,
+                            resetTimeout: null
+                        };
+
+                        if (refreshData.newRootPassword) {
+                            // also update root password
+                            deviceUpdate.rootPassword = refreshData.newRootPassword;
+                        }
+
+
                         promise = Promise.join(
-                            this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject({
-                                deviceId: device.deviceId,
-                                identityToken: refreshData.newIdentityToken,
-                                isAssigned: 1,
-                                resetTimeout: null
-                            }, true),
+                            this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject(deviceUpdate, true),
 
                             this.Instance.User.updateUserCredentials(device.uid, refreshData.newSharedSecret)
                         )

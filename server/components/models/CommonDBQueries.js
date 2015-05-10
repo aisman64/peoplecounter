@@ -33,7 +33,7 @@ module.exports = NoGapDef.component({
         	 * These queries may be triggered by anyone, no matter the privilege level
         	 */
         	GuestQueryWhitelist: [
-                'MostOftenSeenSSIDs'
+                'MostOftenUsedSSIDs'
         	],
 
             __ctor: function () {

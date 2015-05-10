@@ -67,12 +67,12 @@ module.exports = NoGapDef.component({
             onPageActivate: function() {
                 ThisComponent.busy = true;
 
-                Instance.CommonDBQueries.queries.MostOftenSeenSSIDs({ limit: 20 })
+                Instance.CommonDBQueries.queries.MostOftenUsedSSIDs({ limit: 20 })
                 .finally(function() {
                     ThisComponent.busy = false;
                 })
-                .then(function(mostOftenSeenSSIDs) {
-                    ThisComponent.mostOftenSeenSSIDs = mostOftenSeenSSIDs;
+                .then(function(mostOftenUsedSSIDs) {
+                    ThisComponent.mostOftenUsedSSIDs = mostOftenUsedSSIDs;
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent.page));
