@@ -3,7 +3,8 @@ var fs = require('fs-extra');
 var tmp = require('tmp');
 var cpro = require('child_process')
 var sys = require('sys');
-
+var express = require('express');
+var app = express();
 
 function mntImg()
 	{
@@ -29,6 +30,13 @@ function umntImg(tmpdir, tmpfile)
 	console.log('Device Unmounted');
 	}
 
+function serveImage()
+	{
+	app.get('/', function(req, res) { res.download('images/debian_v0.02.img.gz', 'galileo.img.gz') });
+	app.listen(3000);
+	}
 
-mntImg();
+serveImage();
+
+//mntImg();
 //unmntImage();
