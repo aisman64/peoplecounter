@@ -53,12 +53,20 @@ module.exports = NoGapDef.component({
             setupUI: function(UIMgr, app) {
                 ThisComponent.selection = new Instance.UIMain.SelectionState('deviceId');
 
+                var x = {};
+
+                x.a = 1;
+                x.b = 2;
+
                 // create DevicePage controller
                 app.lazyController('deviceCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
                     // customize your $scope here:
                     $scope.deviceCache = Instance.WifiSnifferDevice.wifiSnifferDevices;
+
+                    $scope.c = 3;
+                    $scope.x = x;
 
                     $scope.registerNewDevice = function(name) {
                         $scope.onChange();
@@ -148,7 +156,7 @@ module.exports = NoGapDef.component({
                             'device privlege levels. ' +
                             'Do you really want to reset device `' + device.getUserNow().userName + '`?';
                         var onOk = function() {
-                            // user pressed Ok -> Tell host to delete it.
+                            // user pressed Ok -> Tell host to reset it.
                             doReset(device);
                         };
                         var onDismiss;      // don't do anything on dismiss
@@ -186,7 +194,10 @@ module.exports = NoGapDef.component({
 
                     var doDelete = function(device) {
                         // delete user object (device will be deleted with it)
-                        Instance.User.users.deleteObject(device.getUserNow().uid)
+                        Promise.join(
+                            Instance.User.users.deleteObject(device.getUserNow().uid),
+                            Instance.WifiSnifferDevice.wifiSnifferDevices.deleteObject(device.deviceId)
+                        )
                         .then(function() {
                             // stop editing
                             ThisComponent.selection.unsetSelection();

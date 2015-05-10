@@ -20,7 +20,7 @@ module.exports = NoGapDef.component({
                      *
                      * @see https://github.com/dcodeIO/bcrypt.js
                      */
-                    bcrypt: libRoot + 'bcrypt.js'
+                    bcrypt: __dirname + '/' + libRoot + 'bcrypt.js'
                 }
             }
         },
@@ -56,6 +56,7 @@ module.exports = NoGapDef.component({
                     'SSID',
                     'WifiDataSet',
                     'WifiPacket',
+                    'MAC_SSID_Relation',
 
                     'WifiSnifferDevice',
                     'DeviceStatus',

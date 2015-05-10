@@ -43,9 +43,10 @@
     "time.span.days": " days",
 
 
-    "page.Guest": "Login",
+    "page.Login": "Login",
     "page.Home": "Home",
-    "page.LookupMAC": "Find me!",
+    "page.MAC": "Find me!",
+    "page.SSID": "Networks",
     "page.Group": "Group",
     "page.Activity": "Activity",
     "page.Account": "Account",

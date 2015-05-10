@@ -1,0 +1,33 @@
+<div class="fill container-page" ng-controller="macCtrl">
+	<h4>
+		most popular MAC addresses
+		<i class="fa fa-spinner fa-spin"
+			ng-if="PC.busy"></i>
+	</h4>
+	<table class="table">
+		<thead>
+			<th class="col-xs-1">
+				
+			</th>
+			<th class="col-xs-3">
+				number seen
+			</th>
+			<th class="col-xs-8">
+				MAC
+			</th>
+		</thead>
+		<tbody>
+			<tr ng-repeat="ssidEntry in PC.mostOftenSeenMACs">
+				<td class="col-xs-1">
+					{{$index + 1}}.
+				</td>
+				<td class="col-xs-3">
+					{{ssidEntry.count}}
+				</td>
+				<td class="col-xs-8">
+					{{ssidEntry.macAddress}}
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

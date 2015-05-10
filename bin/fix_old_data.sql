@@ -21,6 +21,10 @@
 # Most active MACAddresses
 # SELECT COUNT(*) c, macId m FROM WifiPacket GROUP BY macId ORDER BY c DESC LIMIT 10;
 
+# Export data
+# mysqldump --opt --where="1 limit 10000" --user=USER --password=PW DB > "db.sql"
+
+
 
 ###################################################################################################
 # move and rename tables
@@ -57,6 +61,14 @@ ALTER TABLE WifiDataset CHANGE name datasetName varchar(255);
 
 ALTER TABLE WifiSnifferDevice CHANGE id deviceId INTEGER UNSIGNED AUTO_INCREMENT;
 ALTER TABLE WifiSnifferDevice CHANGE device deviceName varchar(255);
+ALTER TABLE WifiSnifferDevice ADD uid INTEGER UNSIGNED;
+ALTER TABLE WifiSnifferDevice ADD identityToken varchar(256);
+ALTER TABLE WifiSnifferDevice ADD rootPassword varchar(256);
+ALTER TABLE WifiSnifferDevice ADD isAssigned INTEGER UNSIGNED;
+ALTER TABLE WifiSnifferDevice ADD resetTimeout DATETIME;
+ALTER TABLE WifiSnifferDevice CHANGE host hostName varchar(255);
+ALTER TABLE WifiSnifferDevice ADD `createdAt` DATETIME;
+ALTER TABLE WifiSnifferDevice ADD `updatedAt` DATETIME;
 
 ALTER TABLE SSID CHANGE id ssidId INTEGER UNSIGNED AUTO_INCREMENT;
 ALTER TABLE SSID CHANGE ssid ssidName varchar(32);
@@ -87,6 +99,23 @@ INSERT INTO `SSID` (`ssidName`) (
     WHERE SSID.ssidName IS NULL
 );
 
+
+###################################################################################################
+# add one user for each device
+###################################################################################################
+
+INSERT INTO `User` (`userName`) (
+    SELECT CONCAT('dev_', `deviceName`) FROM `WifiSnifferDevice`
+);
+
+UPDATE `WifiSnifferDevice` d
+INNER JOIN `User` u
+ON (CONCAT('dev_', d.deviceName) = u.userName)
+SET d.uid = u.uid, role = 3, displayRole = 3;
+
+ALTER TABLE `WifiSnifferDevice` DROP COLUMN deviceName;
+
+
 ###################################################################################################
 # convert all kinds of names to ids in WifiPacket table
 ###################################################################################################
@@ -99,7 +128,7 @@ INNER JOIN `WifiSnifferDevice`
 ON `WifiSnifferDevice`.`host` = `WifiPacket`.`device`
 SET `WifiPacket`.`deviceId` = `WifiSnifferDevice`.`id`;
 
- CREATE INDEX WifiPacket_deviceId ON WifiPacket (deviceId);
+CREATE INDEX WifiPacket_deviceId ON WifiPacket (deviceId);
 
 # convert `mac` string to `macId`
 ALTER TABLE WifiPacket ADD `macId` INTEGER UNSIGNED;
@@ -109,7 +138,7 @@ INNER JOIN `MACAddress`
 ON `MACAddress`.`macAddress` = `WifiPacket`.`mac`
 SET `WifiPacket`.`macId` = `MACAddress`.`macId`;
 
- CREATE INDEX WifiPacket_macId ON WifiPacket (macId);
+CREATE INDEX WifiPacket_macId ON WifiPacket (macId);
 
 # convert `ssid` string to `ssidId`
 ALTER TABLE WifiPacket ADD `ssidId` INTEGER UNSIGNED;
@@ -119,7 +148,7 @@ INNER JOIN `SSID`
 ON `SSID`.`ssidName` = `WifiPacket`.`ssid`
 SET `WifiPacket`.`ssidId` = `SSID`.`ssidId`;
 
- CREATE INDEX WifiPacket_ssidId ON WifiPacket (ssidId);
+CREATE INDEX WifiPacket_ssidId ON WifiPacket (ssidId);
 
 SHOW INDEX FROM WifiPacket;
 
@@ -127,6 +156,31 @@ SHOW INDEX FROM WifiPacket;
 # All WifiPackets have a valid macId!
 # NOTE: Not all WifiPackets have a valid ssidId!
 SELECT COUNT(*) FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL); # == 0
+
+
+###################################################################################################
+# Get distinct (macId, ssidId) pairs
+###################################################################################################
+
+CREATE TABLE `MAC_SSID_Relation` (
+    `relationId` INT(11) NOT NULL AUTO_INCREMENT,
+    `macId` INT(11) NOT NULL,
+    `ssidId` CHAR(12) NOT NULL,
+    PRIMARY KEY (`relationId`)
+);
+
+CREATE INDEX MAC_SSID_Relations_macId ON MAC_SSID_Relations (macId);
+CREATE INDEX MAC_SSID_Relations_ssidId ON MAC_SSID_Relations (ssidId);
+CREATE INDEX MAC_SSID_Relations_macId_ssidId ON MAC_SSID_Relations (macId, ssidId);
+
+INSERT INTO MAC_SSID_Relations (macId, ssidId) (
+    SELECT DISTINCT macId, ssidId
+    FROM WifiPacket
+    WHERE ssidId IS NOT NULL
+    GROUP BY macId, ssidId
+);
+
+
 
 #DONE!?
 
@@ -142,3 +196,5 @@ SELECT COUNT(*) FROM WifiPacket WHERE (deviceId IS NULL OR macId IS NULL); # == 
 #ALTER TABLE WifiPacket DROP COLUMN `ssid` UNSIGNED;
 #ALTER TABLE WifiPacket DROP COLUMN `file` UNSIGNED;
 #ALTER TABLE WifiPacket DROP COLUMN `prefix` UNSIGNED;
+
+#DELETE FROM ssid WHERE ssidName IS NULL;

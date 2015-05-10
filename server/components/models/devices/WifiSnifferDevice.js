@@ -160,7 +160,7 @@ module.exports = NoGapDef.component({
 
                     // The host name of the device should be unique so that when two devices are in the same network,
                     //      there won't be any name collision.
-                    hostName: Sequelize.STRING(256)
+                    hostName: Sequelize.STRING(255)
                 },{
 
                     freezeTableName: true,

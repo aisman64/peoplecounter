@@ -19,7 +19,7 @@ module.exports = NoGapDef.component({
 
 
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) {
-        var componentsRoot = '../../';
+        var componentsRoot = '../';
         var libRoot = componentsRoot + '../lib/';
         var SequelizeUtil;
         var fs;
@@ -33,7 +33,7 @@ module.exports = NoGapDef.component({
         	 * These queries may be triggered by anyone, no matter the privilege level
         	 */
         	GuestQueryWhitelist: [
-
+                'MostOftenSeenSSIDs'
         	],
 
             __ctor: function () {
@@ -48,16 +48,18 @@ module.exports = NoGapDef.component({
 
             initHost: function() {
             	// read all queries from files
-            	return new Promise(fs.readdir(queriesFolder, function(err, files) {
-            		if (err) {
-            			reject(makeError(err, 'Could not initialize DB queries - Could not read directory `' + queriesFolder +  '`'));
-            		}
-            		else {
-            			this.readAllQueryFiles(files)
-            			.then(resolve)
-            			.catch(reject);
-            		}
-            	}.bind(this)));
+            	return new Promise(function(resolve, reject) {
+                    fs.readdir(queriesFolder, function(err, files) {
+                		if (err) {
+                			reject(makeError(err, 'Could not initialize DB queries - Could not read directory `' + queriesFolder +  '`'));
+                		}
+                		else {
+                			this.readAllQueryFiles(files)
+                			.then(resolve)
+                			.catch(reject);
+                		}
+                	}.bind(this))
+                }.bind(this));
             },
 
             readAllQueryFiles: function(files) {
@@ -65,8 +67,8 @@ module.exports = NoGapDef.component({
             	.bind(this)
             	.then(function() {
             		this.QueryNameMap = {};
-	                for (var i = 0; i < this.Queries.length; ++i) {
-	                	this.QueryNameMap[this.Queries[i]] = 1;
+	                for (var queryName in this.Queries) {
+	                	this.QueryNameMap[queryName] = 1;
 	                };
             	});
             },
@@ -80,11 +82,11 @@ module.exports = NoGapDef.component({
 	            		}
 	            		else {
 	            			var queryName = fileName.endsWith('.sql') ? fileName.substring(0, fileName.length-4) : fileName;
-	            			registerQuery(queryName, content);
+	            			this.registerQuery(queryName, content);
 	            			resolve();
 	            		}
-            		});
-            	});
+            		}.bind(this));
+            	}.bind(this));
             },
 
             registerQuery: function(queryName, query) {
@@ -106,15 +108,12 @@ module.exports = NoGapDef.component({
         		if (!args.limit) {
         			args.limit = 50;
         		}
-
+                
             	query = [query, suffix, prefix].join(' ');
             	return sequelize.query(query, { 
 				  	replacements: args, 
 				  	type: sequelize.QueryTypes.SELECT
-			  	})
-				.tap(function(results) {
-				  	console.error(results);
-				});
+			  	});
             },
 
             Private: {
@@ -123,20 +122,24 @@ module.exports = NoGapDef.component({
             	},
 
             	getAllowedQueriesForUser: function() {
+                    var nameMap;
             		if (!this.Instance.User.isStandardUser()) {
             			// Guests can only execute some of the queries
-            			return this.GuestQueryWhitelistMap;
+            			nameMap = this.Shared.GuestQueryWhitelistMap;
             		}
+                    else {
+            		    nameMap = this.Shared.QueryNameMap;
+                    }
 
-            		// 
-            		return this.QueryNameMap;
+                    console.assert(nameMap, '`getAllowedQueriesForUser()` found nothing');
+                    return nameMap;
             	}
             },
 
             Public: {
             	executeQuery: function(queryName, args, suffix) {
             		var allowedQueries = this.getAllowedQueriesForUser();
-            		if (!allowedQueries || !allowedQueries[]) {
+            		if (!allowedQueries || !allowedQueries[queryName]) {
             			return Promise.reject('error.invalid.permissions');
             		}
 
@@ -150,7 +153,7 @@ module.exports = NoGapDef.component({
 
             		var prefix = '';
             		suffix = '';
-            		return this.executeQueryByName(queryName, args, suffix, prefix);
+            		return this.Shared.executeQueryByName(queryName, args, suffix, prefix);
             	}
             }
         };
@@ -166,9 +169,9 @@ module.exports = NoGapDef.component({
         		this.allQueryNamesMap = allQueryNamesMap;
 
         		for (var queryName in allQueryNamesMap) {
-        			this.queries[queryName] = function(args) {
-        				ThisComponent.host.executeQuery(queryName, args);
-        			};
+        			this.queries[queryName] = (function(queryName) { return function(args) {
+        				return ThisComponent.host.executeQuery(queryName, args);
+        			}})(queryName);
         		}
         	},
 

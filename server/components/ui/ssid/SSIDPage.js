@@ -13,7 +13,7 @@ module.exports = NoGapDef.component({
         Assets: {
             Files: {
                 string: {
-                    template: 'LookupMACPage.html'
+                    template: 'SSIDPage.html'
                 }
             },
             AutoIncludes: {
@@ -48,24 +48,29 @@ module.exports = NoGapDef.component({
             },
 
             /**
-             * Prepares the lookupMAC page controller.
+             * Prepares the SSID page controller.
              */
             setupUI: function(UIMgr, app) {
-                // create LookupMAC controller
-                app.lazyController('lookupMACCtrl', function($scope) {
+                // create SSID controller
+                app.lazyController('ssidCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
-                    // customize your LookupMACPage's $scope here:
+                    // customize your SSIDPage's $scope here:
                 });
 
                 // register page
-                Instance.UIMgr.registerPage(this, 'LookupMAC', this.assets.template, {
-                    iconClasses: 'fa fa-mobile'
+                Instance.UIMgr.registerPage(this, 'SSID', this.assets.template, {
+                    iconClasses: 'fa fa-wifi'
                 });
             },
 
             onPageActivate: function() {
-                Instance.CommonDBQueries.queries.MostOftenSeenSSIDs()
+                ThisComponent.busy = true;
+
+                Instance.CommonDBQueries.queries.MostOftenSeenSSIDs({ limit: 20 })
+                .finally(function() {
+                    ThisComponent.busy = false;
+                })
                 .then(function(mostOftenSeenSSIDs) {
                     ThisComponent.mostOftenSeenSSIDs = mostOftenSeenSSIDs;
                     ThisComponent.page.invalidateView();
