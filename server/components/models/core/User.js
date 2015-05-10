@@ -490,11 +490,7 @@ module.exports = NoGapDef.component({
                     }
 
                     return this._bcryptHash(authData.sharedSecretV1, user.secretSalt || '')
-                    .spread(function(secretSalt, sharedSecret) {
-                        if (!user.sharedSecret) {
-                            // never allow password-based authentication for an account without password
-                            return Promise.reject('error.login.auth');
-                        }
+                    .then(function(sharedSecret) {
                         if (user.sharedSecret !== sharedSecret) {
                             // invalid user credentials
                             return Promise.reject('error.login.auth');

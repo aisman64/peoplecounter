@@ -135,6 +135,7 @@ module.exports = NoGapDef.component({
                 exec("iw phy phy0 interface add mon0 type monitor", ThisComponent.puts);
                 exec("ifconfig mon0 up", ThisComponent.puts);
             },
+
             processPacket: function(packet) {
                 var result = {};
                 result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
