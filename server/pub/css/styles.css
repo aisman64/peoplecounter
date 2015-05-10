@@ -289,6 +289,16 @@ fieldset[disabled] .btn-fancy.active {
   vertical-align: middle;
 }
 
+.container-centered-flexbox {
+  margin: 0 auto;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  position:absolute; top:0; bottom:0; right:0; left:0;
+}
+
 
 /* ########################################################################################## */
 /* Menus */

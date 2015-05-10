@@ -12,6 +12,13 @@ module.exports = NoGapDef.component({
     	return {
     		DefaultLimit: 50,
 
+            /**
+             * These queries may be triggered by anyone, no matter the privilege level
+             */
+            GuestQueryWhitelist: [
+                'MostOftenUsedSSIDs'
+            ],
+
 	    	Private: {
 	    	}
 	    };
@@ -28,13 +35,6 @@ module.exports = NoGapDef.component({
 
         return {
         	Queries: { },
-
-        	/**
-        	 * These queries may be triggered by anyone, no matter the privilege level
-        	 */
-        	GuestQueryWhitelist: [
-                'MostOftenUsedSSIDs'
-        	],
 
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');

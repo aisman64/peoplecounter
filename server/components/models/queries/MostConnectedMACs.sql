@@ -1,7 +1,7 @@
-SELECT COUNT(*) c, macId
+SELECT COUNT(*) count, macId
 FROM MAC_SSID_Relation
 GROUP BY macId
-ORDER BY c DESC
+ORDER BY count DESC
 LIMIT :limit;
 
 # Query all SSIDs of some macId

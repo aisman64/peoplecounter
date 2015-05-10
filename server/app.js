@@ -123,7 +123,8 @@ var port = appConfig.httpd.port || 8080;
 var protocol = appConfig.isHttps && 'https' || 'http';
 
 // we are guessing that the first address is the external address
-app.externalUrl = protocol + '://' + hosts[0] + ':' + port;
+var externalHost = appConfig.externalHost || hosts[0];
+app.externalUrl = protocol + '://' + externalHost + ':' + port;
 
 // // for debugging purposes:
 // app.use(function(req, res, next) {

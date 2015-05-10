@@ -31,6 +31,12 @@
  * Wi-fi abused for app- or device-specific beacons (e.g. [Nintendo 3DS](http://sc-wifi.com/2012/11/) and [Onavo](https://github.com/rixgit/wifisniff))
  * Look at relationships through private SSIDs used by very few people (two to five) and also look at timestamps?
 
+## References
+ * [Peoplecounter presentation (2014)](https://www.dropbox.com/s/m3m5ru1kpifgv4s/Peoplecounter2.pptx?dl=0)
+ * [Signals from the Crowd: Uncovering Social Relationships through Smartphone Probes](http://conferences.sigcomm.org/imc/2013/papers/imc148-barberaSP106.pdf)
+ * [Inferring User Relationship from Hidden Information in WLANs](http://spirit.cs.ucdavis.edu/pubs/conf/Ningning_MILCOM12.pdf)
+ * [YOUR MOBILE PHONE IS A TRAITOR! – RAISING AWARENESS ON UBIQUITOUS PRIVACY ISSUES WITH SASQUATCH](https://uhdspace.uhasselt.be/dspace/bitstream/1942/17224/1/bonne14sasquatch.pdf)
+
 
 ## OrientDB Experiment (IGNORE THIS FOR NOW)
 To better support graph-analysis on large datasets, we might want to eventually migrate toward OrientDB.

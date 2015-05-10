@@ -41,10 +41,11 @@ module.exports = NoGapDef.component({
                  */
                 return sequelize.define('WifiDataset', {
                     datasetId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-                    datasetName: {type: Sequelize.STRING(256) },
+                    datasetName: {type: Sequelize.STRING(256) }
                 }, {
                     freezeTableName: true,
-                    tableName: 'WifiDataset',
+
+                    tableName: 'WifiDataset'
                 });
             }
         };

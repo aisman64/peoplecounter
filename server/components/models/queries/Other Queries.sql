@@ -20,7 +20,7 @@ FROM (
 			ON (m1.ssidId = m2.ssidId)
 		INNER JOIN SSID s
 			ON (m1.ssidId = s.ssidId)
-		WHERE ssidName != '' AND ssidName != 'csie'
+		WHERE ssidName != 'csie'
 	) g
 	GROUP BY macId
 ) g2
@@ -32,8 +32,7 @@ WHERE c > 100;
 SELECT *
 FROM mac_ssid_relation r
 INNER JOIN (SELECT ssidId, ssidName FROM SSID) s
-	ON (r.ssidId = s.ssidId)
-WHERE ssidName != '';
+	ON (r.ssidId = s.ssidId);
 
 
 # Get all number of SSIDs for each macId, given they have at least the given amount
@@ -46,3 +45,15 @@ INNER JOIN (SELECT ssidId, ssidName FROM SSID) s
 WHERE ssidName != ''
 GROUP BY r.macId
 HAVING c > 3;
+
+
+# Get pairs of MAC addresses with the greatest amount of common networks
+
+
+# Hone in on echos (same packet received many times)
+SELECT macId, seqnum, deviceId, COUNT(*) c
+FROM WifiPacket
+GROUP BY macId, seqnum, deviceId
+HAVING c > 1
+ORDER BY c DESC
+LIMIT 10;
