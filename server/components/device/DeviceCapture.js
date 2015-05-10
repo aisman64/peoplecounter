@@ -86,7 +86,14 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function() {
                 ThisComponent = this;
-                pcap = require('pcap');
+
+                try {
+                    pcap = require('pcap');
+                }
+                catch (err) {
+                    console.error('[ERROR] pcap is not available');
+                }
+
                 sys = require('sys');
                 exec = require('child_process').exec;
                 Queue = require('file-queue').Queue;
@@ -153,6 +160,7 @@ module.exports = NoGapDef.component({
                     })*/
                 );
             },
+
             processPacket: function(packet) {
                 var result = {};
                 result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
@@ -163,6 +171,7 @@ module.exports = NoGapDef.component({
                 ThisComponent.storePackets([result]);
             },
             startCapturing: function() {
+                if (!pcap) return;
                 ThisComponent.preCapture()
                 .then(function() {
                     var pcap_session = pcap.createSession("mon0", "wlan type mgt subtype probe-req");
