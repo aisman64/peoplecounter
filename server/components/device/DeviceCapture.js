@@ -86,14 +86,12 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function() {
                 ThisComponent = this;
-
                 try {
                     pcap = require('pcap');
                 }
                 catch (err) {
                     console.error('[ERROR] pcap is not available');
                 }
-
                 sys = require('sys');
                 exec = require('child_process').exec;
                 Queue = require('file-queue').Queue;
@@ -146,18 +144,18 @@ module.exports = NoGapDef.component({
             },
             preCapture: function() {
                 return Promise.join(
-	            ThisComponent.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
-            	    //ThisComponent.execAsync("ntp-wait -v"),
-                    //ThisComponent.execAsync("iw phy phy0 interface add mon0 type monitor"),
-                    //ThisComponent.execAsync("ifconfig mon0 up"),
-                    /*new Promise(function(resolve, reject) {  
+	            ThisComponent.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp"),
+            	    ThisComponent.execAsync("ntp-wait -v"),
+                    ThisComponent.execAsync("iw phy phy0 interface add mon0 type monitor"),
+                    ThisComponent.execAsync("ifconfig mon0 up"),
+                    new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err)
                                 reject(err);
                             else
                                 resolve();
                         });
-                    })*/
+                    })
                 );
             },
 
