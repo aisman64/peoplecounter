@@ -167,7 +167,8 @@ module.exports = NoGapDef.component({
                     'CommonDBQueries'
                 ],
                 pageComponents: [
-                    'LookupMACPage'
+                    'MACPage',
+                    'SSIDPage'
                 ],
                 mayActivate: function() {
                     return true;

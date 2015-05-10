@@ -108,15 +108,12 @@ module.exports = NoGapDef.component({
         		if (!args.limit) {
         			args.limit = 50;
         		}
-
+                
             	query = [query, suffix, prefix].join(' ');
             	return sequelize.query(query, { 
 				  	replacements: args, 
 				  	type: sequelize.QueryTypes.SELECT
-			  	})
-				.tap(function(results) {
-				  	console.error(results);
-				});
+			  	});
             },
 
             Private: {
@@ -172,9 +169,9 @@ module.exports = NoGapDef.component({
         		this.allQueryNamesMap = allQueryNamesMap;
 
         		for (var queryName in allQueryNamesMap) {
-        			this.queries[queryName] = function(args) {
+        			this.queries[queryName] = (function(queryName) { return function(args) {
         				return ThisComponent.host.executeQuery(queryName, args);
-        			};
+        			}})(queryName);
         		}
         	},
 

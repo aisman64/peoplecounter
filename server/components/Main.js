@@ -56,6 +56,7 @@ module.exports = NoGapDef.component({
                     'SSID',
                     'WifiDataset',
                     'WifiPacket',
+                    'MAC_SSID_Relation',
 
                     'WifiSnifferDevice',
                     'DeviceStatus',

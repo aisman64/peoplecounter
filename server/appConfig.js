@@ -171,6 +171,7 @@ module.exports = {
             'models/wifi/SSID',
             'models/wifi/WifiDataset',
             'models/wifi/WifiPacket',
+            'models/wifi/MAC_SSID_Relation',
             'models/devices/WifiSnifferDevice',
             'models/devices/DeviceStatus',
             'models/CommonDBQueries',
@@ -196,7 +197,8 @@ module.exports = {
 
             // guest + unregistered pages:
             'ui/login/LoginPage',
-            'ui/lookupMAC/LookupMACPage',
+            'ui/mac/MACPage',
+            'ui/ssid/SSIDPage',
 
             // user pages:
             'ui/home/HomePage',

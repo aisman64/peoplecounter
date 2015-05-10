@@ -16,7 +16,7 @@ shopt -s nullglob
 sqlFiles=($backupRoot/*.sql)
 iFile=0
 
-for file in $sqlFiles
+for file in "${sqlFiles[@]}"
 do
 	((iFile++))
 	echo "$iFile: $file";

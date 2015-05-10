@@ -1,1 +1,1 @@
-mysqldump --opt --where="1 limit 108000" --user=domi --password=domi12345678 peoplecounter > "db.sql"
+mysqldump --opt --where="1 LIMIT 120000" -p peoplecounter MACAddress OUI SSID WifiDataset WifiPacket WifiSnifferDevice > "db.sql"
