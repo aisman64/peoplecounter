@@ -98,7 +98,7 @@ module.exports = {
     'db' : {
         'host'     : 'localhost',
         'user'     : 'root',
-        'password' : 'r00t',
+        'password' : '123',
         'port'     : '3306',
         'database' : 'peoplecounter',
         'reconnectDelay':   '5'
