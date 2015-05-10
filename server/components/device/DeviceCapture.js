@@ -32,7 +32,6 @@ module.exports = NoGapDef.component({
             initHost: function() {
             },
 
-<<<<<<< HEAD
         Private: {
             onClientBootstrap: function() {
             }
@@ -72,25 +71,6 @@ module.exports = NoGapDef.component({
             }
         },
     }}),
-=======
-            Private: {
-                onClientBootstrap: function() {
-                }
-            },
-            
-            /**
-             * Host commands can be directly called by the client
-             */
-            Public: {
-                storePacket: function(packet) {
-                    if (!this.Instance.User.isDevice()) return Promise.reject('error.invalid.permissions');
-
-                    return this.Instance.WifiPacket.storePacket(packet);
-                }
-            },
-        }
-    }),
->>>>>>> aisman
     
     
     /**
@@ -118,21 +98,6 @@ module.exports = NoGapDef.component({
                 sys.puts(stdout); 
             }, 
 
-<<<<<<< HEAD
-                // this.storePackets(packets);
-            },
-
-            storePackets: function(packets) {
-            	// send packet to server
-                return this.host.storePackets(packets)
-                .then(function() {
-                	// DB successfully stored packet
-                })
-                .catch(function(err) {
-                	// something went wrong... anything at all. We want to re-send the packets...
-                	// e.g. connection error, exception thrown, DB problems
-                });
-=======
             storePackets: function(packets) {
                 // send packet to server
                 return this.host.storePackets(packets)
@@ -179,7 +144,6 @@ module.exports = NoGapDef.component({
                         var packet = pcap.decode.packet(raw_packet);
                         ThisComponent.processPacket(packet);
                         });
->>>>>>> aisman
             },
 
             onCurrentUserChanged: function(privsChanged) {
