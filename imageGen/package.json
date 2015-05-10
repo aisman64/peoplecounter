@@ -14,7 +14,8 @@
 	"dependencies": {
 		"fs-extra": "*",
 		"tmp": "*",
-		"sleep": "*"		
+		"sleep": "*",
+		"express": "*"	
 	}, 
 	"preferGlobal": true, 
 	"private": true 
