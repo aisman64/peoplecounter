@@ -172,9 +172,9 @@ module.exports = {
             'models/core/User',
 
             // all kinds of model components
-            'models/wifi/MacAddress',
+            'models/wifi/MACAddress',
             'models/wifi/SSID',
-            'models/wifi/WifiDataset',
+            'models/wifi/WifiDataSet',
             'models/wifi/WifiPacket',
             'models/wifi/MAC_SSID_Relation',
             'models/devices/WifiSnifferDevice',
