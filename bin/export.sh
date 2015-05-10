@@ -1,0 +1,1 @@
+mysqldump --opt --where="1 limit 108000" --user=domi --password=domi12345678 peoplecounter > "db.sql"

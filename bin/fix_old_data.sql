@@ -21,6 +21,10 @@
 # Most active MACAddresses
 # SELECT COUNT(*) c, macId m FROM WifiPacket GROUP BY macId ORDER BY c DESC LIMIT 10;
 
+# Export data
+# mysqldump --opt --where="1 limit 10000" --user=USER --password=PW DB > "db.sql"
+
+
 
 ###################################################################################################
 # move and rename tables
