@@ -1,11 +1,7 @@
-SELECT COUNT(*) count, macId
-FROM MAC_SSID_Relation
+SELECT COUNT(*) count, r.macId as macId, macAddress
+FROM MAC_SSID_Relation r
+INNER JOIN MacAddress a
+ON (r.macId = a.macId)
 GROUP BY macId
 ORDER BY count DESC
 LIMIT :limit;
-
-# Query all SSIDs of some macId
--- SELECT * FROM MAC_SSID_Relation r
--- INNER JOIN SSID s
--- ON (r.ssidId = s.ssidId)
--- WHERE macId = :macId;

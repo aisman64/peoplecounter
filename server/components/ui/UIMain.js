@@ -51,6 +51,10 @@ module.exports = NoGapDef.component({
                     'js/angular_ui/timespan-picker',
                     // Array utilities
                     
+
+                    // graph drawing
+                    'lib/springy/springy',
+                    'lib/springy/springyui'
                 ],
                 css: [
                     // bootstrap & font-awesome make things look pretty

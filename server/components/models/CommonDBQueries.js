@@ -135,6 +135,52 @@ module.exports = NoGapDef.component({
             	getClientCtorArguments: function() {
             		return [this.Shared.QueryNameMap];
             	},
+
+                computeMACRelationGraph: function(macId) {
+                    return Promise.join(
+                        this.Instance.MACAddress.macAddresses.getObject({macId: macId}, true, false, true),
+                        this.Instance.MAC_SSID_Relation.macSsidRelationships.getObjects(),
+                        this.Instance.SSID.ssids.getObjects(),
+                        sequelize.query('SELECT COUNT(*) FROM SSID WHERE ssidName != "" AND ssidName IS NOT NULL', {
+                            type: sequelize.QueryTypes.SELECT
+                        })
+                    )
+                    .spread(function(macAddressEntry, allRelations, allSsids, totalSsidCount) {
+                        var ssidsByMacId = _.mapValues(_.groupBy(allRelations, 'macId'), function(group) {
+                            return _.pluck(group, 'ssidId');
+                        });
+
+                        var macIdsBySsids = _.mapValues(_.groupBy(allRelations, 'ssidId'), function(group) {
+                            return _.pluck(group, 'macId');
+                        });
+
+                        var ssidEntriesBySsidId = _.indexBy(allSsids, 'ssidId');
+
+                        var ownSsids = ssidsByMacId[macId] || [];
+
+                        // get all MAC addresses that the given MAC address is connected to
+                        var allConnectedMacIds = {};
+                        for (var iOwnSsid = 0; iOwnSsid < ownSsids.length; ++iOwnSsid) {
+                            var ssid = ownSsids[iOwnSsid];
+                            var connectedMacIds = macIdsBySsids[ssid] || [];
+                            if (connectedMacIds.length > 0) {
+
+                            }
+                        };
+
+                        var ownSsidNames = _.map(ownSsids, function(ssidId) {
+                            var entry = ssidEntriesBySsidId[ssidId];
+                            if (!(entry && entry.ssidName)) console.error(ssidId);
+                            return entry && entry.ssidName || '<unknown>';
+                        });
+
+                        return {
+                            macId: macId,
+                            macAddress: macAddressEntry && macAddressEntry.macAddress,
+                            ownSsids: ownSsidNames
+                        };
+                    });
+                },
             },
 
             Public: {
@@ -155,7 +201,11 @@ module.exports = NoGapDef.component({
             		var prefix = '';
             		suffix = '';
             		return this.Shared.executeQueryByName(queryName, args, suffix, prefix);
-            	}
+            	},
+
+                computeMACRelationGraphPublic: function(macId) {
+                    return this.computeMACRelationGraph(macId);
+                }
             }
         };
     }),
