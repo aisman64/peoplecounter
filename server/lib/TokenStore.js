@@ -72,31 +72,42 @@ var TokenStore = Object.create({
      * @param {Number} len Total length of result string.
      * @param {String} symbols The symbols that the token string should be composed of.
      */
-    generateTokenString: function(len, symbols) {
+    generateTokenString: function(len) {
         len = len || this.options.defaultLen;
-        symbols = symbols || '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        var nSymbols = symbols.length;
+        //symbols = symbols || '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_#!';
         var buf = crypto.randomBytes(len);
-        var res = '';
         
         // only get `len` characters
-        for (var i = 0; i < len; ++i) {
-            var nextByte = buf[i];
-            res += symbols.charAt(nextByte%nSymbols);      // map bytes to our given set of symbols
-        }
-        return res;
+        return buf.toString('base64').substring(0, len);
+
+        // var res = '';
+        // for (var i = 0; i < len; ++i) {
+        //     var nextByte = buf[i];
+        //     res += symbols.charAt(nextByte%nSymbols);      // map bytes to our given set of symbols
+        // }
+        // return res;
     },
     
     /**
      * Gets the token of the given name and calls cb on it when ready.
      * Generates new token if the token does not exist or has the wrong length.
      */
-    getToken: function(name, len, dontWrite) {
+    getToken: function(name, generatorOrLen, dontWrite) {
         len = len || this.options.defaultLen;
         var token = this.tokens[name];
         if (!token || token.length != len) {
             console.debug("Generating new token \"" + name + "\"...");
-            token = this.generateTokenString(len);
+            if (generatorOrLen instanceof Function) {
+                var generator = generatorOrLen;
+                token = generator();
+            }
+            else if (!generatorOrLen || (!isNaN(generatorOrLen) && generatorOrLen > 0)) {
+                var len = generatorOrLen;
+                token = this.generateTokenString(len);
+            }
+            else {
+                throw new Error('Invalid argument to `getToken` - generatorOrLen = ' + generatorOrLen);
+            }
             this.tokens[name] = token;
             
             // rewrite file

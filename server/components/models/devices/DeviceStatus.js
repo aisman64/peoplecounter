@@ -18,16 +18,17 @@ module.exports = NoGapDef.component({
                 LoginReset: 11,
                 LoginResetFailed: 12,
             }),
+            
+            Caches: {
+                deviceStatuses: {
+                    idProperty: 'deviceStatusId',
+                    members: {
+
+                    }
+                }
+            },
 
 	    	Private: {
-	    		Caches: {
-	    			deviceStatuses: {
-	    				idProperty: 'deviceStatusId',
-                        members: {
-
-                        }
-	    			}
-	    		}
 	    	}
 	    };
 	}),
@@ -76,6 +77,16 @@ module.exports = NoGapDef.component({
                         }
                     }
                 });
+            },
+
+            Private: {
+            	logStatus: function(newDeviceStatus) {
+                    return this.deviceStatuses.createObject(newDeviceStatus, true, true)
+                    .bind(this)
+                    .catch(function(err) {
+                        this.Tools.handleError(err, 'Could not store DeviceStatus');
+                    });
+            	}
             },
 
             Public: {

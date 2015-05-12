@@ -20,7 +20,7 @@ module.exports = NoGapDef.component({
                      *
                      * @see https://github.com/dcodeIO/bcrypt.js
                      */
-                    bcrypt: libRoot + 'bcrypt.js'
+                    bcrypt: __dirname + '/' + libRoot + 'bcrypt.js'
                 }
             }
         },
@@ -52,10 +52,11 @@ module.exports = NoGapDef.component({
                     'User',
 
                     // model components
-                    'MacAddress',
+                    'MACAddress',
                     'SSID',
                     'WifiDataset',
                     'WifiPacket',
+                    'MAC_SSID_Relation',
 
                     'WifiSnifferDevice',
                     'DeviceStatus',
@@ -120,9 +121,6 @@ module.exports = NoGapDef.component({
 
                 // sanity check: Make sure, User cache is present
                 console.assert(this.Instance.User.users, 'INTERNAL ERROR: Cache installation failed.');
-
-                // resume user session
-                return this.Instance.User.resumeSession();
             },
         }
     };}),

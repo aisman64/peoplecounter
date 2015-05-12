@@ -12,12 +12,13 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
+            Caches: {
+                macAddresses: {
+                    idProperty: 'macId'
+                }
+            },
+            
 	    	Private: {
-	    		Caches: {
-	    			macAddresses: {
-	    				idProperty: 'macId'
-	    			}
-	    		}
 	    	}
 	    };
 	}),

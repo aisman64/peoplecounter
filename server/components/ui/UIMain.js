@@ -81,6 +81,15 @@ module.exports = NoGapDef.component({
         Private: {
             __ctor: function() {
             },
+
+            getClientCtorArguments: function() {
+                return [GLOBAL.DEVICE];
+            },
+
+           	onClientBootstrap: function() {
+                // resume user session
+                return this.Instance.User.resumeSession();
+            }
         }
     };}),
     
@@ -116,28 +125,17 @@ module.exports = NoGapDef.component({
         // TODO: Set the guest user object; and use `displayRole` instead to determine user access
         var _defaultPageGroups = [
             /**
-             * Guest clients get access to these components.
-             */
-            {
-                pageComponents: [
-                    'GuestPage'
-                ],
-                mayActivate: function() {
-                    return !Instance.User.currentUser;
-                }
-            },
-
-            /**
              * Logged in users get access to these components
              */
             {
                 otherComponents: [
-                    // core utilities
-                    'DeviceConfiguration'
+                    // some non-guest core components
+                    'DeviceConfiguration',
+                    'DeviceImage'
                 ],
 
                 pageComponents: [
-                    'HomePage',
+                    //'HomePage',
                     'DevicePage',
                     'AccountPage',
                     'MapPage',
@@ -162,6 +160,34 @@ module.exports = NoGapDef.component({
                 ],
                 mayActivate: function() {
                     return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.Unregistered;
+                }
+            },
+
+            /**
+             * Everyone can access these components.
+             */
+            {
+                otherComponents: [
+                    'CommonDBQueries'
+                ],
+                pageComponents: [
+                    'MACPage',
+                    'SSIDPage'
+                ],
+                mayActivate: function() {
+                    return true;
+                } 
+            },
+
+            /**
+             * Guest clients get access to these components.
+             */
+            {
+                pageComponents: [
+                    'LoginPage'
+                ],
+                mayActivate: function() {
+                    return !Instance.User.currentUser;
                 }
             },
 
@@ -411,8 +437,9 @@ module.exports = NoGapDef.component({
             // ################################################################################################################
             // Main initialization
 
-            __ctor: function() {
+            __ctor: function(DEVICE) {
             	ThisComponent = this;
+                squishy.getGlobalContext().DEVICE = DEVICE;
             },
 
             events: {
@@ -515,6 +542,9 @@ module.exports = NoGapDef.component({
                 // add some general functions and objects to $rootScope
                 angularApp.run(['$rootScope', function($rootScope) {
                     var localizer = Instance.Localizer.Default;
+
+                    // global device-related settings
+                    $rootScope.DEVICE = DEVICE;
 
                     // localize
                     $rootScope.localize = localizer.lookUp.bind(localizer);

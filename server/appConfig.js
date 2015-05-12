@@ -6,14 +6,21 @@ module.exports = {
     // ########################################################################################################################
     // Device config
 
-    'DeviceConfigDefaults': {
-        'HostUrl': 'http://localhost:9123',
-        'CookiesFile': 'data/cookies.json',
-        'IdentityTokenFile': 'data/identityToken',
+    'deviceConfigDefaults': {
+        'CookiesFile': './data/cookies.json',
+        'HostIdentityTokenFile': './data/hostIdentityToken',
+        'DeviceClientCacheFile': './data/deviceClientCache.js',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
-    'DeviceDefaultResetTimeout': 60 * 1000,// a few minutes
+    'deviceDefaultResetTimeout': 60 * 1000,// a few minutes
+
+    'deviceImage': {
+        'downloadPath': '/Download/DeviceImage',
+
+        // absolute file path
+        'filePath': __dirname + '/data/DeviceImage.img'
+    },
 
     // ########################################################################################################################
     // User feature locks
@@ -24,6 +31,9 @@ module.exports = {
      */
     'registrationLocked': 0,
 
+    /**
+     * Whether non-priviliged users can currently login
+     */
     'loginLocked': 0,
 
 
@@ -39,7 +49,12 @@ module.exports = {
     // ########################################################################################################################
     // Host + networking settings
 
-    'hosts': ['localhost'],
+    /**
+     * Host name or IP that external clients can connect to
+     */
+    'externalHost': 'localhost',
+
+    'hosts': ['0.0.0.0'],
 
 
     // ########################################################################################################################
@@ -94,7 +109,6 @@ module.exports = {
     },
 
     // these are the login details to connect to your MySQL DB
-    // it should usually be the same as in your `LocalSettings.php`
     'db' : {
         'host'     : 'localhost',
         'user'     : 'root',
@@ -158,12 +172,14 @@ module.exports = {
             'models/core/User',
 
             // all kinds of model components
-            'models/wifi/MacAddress',
+            'models/wifi/MACAddress',
             'models/wifi/SSID',
             'models/wifi/WifiDataset',
             'models/wifi/WifiPacket',
+            'models/wifi/MAC_SSID_Relation',
             'models/devices/WifiSnifferDevice',
             'models/devices/DeviceStatus',
+            'models/CommonDBQueries',
 
             // misc utilities
             'util/Auth',
@@ -185,7 +201,9 @@ module.exports = {
             'device/DeviceCapture',
 
             // guest + unregistered pages:
-            'ui/guest/GuestPage',
+            'ui/login/LoginPage',
+            'ui/mac/MACPage',
+            'ui/ssid/SSIDPage',
 
             // user pages:
             'ui/home/HomePage',

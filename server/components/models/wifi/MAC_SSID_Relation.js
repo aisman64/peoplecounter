@@ -1,6 +1,7 @@
 /**
- * Since SSIDs in most of our use-cases are only used for grouping,
- * replacing SSID strings with numbers can significantly speed up queries and reduce the packet table's size.
+ * Since MAC addresses in most of our use-cases are only used for grouping,
+ * replacing the long identifier strings with short numbers can significantly 
+ * speed up queries and reduce the packet table's size.
  */
 "use strict";
 
@@ -12,13 +13,13 @@ module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
             Caches: {
-                ssids: {
-                    idProperty: 'ssidId'
+                macSsidRelationships: {
+                    idProperty: 'relationshipId'
                 }
             },
-                
-            Private: {
-            },
+            
+	    	Private: {
+	    	}
 	    };
 	}),
 
@@ -39,19 +40,13 @@ module.exports = NoGapDef.component({
                 /**
                  * 
                  */
-                return sequelize.define('SSID', {
-                    /**
-                     * The ssidId is a number, uniquely identifying the given ssid (which is actually a name string)
-                     */
-                    ssidId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-                    ssidName: { type: Sequelize.STRING(32), unique: true },
-
-                    lat: Sequelize.DECIMAL,
-                    
-                    long: Sequelize.DECIMAL
+                return sequelize.define('MAC_SSID_Relation', {
+                    relationshipId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
+                    macId: Sequelize.INTEGER.UNSIGNED,
+                    ssidId: Sequelize.INTEGER.UNSIGNED
                 }, {
                     freezeTableName: true,
-                    tableName: 'SSID',
+                    tableName: 'MAC_SSID_Relation'
                 });
             }
         };

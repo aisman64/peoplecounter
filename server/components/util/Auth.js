@@ -84,7 +84,7 @@ module.exports = NoGapDef.component({
                 });
 
                 
-                var facebookCallbackUrl = 'http://' + app.externalListenAddress + authPath + '/facebook/callback';
+                var facebookCallbackUrl = app.externalUrl + authPath + '/facebook/callback';
 
                 passport.use(new FacebookStrategy({
                     clientID: facebookAppId,

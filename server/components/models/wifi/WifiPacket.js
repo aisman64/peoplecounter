@@ -10,24 +10,38 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
-	    	Private: {
-	    		Caches: {
-	    			wifiPackets: {
-	    				idProperty: 'packetId',
+            Caches: {
+                wifiPackets: {
+                    idProperty: 'packetId',
 
-                        members: {
-                            compileObjectCreate: function(queryInput, ignoreAccessCheck) {
-                                if (!this.Instance.User.isDevice() && !ignoreAccessCheck) {
-                                    return Promise.reject('error.invalid.permissions');
-                                }
-
-                                // TODO: Pre-processing
-
-                                return queryInput;
+                    members: {
+                        compileCreateObject: function(queryInput, ignoreAccessCheck) {
+                            if (!this.Instance.User.isDevice() && !ignoreAccessCheck) {
+                                return Promise.reject('error.invalid.permissions');
                             }
+
+                            // TODO: Pre-processing
+
+                            return queryInput;
+                        },
+
+                        compileReadObjects: function(queryInput, ignoreAccessCheck) {
+                            if (!queryInput.macId) {
+
+                            }
+
+                            var queryData = {
+                                where: {}
+                            };
+
+
+                            return queryData;
                         }
-	    			}
-	    		}
+                    }
+                }
+            },
+            
+	    	Private: {
 	    	}
 	    };
 	}),
@@ -69,6 +83,9 @@ module.exports = NoGapDef.component({
                      */
                     seqnum: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
                 },{
+                    createdAt: false,
+                    // updatedAt: false, // we can use `udpatedAt` for our live-stream
+
                     freezeTableName: true,
                     tableName: 'WifiPacket',
                     classMethods: {
@@ -84,19 +101,13 @@ module.exports = NoGapDef.component({
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['ssidId']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['datasetId']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['time']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['signalStrength'])
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['signalStrength']),
+
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['macId', 'updatedAt'])
                             );
                         }
                     }
                 });
-            },
-
-            Private: {
-                storePacket: function(packet) {
-                    // insert into DB
-                    // see: http://docs.sequelizejs.com/en/latest/api/model/#createvalues-options-promiseinstance
-                    return this.Instance.wifiPackets.createObject(packet, false, true);
-                }
             }
         };
     }),
