@@ -79,7 +79,7 @@ module.exports = NoGapDef.component({
                         packet.ssid,
                         packet.deviceId
                     ],
-                    type: sequelize.QueryTypes.SELECT
+                    type: sequelize.QueryTypes.RAW
                 });
                 // .spread(function() {
 
