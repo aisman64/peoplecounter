@@ -210,14 +210,11 @@ module.exports = {
             'ui/home/HomePage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
-<<<<<<< HEAD
-            'ui/map/MapPage',
-            'ui/result/ResultPage'
-=======
 
-            // superuser pages:
+            'ui/map/MapPage',
+            'ui/result/ResultPage',
+
             'ui/admin/AdminPage'
->>>>>>> bfcfe9b27fcda2aa629688626a69be4382c1b145
         ]
     },
 };
