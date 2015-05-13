@@ -93,7 +93,7 @@ module.exports = NoGapDef.component({
              */
             hashPassphrase: function(pepper, passphrase, salt) {
                 var sharedSecretRaw = pepper + ':' + passphrase;
-                bcrypt = typeof(bcrypt) !== undefined ? bcrypt : Shared.Main.assets.bcrypt;
+                bcrypt = (typeof(bcrypt) !== 'undefined') ? bcrypt : Shared.Main.assets.bcrypt;
 
                 // create a hash asynchronously, so the actual password is never seen by anyone
                 return new Promise(function(resolve, reject) {
@@ -221,7 +221,8 @@ module.exports = NoGapDef.component({
         var UserModel;
         var UserRole;
 
-        var SequelizeUtil;
+        var SequelizeUtil,
+            TokenStore;
 
         var CryptWorkFactor = 8;
 
@@ -231,6 +232,7 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
+                TokenStore = require(libRoot + 'TokenStore');
             },
 
             initModel: function() {
@@ -353,6 +355,7 @@ module.exports = NoGapDef.component({
                                     uid: queryInput.uid
                                 };
                             }
+                            
                             return queryData;
                         }
                     }
@@ -443,24 +446,43 @@ module.exports = NoGapDef.component({
                 },
 
                 generateNewUserCredentials: function(sharedSecretV1, result) {
-                    result = result || {};
-                    return new Promise(function(resolve, reject) {
-                        bcrypt.genSalt(CryptWorkFactor, function(err, secretSalt) {
-                            if (err) {
-                                // never share this error with the outside world
-                                this.Tools.handleError(err);
-                                return reject('error.login.auth');
-                            }
+                    var promise = Promise.resolve(sharedSecretV1);
+                    if (!_.isString(sharedSecretV1)) {
+                        var rawPassInfo = sharedSecretV1;
+                        if (!rawPassInfo || (!rawPassInfo.pepper && !rawPassInfo.userName) || !rawPassInfo.passphrase) {
+                            return Promise.reject(makeError('error.internal', 'Invalid arguments for `generateNewUserCredentials`'));
+                        }
 
-                            this._bcryptHash(sharedSecretV1, secretSalt)
-                            .then(function(sharedSecretV2) {
-                                result.sharedSecret = sharedSecretV2;
-                                result.secretSalt = secretSalt;
-                                resolve(result);
-                            })
-                            .catch(reject);
+                        promise = promise
+                        .bind(this)
+                        .then(function() {
+                            return this.Shared.hashPassphrase(rawPassInfo.pepper || rawPassInfo.userName, rawPassInfo.passphrase);
+                        });
+                    }
+
+                    result = result || {};
+
+                    return promise
+                    .bind(this)
+                    .then(function(sharedSecretV1) {
+                        return new Promise(function(resolve, reject) {
+                            bcrypt.genSalt(CryptWorkFactor, function(err, secretSalt) {
+                                if (err) {
+                                    // never share this error with the outside world
+                                    this.Tools.handleError(err);
+                                    return reject('error.login.auth');
+                                }
+
+                                this._bcryptHash(sharedSecretV1, secretSalt)
+                                .then(function(sharedSecretV2) {
+                                    result.sharedSecret = sharedSecretV2;
+                                    result.secretSalt = secretSalt;
+                                    resolve(result);
+                                })
+                                .catch(reject);
+                            }.bind(this));
                         }.bind(this));
-                    }.bind(this));
+                    });
                 },
 
                 _bcryptHash: function(secret, secretSalt) {
@@ -555,7 +577,7 @@ module.exports = NoGapDef.component({
                                 var promise = (!authData.sharedSecretV1 && Promise.resolve() ||
                                     this.generateNewUserCredentials(authData.sharedSecretV1, authData));
 
-                                return promise.then(this.createAndLogin.bind(this, authData));
+                                return promise.then(this.createNewUser.bind(this, authData, true));
                             }
                             else {
                                 // check if this is the first User
@@ -565,12 +587,12 @@ module.exports = NoGapDef.component({
                                     if (count == 0)  {
                                         // this is the first user: Create & login with highest privs
                                         authData.role = UserRole.Developer;
-                                        return this.createAndLogin(authData);
+                                        return this.createNewUser(authData, true);
                                     }
                                     else if (isFacebookLogin) {
                                         // standard user
                                         authData.role = UserRole.Unregistered;
-                                        return this.createAndLogin(authData);
+                                        return this.createNewUser(authData, true);
                                     }
                                     else {
                                         // invalid user credentials
@@ -634,7 +656,7 @@ module.exports = NoGapDef.component({
                 /**
                  * Create new account and login right away
                  */
-                createAndLogin: function(authData) {
+                createNewUser: function(authData, alsoLogin) {
                     var preferredLocale = authData.preferredLocale;
                     var role = authData.role || UserRole.StandardUser;
 
@@ -651,7 +673,8 @@ module.exports = NoGapDef.component({
                     }
 
                     var queryData = {
-                        userName: authData.userName, 
+                        userName: authData.userName,
+                        email: authData.email,
                         role: role, 
                         displayRole: role,
 
@@ -669,8 +692,10 @@ module.exports = NoGapDef.component({
                     return this.users.createObject(queryData, true)
                     .bind(this)
                     .then(function(user) {
-                        // set current user data
-                        this.setCurrentUser(user);
+                        if (alsoLogin) {
+                            // set current user data before raising any events
+                            this.setCurrentUser(user);
+                        }
 
                         // fire creation and login events
                         return this.events.create.fire(user)
@@ -681,7 +706,9 @@ module.exports = NoGapDef.component({
                             }
                         })
                         .then(function() {
-                            return this.onLogin(user, true);
+                            if (alsoLogin) {
+                                return this.onLogin(user, true);
+                            }
                         })
                         .return(user);
                     });
@@ -829,6 +856,51 @@ module.exports = NoGapDef.component({
 
 
             Public: {
+                createNewUserPublic: function(email) {
+                    // TODO: Make sure, email is valid
+                    // TODO: Make sure, email has not been used yet
+                    // TODO: Check if email arrived?
+                    // TODO: Keep track of user activity
+
+                    if (!this.Instance.User.isStandardUser()) {
+                        // currently, we need an already logged in user to create more users
+                        // TODO: Captcha etc...
+                        return Promise.reject(makeError('error.invalid.permissions'));
+                    }
+
+                    var userName = email;
+                    var plainPassphrase = TokenStore.generateTokenString(32);       // random password
+
+                    var authData = {
+                        userName: userName,
+                        email: email,
+                        role: UserRole.StandardUser
+                    };
+
+                    // generate credentials
+                    return this.generateNewUserCredentials({
+                        userName: userName,
+                        passphrase: plainPassphrase
+                    }, authData)
+                    .bind(this)
+                    .then(function(authData) {
+                        // create the user
+                        return this.createNewUser(authData, false);
+                    })
+                    .then(function(user) {
+                        // finally, send out registration email
+                        var externalUrl = Shared.AppConfig.getValue('externalUrl');
+                        return this.Instance.SMTP.sendMail({
+                            to: email,
+                            //from: 'Wifi is hot!',
+                            subject: 'Welcome to Wifi is hot!',
+                            html: ['You have successfully registered an account with <b>Wifi is hot!</b>',
+                                'Use this email address and the following password to login at <a href="' + externalUrl + '">' + externalUrl + '</a>: ',
+                                plainPassphrase
+                            ].join('<br />')
+                        });
+                    });
+                },
 
                 /**
                  * Properly logout the current user

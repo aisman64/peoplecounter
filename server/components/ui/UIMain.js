@@ -168,7 +168,8 @@ module.exports = NoGapDef.component({
              */
             {
                 otherComponents: [
-                    'CommonDBQueries'
+                    'CommonDBQueries',
+                    'SMTP'
                 ],
                 pageComponents: [
                     'MACPage',
@@ -197,7 +198,7 @@ module.exports = NoGapDef.component({
              */
             {
                 pageComponents: [
-                    //'SettingsPage',
+                    'AdminPage',
                 ],
 
                 mayActivate: function() {

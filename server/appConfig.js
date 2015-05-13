@@ -188,6 +188,7 @@ module.exports = {
             'util/Log',
             'util/ValidationUtil',
             'util/FacebookApi',
+            'util/SMTP',
             
             // this one kicks off Instance code
             'Main',
@@ -208,7 +209,10 @@ module.exports = {
             // user pages:
             'ui/home/HomePage',
             'ui/device/DevicePage',
-            'ui/account/AccountPage'
+            'ui/account/AccountPage',
+
+            // superuser pages:
+            'ui/admin/AdminPage'
         ]
     },
 };
