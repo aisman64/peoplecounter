@@ -88,15 +88,17 @@
 
             <hr />
 
-            <!-- Add user button -->
-            <input type="text" ng-model="UsersView.newUserEmail" placeholder="new user email">
-            <a class="btn btn-lg btn-fancy"
-                style="margin-top: .5em; margin-bottom: .5em;"
-                ng-disabled="UsersView.busy || !UsersView.newUserEmail || !UsersView.newUserEmail.length"
-                ng-click="PC.createNewAccount()">
-                <i class="fa fa-envelope"></i>
-                <span>Create new user!</span> &nbsp;
-                <span ng-show="UsersView.busy"><i class="fa fa-spinner fa-spin"></i></span>
-            </a>
+            <div class="some-padding">
+                <!-- Add user button -->
+                <input type="text" ng-model="UsersView.newUserEmail" placeholder="new user email">
+                <a class="btn btn-lg btn-fancy"
+                    style="margin-top: .5em; margin-bottom: .5em;"
+                    ng-disabled="UsersView.busy || !UsersView.newUserEmail || !UsersView.newUserEmail.length"
+                    ng-click="PC.createNewAccount()">
+                    <i class="fa fa-plus"></i> &nbsp;
+                    <span>Add new user!</span> &nbsp;
+                    <span ng-show="UsersView.busy"><i class="fa fa-spinner fa-spin"></i></span>
+                </a>
+            </div>
         </div>
     </div>  <!-- users -->

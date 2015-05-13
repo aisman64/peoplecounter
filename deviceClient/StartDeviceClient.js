@@ -68,31 +68,41 @@ request = request.defaults({ jar : jar })
 // start!
 connectToServerNow();
 
-// keep Node open
-(function wait () {
-   if (Running) setTimeout(wait, 1000);
-})();
-
-
 
 // #############################################################################
 // Device client code execution and caching
 
-function runCode(jsCode) {
+function runCode(jsCode, isFromCache) {
 	// compile and execute server-sent code
 	var Instance = eval(jsCode);
 
 	// compilation worked!
-
-	// TODO: Write to cache, after checking version?
+	if (!isFromCache) {
+		// write to cache
+		try {
+			var cacheFileName = DEVICE.Config.DeviceClientCacheFile;
+			fs.writeFileSync(cacheFileName, jsCode);	
+		}
+		catch (err) {
+			console.error('[ERROR] Could not write device client code to cache - ' + (err.stack || err));
+		}
+	}
 }
 
 /**
- * Try loading and running previously cached script
+ * Try loading and running previously cached code
  */
-function tryRunScriptFromCache() {
+function tryRunCodeFromCache() {
 	var cacheFileName = DEVICE.Config.DeviceClientCacheFile;
-	
+	console.log('[STATUS] Running device client code from cache...');
+	try {
+		var code = fs.readFileSync(cacheFileName).toString('utf8');
+		debugger;
+		runCode(code, true);
+	}
+	catch (err) {
+		console.error('[ERROR] Could not run device client code from cache - ' + (err.stack || err));
+	}
 }
 
 
@@ -104,7 +114,7 @@ function connectToServerLater() {
 	if (!Running) return;
 
 	return Promise
-	.resolve('Reconnecting in ' + (DEVICE.Config.ReconnectDelay/1000).toFixed(1) + ' seconds...')
+	.resolve('[STATUS] Reconnecting in ' + (DEVICE.Config.ReconnectDelay/1000).toFixed(1) + ' seconds...')
 	.then(console.log.bind(console))
 	.delay(DEVICE.Config.ReconnectDelay)
 	.then(connectToServerNow);
@@ -113,7 +123,7 @@ function connectToServerLater() {
 function connectToServerNow() {
 	if (!Running) return;
 
-	console.log('Connecting to `' + DEVICE.Config.HostUrl + '`...')
+	console.log('[STATUS] Connecting to `' + DEVICE.Config.HostUrl + '`...')
 	return new Promise(function(resolve, reject) {
 		request({
 				url: DEVICE.Config.HostUrl,
@@ -128,22 +138,35 @@ function connectToServerNow() {
 					return;
 				}
 
-				console.log('Connected to server. Received client script (' + jsonEncodedJsCode.length + ' bytes). Compiling...');
+				console.log('[STATUS] Connected to server. Received client code (' + jsonEncodedJsCode.length + ' bytes). Compiling...');
 
 				// start running client sent through NoGap
 				//console.log(body);
 				var jsCode = eval(jsonEncodedJsCode);
 				
-				runCode(jsCode);
+				runCode(jsCode, false);
 			}
 		);
 	})
 	.then(function() {
-		// keep re-connecting!
-		connectToServerLater();
+		// this will never be called!
 	})
 	.catch(function(err) {
 		console.error('Connection error: ' + err && (err.stack || err.message) || err);
+
+		// try running code from cache
+		if (!GLOBAL.DEVICE.DeviceClientInitialized) {
+			tryRunCodeFromCache();
+		}
+
+		// keep trying to re-connect!
 		connectToServerLater();
 	});
 };
+
+
+
+// keep Node open
+(function _keepNodeOpen() {
+   if (Running) setTimeout(_keepNodeOpen, 1000);
+})();
