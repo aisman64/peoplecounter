@@ -50,7 +50,7 @@ module.exports = NoGapDef.component({
                     'js/DomUtil',
                     'js/angular_ui/timespan-picker',
                     // Array utilities
-                    
+                    'http://maps.googleapis.com/maps/api/js?key=&sensor=false&extension=.js',
                     'lib/angular/angular-google-maps.min',
                     
 
@@ -525,9 +525,11 @@ module.exports = NoGapDef.component({
                 // start angular
                 // Added modules:
                 var includeModules = [
+                
                     'ui.bootstrap',
                     'timespanPicker',
                     'uiGmapgoogle-maps'
+                    
                 ];
                 var angularApp = angular.module('app', includeModules);
                 angularApp.config(function(uiGmapGoogleMapApiProvider) {

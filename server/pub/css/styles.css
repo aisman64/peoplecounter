@@ -503,7 +503,7 @@ title, tt, u, var {
 }
 
 .angular-google-map-container { height: 400px; }
-/*#map {
+#map {
     height:400px;
     width:600px;
 }
@@ -515,4 +515,4 @@ title, tt, u, var {
 h2 {
     margin-bottom:0;
     margin-top: 0;
-}*/
+}
