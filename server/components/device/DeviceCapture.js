@@ -70,13 +70,14 @@ module.exports = NoGapDef.component({
                 //});
 
                 // call stored procedure to take care of packet insertion
-                sequelize.query('CALL storePacket(?, ?, ?, ?, ?);', { 
+                sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
                     replacements: [
                         packet.mac,
                         packet.signalStrength,
                         packet.time,
                         packet.seqnum,
-                        packet.ssid
+                        packet.ssid,
+                        packet.deviceId
                     ],
                     type: sequelize.QueryTypes.SELECT
                 });
@@ -120,10 +121,12 @@ module.exports = NoGapDef.component({
                 // send packet to server
                 return this.host.storePacket(packet)
                 .then(function() {
+                    console.log("Packet sent successfully");
                     // DB successfully stored packet
                 })
                 .catch(function(err) {
-                    queue.push(packets[0], function(err) { 
+                    console.error(err.stack);
+                    queue.push(packet, function(err) { 
                         if(err) throw err; 
                         queue.length(function(err,len) { console.log(len); });
                     });

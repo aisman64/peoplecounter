@@ -1,4 +1,4 @@
-DELIMITER $$
+/*DELIMITER $$
 
 CREATE DEFINER=`root`@`%` PROCEDURE `store_packet`(
     IN mac CHAR(12), 
@@ -26,4 +26,4 @@ ELSE
 END IF;
 INSERT INTO WifiPacket (time, signalStrength, seqnum, macId, ssidId, updatedAt)
     VALUES(tstamp, sigstr, seqn, idMac, idSSID, ct);
-END
+END*/
