@@ -203,6 +203,9 @@ module.exports = NoGapDef.component({
              */
             initClient: function() {
             	// start capturing right away
+                GLOBAL.DEVICE.DeviceClientInitialized = true;
+
+                console.log('[STATUS] Device client initialized.');
             	Instance.DeviceCapture.startCapturing();
             },
 

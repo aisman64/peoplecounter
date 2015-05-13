@@ -166,6 +166,8 @@ module.exports = NoGapDef.component({
 
                 // update tracing settings
                 Shared.Libs.ComponentTools.TraceCfg.enabled = this.getValue('traceHost');
+
+                this.config.externalUrl = app.externalUrl;
             },
 
             updateValue: function(key, value) {
@@ -177,6 +179,7 @@ module.exports = NoGapDef.component({
                 console.assert(!!this.runtimeConfig, 'Tried to run `AppConfig.updateValue` before server initialization finished');
 
                 // update in-memory cache
+                this.config[key] = value;
                 this.runtimeConfigOverrides[key] = value;
                 this.runtimeConfig.configOverrides = this.serializeConfig(this.runtimeConfigOverrides);
 

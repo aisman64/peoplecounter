@@ -14,9 +14,13 @@
 	* Go to "Device" page
 	* Setup device
 		* Download an image file (if you have not done so before) and copy it to the device (tested only on Galileo)
+                * Connect your device to a wired network
 		* Boot up the device
 		* Once it has finished initializing, it will connect to the server.
 	* Add a new device configuration through the "Add device" button, give it a new name and hit "Apply"
+                * TODO: Send WLAN provisioning information to the server
+                * TODO: Reset root and user password on device reset
+                * TODO: Change hostname
 		* Make sure that it is currently in the "reset pending" state. If not, hit "Reset"
 		* Upon the next connection attempt, your (Galileo) device will be assigned the first configuration with "reset pending" state
 		* From then on, the device will use that configuration to authenticate and communicate with the server (until you reset it again)

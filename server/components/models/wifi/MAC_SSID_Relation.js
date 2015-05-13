@@ -41,7 +41,7 @@ module.exports = NoGapDef.component({
                  * 
                  */
                 return sequelize.define('MAC_SSID_Relation', {
-                    relationshipId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
+                    relationId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
                     macId: Sequelize.INTEGER.UNSIGNED,
                     ssidId: Sequelize.INTEGER.UNSIGNED
                 }, {

@@ -33,6 +33,8 @@
     
     "fb": "*",
     "passport": "*",
-    "passport-facebook": "*"
+    "passport-facebook": "*",
+
+    "nodemailer": "~1.0.0"
   }
 }

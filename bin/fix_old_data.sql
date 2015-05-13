@@ -169,8 +169,14 @@ CREATE TABLE `MAC_SSID_Relation` (
     `relationId` INT(11) NOT NULL AUTO_INCREMENT,
     `macId` INT(11) NOT NULL,
     `ssidId` CHAR(12) NOT NULL,
+    `updatedAt` DATETIME,
+    `createdAt` DATETIME,
     PRIMARY KEY (`relationId`)
 );
+
+-- ALTER TABLE MAC_SSID_Relation ADD `updatedAt` DATETIME;
+-- ALTER TABLE MAC_SSID_Relation ADD `createdAt` DATETIME;
+-- DELETE FROM MAC_SSID_Relation WHERE ssidId = 51773;
 
 CREATE INDEX MAC_SSID_Relations_macId ON MAC_SSID_Relations (macId);
 CREATE INDEX MAC_SSID_Relations_ssidId ON MAC_SSID_Relations (ssidId);

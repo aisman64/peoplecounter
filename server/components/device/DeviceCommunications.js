@@ -9,14 +9,18 @@ module.exports = NoGapDef.component({
     /**
      * Everything defined in `Base` is available on Host and Client.
      */
-    Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) { return {
-        /**
-         * 
-         */
-        initBase: function() {
-            
-        },
-    };}),
+    Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) { 
+    	return {
+	    	PingDelay: 5 * 1000,		// every few seconds
+
+	        /**
+	         * 
+	         */
+	        initBase: function() {
+	            
+	        },
+	    };
+	}),
 
     /**
      * Everything defined in `Host` lives only on the host side (Node).
@@ -33,6 +37,12 @@ module.exports = NoGapDef.component({
             onClientBootstrap: function() {
             }
         },
+
+        Public: {
+        	checkIn: function() {
+
+        	}
+        }
     }}),
     
     
@@ -83,8 +93,7 @@ module.exports = NoGapDef.component({
 							function (error, response, body) {
 					            if (error) {
 					                // TODO: Better error handling
-					                reject(error);
-					                return;
+					                return reject(error);
 					            }
 
 			                    var hostReply;
@@ -98,19 +107,27 @@ module.exports = NoGapDef.component({
 			                        err = 'Unable to parse reply sent by host. '
 			                            + 'Check out http://jsonlint.com/ to check the formatting. - \n'
 			                            + body.substring(0, 1000) + '...';
-			                        reject(err);
-			                        return;
+			                        return reject(err);
 			                    }
 
 			                    // return host-sent data to caller (will usually be eval'ed by NoGap comm layer)
 			                    resolve(hostReply);
 					        }
 				        );
-					}.bind(this));
+					}.bind(this))
+					.then(function(result) {
+						GLOBAL.DEVICE.LastConnectionAttemptSuccessful = true;		// 
+						return result;
+					})
+					.catch(function(err) {
+						GLOBAL.DEVICE.LastConnectionAttemptSuccessful = false;		// 
+						return Promise.reject(err);			// keep propagating
+					});
 			    },
 
 				refresh: function() {
 					// refresh was requested. Probably need to restart client app...
+					// TODO: Kill client and restart?
 					console.error('Refresh requested. Client is probably out of sync and needs to re-connect.');
 				}
 			},
@@ -125,6 +142,16 @@ module.exports = NoGapDef.component({
 	            	connection[methodName] = method.bind(connection);
 	            }
             },
+
+            initClient: function() {
+            	// ping server regularly
+            	ThisComponent.pingTimer = setInterval(function() {
+        			ThisComponent.host.checkIn()
+            		.catch(function(err) {
+            			console.error('[ERROR] Could not reach server: ' + (err.message || err));
+            		});
+            	}, ThisComponent.PingDelay);
+            }
         };
     })
 });

@@ -154,7 +154,7 @@ module.exports = NoGapDef.component({
                         return Promise.reject(makeError('error.invalid.request', 'Device tried to `startResetConfiguration` while still refreshing'));
                     }
 
-                    // re-generate client seccret
+                    // re-generate client secret
                     return Shared.User.hashPassphrase(device.deviceId, this.generateDevicePassphrase())
                     .bind(this)
                     .then(function(sharedSecretV1) {

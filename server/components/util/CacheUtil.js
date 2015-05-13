@@ -843,7 +843,7 @@ module.exports = NoGapDef.component({
                  * TODO: Always check cache?
                  */
                 getObject: function(queryInput, ignoreAccessCheck, sendToClient, allowNull) {
-                    var obj = this.getObjectNow(queryInput, ignoreAccessCheck);
+                    var obj = this.hasMemorySet() && this.getObjectNow(queryInput, ignoreAccessCheck);
                     if (obj) {
                         // object was already cached -> return Promise
                         return Promise.resolve(obj);
