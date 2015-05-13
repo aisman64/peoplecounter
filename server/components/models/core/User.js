@@ -515,6 +515,7 @@ module.exports = NoGapDef.component({
                     .then(function(sharedSecret) {
                         if (user.sharedSecret !== sharedSecret) {
                             // invalid user credentials
+                            this.Tools.handleError('User password authentication failed');
                             return Promise.reject('error.login.auth');
                         }
                         else {
@@ -551,6 +552,7 @@ module.exports = NoGapDef.component({
                     }
                     else {
                         // invalid user credentials
+                        this.Tools.handleError('invalid authentication arguments');
                         return Promise.reject('error.login.auth');
                     }
 
@@ -596,6 +598,7 @@ module.exports = NoGapDef.component({
                                     }
                                     else {
                                         // invalid user credentials
+                                        this.Tools.handleError('invalid userName: ' + authData.userName);
                                         return Promise.reject('error.login.auth');
                                     }
                                 });
@@ -603,6 +606,7 @@ module.exports = NoGapDef.component({
                         }
                         else if (!user) {
                             // invalid user information
+                            this.Tools.handleError('missing userName during authentication');
                             return Promise.reject('error.login.auth');
                         }
                         else {

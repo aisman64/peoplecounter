@@ -11,8 +11,6 @@ module.exports = NoGapDef.component({
      */
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) { 
     	return {
-	    	PingDelay: 1 * 1000,		// every few seconds
-
 	    	__ctor: function() {
 	    	},
 
@@ -165,6 +163,8 @@ module.exports = NoGapDef.component({
             initClient: function() {
             	// ping server regularly
             	var lastMessage;
+            	var delay = Instance.AppConfig.getValue('deviceCheckInDelay') || 5 * 1000;
+
             	ThisComponent.pingTimer = setInterval(function() {
         			ThisComponent.host.checkIn()
             		.catch(function(err) {
@@ -172,7 +172,7 @@ module.exports = NoGapDef.component({
             			lastMessage = err.message;
             			console.error('[ERROR] Could not reach server: ' + (err.stack || err));
             		});
-            	}, ThisComponent.PingDelay);
+            	}, delay);
             }
         };
     })
