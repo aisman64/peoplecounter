@@ -29,10 +29,12 @@ module.exports = NoGapDef.component({
             // load default localization files
             Shared.Localizer.Default = Shared.Localizer.createLocalizer(cfg.localizer || {});
         },
+
+        __ctor: function() {
+            
+        },
         
         Private: {
-            __ctor: function() {
-            },
 
             getClientCtorArguments: function() {
                 if (!this.Context.clientNoHtml) {

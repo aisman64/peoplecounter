@@ -208,6 +208,7 @@ module.exports = {
 
             // user pages:
             'ui/home/HomePage',
+            'ui/live/LivePage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
 

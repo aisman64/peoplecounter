@@ -9,31 +9,33 @@ module.exports = NoGapDef.component({
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
-    Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { return {
-        Assets: {
-            Files: {
-                string: {
-                    template: 'HomePage.html'
+    Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { 
+        return {
+            Assets: {
+                Files: {
+                    string: {
+                        template: 'HomePage.html'
+                    }
+                },
+                AutoIncludes: {
                 }
             },
-            AutoIncludes: {
-            }
-        },
+                    
+            /**
+             * 
+             */
+            initHost: function() {
                 
-        /**
-         * 
-         */
-        initHost: function() {
+            },
             
-        },
-        
-        /**
-         * Host commands can be directly called by the client
-         */
-        Public: {
-            
-        },
-    }}),
+            /**
+             * Host commands can be directly called by the client
+             */
+            Public: {
+                
+            },
+        };
+    }),
     
     
     /**
