@@ -90,6 +90,14 @@ module.exports = NoGapDef.component({
                         latitude: 24.045574, 
                         longitude: 121.228325 
                      }];
+
+                     $scope.queryByMacId = function(macId) {
+                        console.log(macId);
+                        
+
+
+
+                     }
                     // $scope.addMarker = function(event) {
                     //     google.maps.event.addListener($scope.map, "click", function(event) {
                     //         var lat = event.latLng.lat();

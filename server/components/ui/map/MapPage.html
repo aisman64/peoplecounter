@@ -18,8 +18,8 @@
           <div class="form-group">
             <div class="input-group">
               <div class="input-group-addon">Please input your mac address</div>
-              <input type="text" class="form-control" id="macId" placeholder="mac address">
-              <div style="cursor:pointer;"class="input-group-addon btn btn-primary">Submit</div>
+              <input type="text" ng-model="macId" class="form-control" id="macId" placeholder="mac address">
+              <div style="cursor:pointer;"class="input-group-addon btn btn-primary"  ng-click="queryByMacId(macId)">Submit</div>
             </div>
           </div>
         </form>
