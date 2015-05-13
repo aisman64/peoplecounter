@@ -266,7 +266,7 @@ module.exports = NoGapDef.component({
                             deviceUpdate.rootPassword = refreshData.newRootPassword;
                         }
 
-
+                        // update device and user entry in DB
                         promise = Promise.join(
                             this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject(deviceUpdate, true),
 

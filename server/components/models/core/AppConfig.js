@@ -6,14 +6,13 @@
 
 var NoGapDef = require('nogap').Def;
 
-var appRoot = '../../../';
+var appRoot = __dirname + '/../../../';
 var libRoot = appRoot + 'lib/';
 
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
             OverridableConfigKeys: [
-                'currentScriptVersion',
                 'userPasswordFirstSalt'
             ],
 
@@ -66,7 +65,8 @@ module.exports = NoGapDef.component({
 
         var SequelizeUtil,
             TokenStore,
-            bcrypt;
+            bcrypt,
+            fs;
 
 
         return {
@@ -77,6 +77,7 @@ module.exports = NoGapDef.component({
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
                 TokenStore = require(libRoot + 'TokenStore');
                 bcrypt = require(libRoot + 'bcrypt');
+                fs = require('fs');
             },
 
             serializeConfig: function(cfg) {
@@ -119,7 +120,6 @@ module.exports = NoGapDef.component({
                             // );
 
                             var configDefaults = {
-                                currentScriptVersion: 1
                             };
 
                             // query config overrides from DB, or create new, if it does not exist yet
@@ -167,7 +167,38 @@ module.exports = NoGapDef.component({
                 // update tracing settings
                 Shared.Libs.ComponentTools.TraceCfg.enabled = this.getValue('traceHost');
 
+                // some default config entries
                 this.config.externalUrl = app.externalUrl;
+
+                // handle version
+                var versionFilePath = appRoot + 'data/currentAppVersion';
+                var lastVersion;
+                var version;
+                try {
+                    if (!fs.existsSync(versionFilePath)) {
+                        lastVersion = 0;
+                    }
+                    else {
+                        var versionString = fs.readFileSync(versionFilePath).toString();
+                        lastVersion = parseInt(versionString);
+                        if (isNaNOrNull(lastVersion)) {
+                            throw new Error('Could not read version from file: ' + versionString);
+                        }
+                    }
+
+                    // new version
+                    version = lastVersion+1;
+
+                    // write new version back to file
+                    fs.writeFileSync(versionFilePath, version);
+                }
+                catch (err) {
+                    throw new Error('Could not initialize app version: ' + (err.stack || err));
+                }
+
+                // remember config
+                console.log('Current version: ' + version);
+                this.config.currentAppVersion = version;
             },
 
             updateValue: function(key, value) {
@@ -250,6 +281,7 @@ module.exports = NoGapDef.component({
                 this.runtimeConfig = runtimeConfig;
 
                 Instance.Libs.ComponentTools.TraceCfg.enabled = config.traceClient;
+                console.error('############### version: ' + config.currentAppVersion);
             },
 
             initClient: function() {
