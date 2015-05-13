@@ -31,14 +31,19 @@
                     <div class="table table-striped some-padding"
                         ng-click="PC.deviceSelection.toggleSelection(device); onChange(); PC.showDeviceConfig = false;">
                         <div class="row">
-                            <div class="col-xs-8">
+                            <div class="col-xs-4">
                                 <span>{{user.userName}}</span>
                             </div>
                             <div class="col-xs-4">
+                            </div>
+                            <div class="col-xs-4">
                                 <span ng-if="device.isAssigned">
-                                    <span class="alert-success">
+                                    <!-- if assigned, display current job -->
+                                    <localize key="device.jobtype.{{DeviceJobType.getName(device.currentJobType) || ''}}"
+                                        class="alert-info"></localize>
+                                    <!-- <span class="alert-success">
                                         assigned
-                                    </span>
+                                    </span> -->
                                 </span>
                                 <span ng-if="device.resetTimeout"
                                     pulse-clock="util.getCountdownMillis(device.resetTimeout)">
@@ -64,8 +69,29 @@
                 <!-- Device Editor -->
                     <form ng-if="PC.deviceSelection.isSelected(device)">
                         <div class="some-padding">
+                            <!-- Name -->
                             <input type="text" ng-model="user.userName"
                                 ng-change="onChange()">
+
+                            <div class="vertical-space"></div>
+
+                            <!-- Job selection -->
+                            <div class="btn-group" dropdown is-open="status.isopen">
+                                <button type="button" class="btn btn-lg btn-fancy dropdown-toggle" ng-disabled="PC.busy">
+                                    <localize key="device.jobtype.{{DeviceJobType.getName(device.currentJobType) || ''}}"></localize>
+
+                                    <span ng-show="!PC.busy" class="caret"></span>
+                                    <span ng-show="PC.busy"><i class="fa fa-spinner fa-spin"></i></span>
+                                </button>
+                                <ul class="dropdown-menu" role="menu">
+                                    <li ng-repeat="jobType in DeviceJobType.getValues()">
+                                        <a href="" ng-click="setDeviceJobType(device, jobType); status.isopen = false;">
+                                            <localize key="device.jobtype.{{DeviceJobType.getName(jobType) || ''}}">
+                                            </localize>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
 
                             <!-- Save indicators -->
                             <span ng-style="{visibility: PC.deviceSaving && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
@@ -73,6 +99,7 @@
 
                             <div class="vertical-space"></div>
 
+                            <!-- Config -->
                             <div class="some-padding"
                                 style="border: solid black 1px; background-color: white;"
                                 ng-if="PC.showDeviceConfig && PC.currentDeviceSettings">

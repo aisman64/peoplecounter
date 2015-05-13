@@ -54,7 +54,7 @@ module.exports = NoGapDef.component({
         		// check if device's user account is attached to an actual device entry
         		//		and if so, send that device entry to the client.
         		var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
-        		return devices.getObject({uid: user.uid}, true, true, true)
+        		return devices.getObject({uid: user.uid}, true, false, true)
         		.bind(this)
         		.then(function(device) {
         			if (!device) {
@@ -80,9 +80,25 @@ module.exports = NoGapDef.component({
         		});
         	},
 
+            onAfterLogin: function(user) {
+                // send current device data to client
+                var device = this.getCurrentDevice();
+                if (!device) {
+                    this.Tools.handleError('Device not associated after device login...');
+                }
+
+                this.Tools.log('Sending device data to client...');
+
+                var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                devices.sendChangeToClient(device);
+            },
+
            	onClientBootstrap: function() {
                 // resume user session
-                return this.Instance.User.resumeSession(this.onBeforeLogin.bind(this));
+                return this.Instance.User.resumeSession({
+                    preLogin: this.onBeforeLogin.bind(this),
+                    postLogin: this.onAfterLogin.bind(this),
+                });
             }
         },
         
@@ -159,6 +175,10 @@ module.exports = NoGapDef.component({
                     });
                 })
                 .then(function() {
+                    if (this.getCurrentDevice()) {
+                        // login succeeded and device data is ready -> Update client!
+                        this.onAfterLogin();
+                    }
                     newDeviceStatus.deviceStatus = newDeviceStatus.deviceStatus || DeviceStatusId.LoginOk;
                     return null;
                 })

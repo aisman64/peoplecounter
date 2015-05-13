@@ -53,6 +53,8 @@ module.exports = NoGapDef.component({
 
         var queriesFolder = __dirname + '/queries/';
 
+        var startupSqlFile = __dirname + '/Startup.sql';
+
         return {
         	Queries: { },
 
@@ -63,18 +65,44 @@ module.exports = NoGapDef.component({
 
             initHost: function() {
             	// read all queries from files
-            	return new Promise(function(resolve, reject) {
-                    fs.readdir(queriesFolder, function(err, files) {
-                		if (err) {
-                			reject(makeError(err, 'Could not initialize DB queries - Could not read directory `' + queriesFolder +  '`'));
-                		}
-                		else {
-                			this.readAllQueryFiles(files)
-                			.then(resolve)
-                			.catch(reject);
-                		}
-                	}.bind(this))
-                }.bind(this));
+            	return Promise.join(
+                    this._runInitialMySqlScript(),
+                    new Promise(function(resolve, reject) {
+                        fs.readdir(queriesFolder, function(err, files) {
+                    		if (err) {
+                    			reject(makeError(err, 'Could not initialize DB queries - Could not read directory `' + queriesFolder +  '`'));
+                    		}
+                    		else {
+                    			this.readAllQueryFiles(files)
+                    			.then(resolve)
+                    			.catch(reject);
+                    		}
+                    	}.bind(this))
+                    }.bind(this))
+                );
+            },
+
+            _runInitialMySqlScript: function() {
+                return new Promise(function(resolve, reject) {
+                    try {
+                        if (fs.existsSync(startupSqlFile)) {
+                            var startupSql = fs.readFileSync(startupSqlFile).toString('utf8');
+
+                            sequelize.query(startupSql, {
+                                type: sequelize.QueryTypes.SELECT
+                            })
+                            .then(function(result) {
+                                resolve();
+                            })
+                            .catch(function(err) {
+                                reject(err);
+                            });
+                        }
+                    }
+                    catch (err) {
+                        reject('Could not run Startup.sql: ' + err.stack);
+                    }
+                });
             },
 
             readAllQueryFiles: function(files) {

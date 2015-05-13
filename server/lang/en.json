@@ -82,6 +82,11 @@
     "account.changeToStandardUserView" : "Change to standard user View",
     "account.currentLanguage": "Language",
 
+    "device.jobtype.": "<no job>",
+    "device.jobtype.SSIDSniffer": "SSID Sniffer",
+    "device.jobtype.ActivitySniffer": "Activity Sniffer",
+    "device.jobtype.ProximityScanner": "Proximity Scanner",
+
     "queries.names.AllDataOfMacAddress": "",
 
     "error.login.auth": "Invalid username or password.",

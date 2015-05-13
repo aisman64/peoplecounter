@@ -730,7 +730,10 @@ module.exports = NoGapDef.component({
                 /**
                  * This method is called upon bootstrap for user's with an established session.
                  */
-                resumeSession: function(filter) {
+                resumeSession: function(eventHandlers) {
+                    var preLogin = eventHandlers && eventHandlers.preLogin;
+                    var postLogin = eventHandlers && eventHandlers.postLogin;
+
                     // log into account of given uid
                     var sess = this.Context.session;
                     var uid = sess.uid;
@@ -743,16 +746,25 @@ module.exports = NoGapDef.component({
                         }
 
                         var promise = Promise.resolve(user);
-                        if (user && filter) {
-                        	// check if user is ok
-                        	promise = promise.then(filter);
+                        if (user && preLogin) {
+                        	// check if user is ok, and filter out if not
+                        	promise = promise.then(preLogin);
                         }
 
                         return promise
                         .bind(this)
                         .then(function(user) {
                         	this.setCurrentUser(user);
-                        	return user;
+
+                            return Promise.resolve()
+                            .bind(this)
+                            .then(function() {
+                                // post login event handler
+                                if (user && postLogin) {
+                                    return postLogin(user);
+                                }
+                            })
+                        	.return(user);
                     	});
                     }.bind(this);
 
