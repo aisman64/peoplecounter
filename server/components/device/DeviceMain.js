@@ -273,6 +273,7 @@ module.exports = NoGapDef.component({
 
             onLogin: function() {
             	// we have logged in successfully, and now have Device privilege level
+                instance.DeviceCapture.flushQueue();
             },
 
             /**

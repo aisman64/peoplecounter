@@ -189,6 +189,13 @@ module.exports = NoGapDef.component({
                 ThisComponent.storePacket(result);
             },
 
+            flushQueue: function() {
+                queue.tpop(function(err, packet, commit, rollback) {
+                    console.log(packet);
+                    rollback(function(err) { if (err) throw err; });
+                }); 
+            },
+
             startCapturing: function() {
                 if (!pcap) return;
 
