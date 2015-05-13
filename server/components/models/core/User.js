@@ -507,15 +507,15 @@ module.exports = NoGapDef.component({
                     if (!this._doesUserHavePasswordCredentials(user)) {
                         // never allow password-based authentication for an account without password
                         this.Tools.handleError('User without password tried to use password authentication');
-
                         return Promise.reject('error.login.auth');
                     }
 
-                    return this._bcryptHash(authData.sharedSecretV1, user.secretSalt || '')
+                    return this._bcryptHash(authData.sharedSecretV1, user.secretSalt)
+                    .bind(this)
                     .then(function(sharedSecret) {
                         if (user.sharedSecret !== sharedSecret) {
                             // invalid user credentials
-                            this.Tools.handleError('User password authentication failed');
+                            this.Tools.handleError('User password authentication failed: ' + [user.sharedSecret, sharedSecret].join(' vs. '));
                             return Promise.reject('error.login.auth');
                         }
                         else {
