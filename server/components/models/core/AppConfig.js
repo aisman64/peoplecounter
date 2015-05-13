@@ -281,7 +281,7 @@ module.exports = NoGapDef.component({
                 this.runtimeConfig = runtimeConfig;
 
                 Instance.Libs.ComponentTools.TraceCfg.enabled = config.traceClient;
-                console.error('############### version: ' + config.currentAppVersion);
+                //console.error('############### version: ' + config.currentAppVersion);
             },
 
             initClient: function() {

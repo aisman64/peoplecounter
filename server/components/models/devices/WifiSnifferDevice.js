@@ -10,6 +10,24 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
+            DeviceJobType: squishy.makeEnum({
+                /**
+                 * Only look for and store IEEE 802.11 probe requests (which potentially contain previous SSIDs)
+                 */
+                'SSIDSniffer': 1,
+
+                /**
+                 * Look for and store all unencrypted IEEE 802.11 packets in order to determine
+                 * what surrounding devices are up to and what their relative signal strength is.
+                 */
+                'ActivitySniffer': 2,
+
+                /**
+                 * Similar to `ActivitySniffer`, but is administered differently and dedicated to
+                 * real-time GUI interaction and "device selection".
+                 */
+                'ProximityScanner': 3
+            }),
 
             Caches: {
                 wifiSnifferDevices: {
@@ -160,7 +178,14 @@ module.exports = NoGapDef.component({
 
                     // The host name of the device should be unique so that when two devices are in the same network,
                     //      there won't be any name collision.
-                    hostName: Sequelize.STRING(255)
+                    hostName: Sequelize.STRING(255),
+                    
+
+                    // the job this device is currently working on, according to the `DeviceJob` enum
+                    currentJobType: Sequelize.INTEGER.UNSIGNED,
+
+                    // the dataset this device is currently participating in (if any)
+                    currentDatasetId: Sequelize.INTEGER.UNSIGNED,
                 },{
 
                     freezeTableName: true,
