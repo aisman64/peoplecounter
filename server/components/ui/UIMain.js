@@ -177,7 +177,8 @@ module.exports = NoGapDef.component({
                 ],
                 pageComponents: [
                     'MACPage',
-                    'SSIDPage'
+                    'SSIDPage',
+                    'MapPage'
                 ],
                 mayActivate: function() {
                     return true;
