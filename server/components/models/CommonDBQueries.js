@@ -89,7 +89,7 @@ module.exports = NoGapDef.component({
                             var startupSql = fs.readFileSync(startupSqlFile).toString('utf8');
 
                             sequelize.query(startupSql, {
-                                type: sequelize.QueryTypes.SELECT
+                                type: sequelize.QueryTypes.RAW
                             })
                             .then(function(result) {
                                 resolve();

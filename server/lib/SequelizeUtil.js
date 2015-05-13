@@ -25,6 +25,11 @@ GLOBAL.sequelize = new Sequelize(appConfig.db.database, appConfig.db.user, appCo
 
     // log to `db.log`
     logging: logging.getDbLogger(),
+
+    // allow multiple statements in queries
+    dialectOptions: {
+        multipleStatements: true
+    }
     
     //syncOnAssociation: false            // sync manually
 });

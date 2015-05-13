@@ -35,6 +35,7 @@ var SessionManager = squishy.extendClass(MySQLSessionStore, function() {
     var dbOptions = _.clone(appConfig.db) || {};
     dbOptions.autoReconnect = true;
     dbOptions.expiration = appConfig.session.lifetime;
+    dbOptions.multipleStatements =  true;
     this._super(dbOptions);
 
     // check if connection already failed (since mysql lib might raise errors more than once)
