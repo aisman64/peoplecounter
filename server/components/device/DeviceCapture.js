@@ -99,6 +99,7 @@ module.exports = NoGapDef.component({
         var exec;
         var Queue;
         var queue;
+        var promisify = require("promisify-node");
         return {
             __ctor: function() {
                 ThisComponent = this;
@@ -189,11 +190,73 @@ module.exports = NoGapDef.component({
                 ThisComponent.storePacket(result);
             },
 
+
+
             flushQueue: function() {
-                queue.tpop(function(err, packet, commit, rollback) {
-                    console.log(packet);
-                    rollback(function(err) { if (err) throw err; });
-                }); 
+                console.log("Flush Queue");
+                var dummies = [];
+                exec("ls tmp/new/*.galileo | wc -l", function(error, stdout, stderr) {
+                    var length = parseInt(stdout);
+                    for(var i=0; i<length; i++)
+                        {
+                        dummies.push(0);
+                        console.log("Pushed dummy #"+i);
+                        }
+                });
+                /*queue.length(function(err, length) {
+                    for (var i=0; i<length; i++) {
+                        dummies.push(0);
+                    }
+                });*/
+                console.log("Exited Exec");
+                return Promise.map(dummies, function(dummy) {
+                    console.log("Entered MAP");
+                    return new Promise(function(resolve, reject) {
+                        console.log("Enntered Promise");
+                        queue.tpop(function(err, packet, commit, rollback) {
+                            if (err)
+                                {
+                                console.log("tpop ERROR"); 
+                                reject(err);
+                                }
+                            ThisComponent.host.storePacket(packet)
+                            .then(function() {
+                                commit(function(err) {
+                                    if (err) {
+                                        console.log("Commit Error");
+                                        reject(err);
+                                    }
+                                    else {
+                                        console.log("Stored Packet Uploaded");
+                                        resolve();
+                                    }
+                                });
+                            })
+                            .catch(function(err) {
+                                rollback(function(err2) {
+                                    console.log("Stored Packet Problem");
+                                    if (err2) {
+                                        console.error('[ERROR] Unable to rollback: ' + err2.stack);
+                                    }
+                                    console.log("Catch Error");
+                                    reject(err);
+                                });
+                            });
+                        });
+                    });
+                }, {
+                    concurrency: 5              // how many packets in-flight, at the same time
+                });
+
+                /*queue.length(function(err, length) {
+                    for(var i=0; i<5; i++) {
+                        queue.tpop(function(err, packet, commit, rollback) {
+                            ThisComponent.host.storePacket(packet)
+                                .then(function() { commit(function(err) { if(err) throw err; console.log("Stored Packet uploaded");})})
+                                .catch(function() { rollback(function(err) { if (err) throw err; console.log("Stored Packet Problem");})});
+                        }); 
+                    }
+                });*/
             },
 
             startCapturing: function() {

@@ -261,7 +261,7 @@ module.exports = NoGapDef.component({
 	                    console.error('[FATAL ERROR] Failed to login more than once. Giving up! - ' + (err.message || err));
 	            	}
 	            	else {
-                    	console.error('Failed to login - Retrying... (' + (err.message || err) + ')');
+                    	console.error('Failed to login - Retrying... (' + (err.stack || err) + ')');
                     	Promise.delay(300)
                     	.then(function() {
                     		// retry!
@@ -273,7 +273,7 @@ module.exports = NoGapDef.component({
 
             onLogin: function() {
             	// we have logged in successfully, and now have Device privilege level
-                instance.DeviceCapture.flushQueue();
+                Instance.DeviceCapture.flushQueue();
             },
 
             /**
