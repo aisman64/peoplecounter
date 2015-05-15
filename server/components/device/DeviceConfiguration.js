@@ -365,7 +365,7 @@ module.exports = NoGapDef.component({
                             this.writeDeviceConfig(newConfig);
 
                             // then, read config (to make sure it worked!)
-                            GLOBAL.DEVICE.readDeviceConfig();
+                            GLOBAL.DEVICE.reinitializeConfigFromFile();
                         }
                     })
                     .then(function() {
