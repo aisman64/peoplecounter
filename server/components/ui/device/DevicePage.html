@@ -22,19 +22,46 @@
         </div>
         <div class="panel-body no-padding">
             <ul class="list-group">
+
+                <!-- Device Header row -->
+                <li class="list-group-item no-padding">
+                    <div class="table some-padding">
+                        <div class="row text-bold">
+                            <div class="col-xs-4">
+                                <span>name</span>
+                            </div>
+                            <div class="col-xs-4">
+                                <span>current dataset</span>
+                            </div>
+                            <div class="col-xs-4">
+                                <span>status</span>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Device info row -->
                 <li ng-repeat="device in deviceCache.list"
-                    code="user = device.getUserNow()"
+                    code="user = device.getUserNow();
+                            dataset = datasetCache.byId[device.currentDatasetId]"
                     class="list-group-item no-padding"
                     ng-class="{ 'highlight-own': PC.deviceSelection.isSelected(device) }">
 
-                    <!-- Show device Info -->
-                    <div class="table table-striped some-padding"
+                    <div class="table some-padding"
                         ng-click="PC.deviceSelection.toggleSelection(device); onChange(); PC.showDeviceConfig = false;">
                         <div class="row">
                             <div class="col-xs-4">
-                                <span>{{user.userName}}</span>
+                                <span>{{ user.userName }}</span>
                             </div>
                             <div class="col-xs-4">
+                                <span ng-if="!!dataset"
+                                    class="alert-info">
+                                    {{ dataset.datasetName }}
+                                </span>
+                                <span ng-if="!dataset"
+                                    class="alert-warning">
+                                    &lt;not assigned>
+                                </span>
                             </div>
                             <div class="col-xs-4">
                                 <span ng-if="device.isAssigned">
@@ -68,29 +95,51 @@
                 <!-- ######################################################################################################################## -->
                 <!-- Device Editor -->
                     <form ng-if="PC.deviceSelection.isSelected(device)">
-                        <div class="some-padding">
-                            <!-- Name -->
-                            <input type="text" ng-model="user.userName"
-                                ng-change="onChange()">
+                        <div class="row some-padding">
+                            <div class="col-xs-4">
+                                <!-- Name -->
+                                <input type="text" ng-model="user.userName"
+                                    ng-change="onChange()">
+                            </div>
+                            
+                            <div class="col-xs-4">
+                                <!-- Dataset selection -->
+                                <div class="btn-group" dropdown>
+                                    <button type="button" class="btn btn-lg btn-fancy dropdown-toggle" ng-disabled="PC.busy">
+                                        <span>{{ dataset.datasetName }}</span>
 
-                            <div class="vertical-space"></div>
+                                        <span ng-show="!PC.busy" class="caret"></span>
+                                        <span ng-show="PC.busy"><i class="fa fa-spinner fa-spin"></i></span>
+                                    </button>
 
-                            <!-- Job selection -->
-                            <div class="btn-group" dropdown is-open="status.isopen">
-                                <button type="button" class="btn btn-lg btn-fancy dropdown-toggle" ng-disabled="PC.busy">
-                                    <localize key="device.jobtype.{{DeviceJobType.getName(device.currentJobType) || ''}}"></localize>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li ng-repeat="dataset in datasetCache.list">
+                                            <a href="" ng-click="setDataset(device, dataset);">
+                                                <span>{{ dataset.datasetName }}</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="col-xs-4">
+                                <!-- Job selection -->
+                                <div class="btn-group" dropdown is-open="deviceJobDropdown.isopen">
+                                    <button type="button" class="btn btn-lg btn-fancy dropdown-toggle" ng-disabled="PC.busy">
+                                        <localize key="device.jobtype.{{DeviceJobType.getName(device.currentJobType) || ''}}"></localize>
 
-                                    <span ng-show="!PC.busy" class="caret"></span>
-                                    <span ng-show="PC.busy"><i class="fa fa-spinner fa-spin"></i></span>
-                                </button>
-                                <ul class="dropdown-menu" role="menu">
-                                    <li ng-repeat="jobType in DeviceJobType.getValues()">
-                                        <a href="" ng-click="setDeviceJobType(device, jobType); status.isopen = false;">
-                                            <localize key="device.jobtype.{{DeviceJobType.getName(jobType) || ''}}">
-                                            </localize>
-                                        </a>
-                                    </li>
-                                </ul>
+                                        <span ng-show="!PC.busy" class="caret"></span>
+                                        <span ng-show="PC.busy"><i class="fa fa-spinner fa-spin"></i></span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li ng-repeat="jobType in DeviceJobType.getValues()">
+                                            <a href="" ng-click="setDeviceJobType(device, jobType); deviceJobDropdown.isopen = false;">
+                                                <localize key="device.jobtype.{{DeviceJobType.getName(jobType) || ''}}">
+                                                </localize>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
 
                             <!-- Save indicators -->
@@ -229,11 +278,27 @@
         </div>
         <div class="panel-body no-padding">
             <ul class="list-group">
+                <!-- Dataset Header row -->
+                <li class="list-group-item no-padding">
+                    <div class="table table-striped some-padding"
+                        ng-click="PC.datasetSelection.toggleSelection(dataset); onChange();">
+                        <div class="row text-bold">
+                            <div class="col-xs-8">
+                                <span>name</span>
+                            </div>
+                            <div class="col-xs-4">
+                                <span>created</span>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
+
+                <!-- Show dataset Info -->
                 <li ng-repeat="dataset in datasetCache.list"
                     class="list-group-item no-padding"
                     ng-class="{ 'highlight-own': PC.datasetSelection.isSelected(dataset) }">
 
-                    <!-- Show dataset Info -->
                     <div class="table table-striped some-padding"
                         ng-click="PC.datasetSelection.toggleSelection(dataset); onChange();">
                         <div class="row">
@@ -241,6 +306,7 @@
                                 <span>{{dataset.datasetName}}</span>
                             </div>
                             <div class="col-xs-4">
+                                <span>{{ dataset.createdAt && util.moment(dataset.createdAt).calendar() || '&lt;unknown>' }}</span>
                             </div>
                         </div>
                     </div>

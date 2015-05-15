@@ -147,15 +147,26 @@ module.exports = NoGapDef.component({
                         .catch($scope.handleError.bind($scope));
                     };
 
+                    $scope.setDataset = function(device, dataset) {
+                        $scope.updateDevice({
+                            deviceId: device.deviceId,
+                            currentDatasetId: dataset.datasetId
+                        });
+                    };
+
                     $scope.setDeviceJobType = function(device, jobType) {
+                        $scope.updateDevice({
+                            deviceId: device.deviceId,
+                            currentJobType: jobType
+                        });
+                    };
+
+                    $scope.updateDevice = function(deviceUpdate) {
                         ThisComponent.busy = true;
 
                         var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
 
-                        devices.updateObject({
-                            deviceId: device.deviceId,
-                            currentJobType: jobType
-                        })
+                        return devices.updateObject(deviceUpdate)
                         .finally(function() {
                             ThisComponent.busy = false;
                         })
@@ -164,6 +175,7 @@ module.exports = NoGapDef.component({
                             ThisComponent.page.invalidateView();
                         })
                         .catch($scope.handleError.bind($scope));
+
                     };
 
 
