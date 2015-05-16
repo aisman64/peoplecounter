@@ -134,14 +134,42 @@ module.exports = NoGapDef.component({
                     $scope.datasetCache = Instance.WifiDataset.wifiDatasets;
 
 
+                    // #########################################################################################################
+                    // Devices - general
+
                     $scope.onChange = function() {
                         $scope.errorMessage = null;
                         ThisComponent.deviceSaved = false;
                     };
 
+                    $scope.downloadImage = function(device) {
+                        // start downloading image
+                        Instance.DeviceImage.downloadDeviceImage();
+                    };
+
+                    $scope.startWritingDeviceWifiConfigFile = function() {
+                        ThisComponent.writingDeviceWifiConfigFile = !ThisComponent.writingDeviceWifiConfigFile;
+                        if (ThisComponent.writingDeviceWifiConfigFile) {
+                            ThisComponent.busy = true;
+                            
+                            return Instance.AppConfig.requestConfigValue('deviceWifiConnectionFile')
+                            .finally(function() {
+                                ThisComponent.busy = false;
+                            })
+                            .then(function(val) {
+                                ThisComponent.page.invalidateView();
+                            })
+                            .catch($scope.handleError.bind($scope));
+                        }
+                    };
+
+                    $scope.updateDeviceWifiConfigFile = function() {
+                        Instance.AppConfig.updateConfigValue('deviceWifiConnectionFile', Instance.AppConfig.getValue('deviceWifiConnectionFile'));
+                    };
+
 
                     // #########################################################################################################
-                    // Devices
+                    // Devices - individual
 
                     $scope.registerNewDevice = function(name) {
                         $scope.onChange();
@@ -162,11 +190,6 @@ module.exports = NoGapDef.component({
                             ThisComponent.deviceSaved = false;
                             $scope.handleError(err);
                         });
-                    };
-
-                    $scope.downloadImage = function(device) {
-                        // start downloading image
-                        Instance.DeviceImage.downloadDeviceImage();
                     };
                     
 

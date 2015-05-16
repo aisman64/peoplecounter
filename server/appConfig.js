@@ -23,6 +23,8 @@ module.exports = {
         'filePath': __dirname + '/data/DeviceImage.img'
     },
 
+    'deviceHostNamePrefix': 'dv_one_dev_',
+
     // ########################################################################################################################
     // User feature locks
 
