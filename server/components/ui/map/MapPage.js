@@ -64,6 +64,16 @@ module.exports = NoGapDef.component({
 
                 app.lazyController('mapCtrl', ['$scope', 'uiGmapGoogleMapApi', 
                     function($scope, GoogleMapApi) {
+                        $scope.positions = [];
+                        $scope.addMarker = function(event) {
+                            console.log(event);
+                            $scope.x = event.latLng.A;
+                            $scope.y = event.latLng.F;
+                            var ll = event.latLng;
+                            $scope.positions.push({lat:$scope.x, lng: $scope.y});
+                            console.log($scope.positions);
+                        };
+                        
 
                     $scope.map = { 
                         center: { 
@@ -92,8 +102,28 @@ module.exports = NoGapDef.component({
                      }];
 
                      $scope.queryByMacId = function(macId) {
-                        console.log(macId);
-                        
+                        if (typeof macId !== 'undefined') {
+                            var queryData = {
+                                where: {
+                                    macId: macId
+                                }
+                            };
+                            console.log('hello');
+                            Instance.WifiPacket.wifiPackets.getObjects(queryData)
+                            .then(function(data) {
+                                console.log("then");
+                                console.log(data);
+
+                            })
+                            .catch(function(error){
+                                console.log("catch");
+                                console.log(error);
+
+                            });
+                            // console.log(Instance.WifiPacket);
+
+                        }
+
 
 
 
@@ -107,6 +137,7 @@ module.exports = NoGapDef.component({
                     //     });
                     //     $scope.positions.push({latitude:lat,  longitude: lon});
                     //  }   
+                    
 
 
                         // https://github.com/angular-ui/angular-google-maps/blob/7edede9372a95fba99b1abd49ebcfd2a85ec8c66/example/assets/scripts/controllers/example.js#L252

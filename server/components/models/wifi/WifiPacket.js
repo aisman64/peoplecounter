@@ -25,17 +25,17 @@ module.exports = NoGapDef.component({
                             return queryInput;
                         },
 
-                        compileReadObjects: function(queryInput, ignoreAccessCheck) {
-                            if (!queryInput.macId) {
-
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
+                            if (!this.Instance.User.isStaff()) {
+                                return Promise.reject('error.invalid.permissions');
                             }
 
-                            var queryData = {
-                                where: {}
-                            };
+                            // var queryData = {
+                            //     where: {}
+                            // };
 
 
-                            return queryData;
+                            return queryInput;
                         }
                     }
                 }
