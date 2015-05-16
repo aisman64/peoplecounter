@@ -52,10 +52,10 @@
                     <div class="table some-padding"
                         ng-click="PC.deviceSelection.toggleSelection(device); onChange(); PC.showDeviceConfig = false;">
                         <div class="row">
-                            <div class="col-xs-4">
+                            <div class="col-xs-3">
                                 <span>{{ user.userName }}</span>
                             </div>
-                            <div class="col-xs-4">
+                            <div class="col-xs-5">
                                 <span ng-if="!!dataset"
                                     class="alert-info">
                                     {{ dataset.datasetName }}
@@ -98,13 +98,13 @@
                 <!-- Device Editor -->
                     <form ng-if="PC.deviceSelection.isSelected(device)">
                         <div class="row some-padding">
-                            <div class="col-xs-4">
+                            <div class="col-xs-3">
                                 <!-- Name -->
                                 <input type="text" ng-model="user.userName"
                                     ng-change="onChange()">
                             </div>
                             
-                            <div class="col-xs-4">
+                            <div class="col-xs-5">
                                 <!-- Dataset selection -->
                                 <div class="btn-group" dropdown>
                                     <button type="button" class="btn btn-lg btn-fancy dropdown-toggle" ng-disabled="PC.busy">

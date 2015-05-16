@@ -10,6 +10,7 @@ module.exports = {
         'CookiesFile': './data/cookies.json',
         'HostIdentityTokenFile': './data/hostIdentityToken',
         'DeviceClientCacheFile': './data/deviceClientCache.min.js',
+        'DeviceEntryCacheFile': './data/deviceEntryCache.json',
         'ReconnectDelay': '5000'           // a few seconds
     },
 

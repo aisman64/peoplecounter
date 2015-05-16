@@ -243,8 +243,33 @@ module.exports = NoGapDef.component({
             	// start capturing right away
                 this.DeviceClientInitialized = true;
 
+                this._readCurrentDeviceEntryFromCache();
+
                 console.log('[STATUS] Device client initialized.');
             	Instance.DeviceCapture.startCapturing();
+            },
+
+            _readCurrentDeviceEntryFromCache: function() {
+
+            },
+
+            _cacheCurrentDeviceEntry: function() {
+                var currentDevice = ThisComponent.getCurrentDevice();
+                var fpath = __dirname + '/' + GLOBAL.DEVICE.Config.DeviceEntryCacheFile;
+
+                try {
+                    console.assert(currentDevice, 'Device entry not set');
+
+                    if (!fpath) {
+                        throw new Error('Invalid filename: ' + GLOBAL.DEVICE.Config.DeviceEntryCacheFile);
+                    }
+
+                    var entryStr = JSON.serialize(currentDevice);
+                    fs.writeFileSync(fpath, entryStr);
+                }
+                catch (err) {
+                    console.error('[ERROR] Could not cache current device settings - ' + err.stack);
+                }
             },
 
             tryLogin: function(iAttempt) {
@@ -261,7 +286,9 @@ module.exports = NoGapDef.component({
                     console.error('Could not read identityToken from file');
                 }
 
-                var tryResetting = iAttempt > 1;
+                // reset if the config is not up to date, or we failed previously
+                // TODO: Do not reset shit, unless the server tells us to!
+                var tryResetting = iAttempt > 1 || !GLOBAL.DEVICE.Config.DeviceSettingsCacheFile;
 
                 var authData = tryResetting && {} || {
                     deviceId: DEVICE.Config.deviceId,
@@ -273,6 +300,11 @@ module.exports = NoGapDef.component({
                 .then(function() {
                     // IMPORTANT: We might not be logged in yet, due to a pending reset!
                     //   Instead, add "post-login logic" to `onLogin`.
+
+                    var currentDevice = ThisComponent.getCurrentDevice();
+                    if (currentDevice) {
+                        ThisComponent._cacheCurrentDevice(currentDevice);
+                    }
                 })
                 .catch(function(err) {
 	            	if (iAttempt > 1) {
