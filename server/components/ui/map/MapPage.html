@@ -1,19 +1,16 @@
 
-	<div class="fill container-page" ng-controller="mapCtrl" >
+<div class="ng-scope" ng-controller="mapCtrl" >
 
-
-    	 <ui-gmap-google-map center='map.center' zoom='map.zoom' >
-		<!-- <ui-gmap-marker ng-repeat="m in map.markers" coords="m" icon="m.icon" click="onMarkerClicked(m)" idKey="m.id" options="m.options"> -->
-		<ui-gmap-marker ng-repeat="m in map.markers" coords="m" icon="m.icon" click="addMarker" idKey="m.id" options="m.options">
-		<!-- <marker ng-repeat="pos in positions" position="{{pos.lat}}, {{pos.lng}}"></marker> -->
-            <ui-gmap-window ng-cloak  coords="map.infoWindowWithCustomClass.coords" isIconVisibleOnClick="false" options="map.infoWindowWithCustomClass.options">
-                    <p>This is an info window at {{ m.latitude | number:4 }}, {{ m.longitude | number:4 }}!</p>
-                    <p class="muted">My marker will stay open when the window is popped up!</p>
-            </ui-gmap-window>
-        </ui-gmap-marker>
-
-        </ui-gmap-google-map>
-
+    <map center="25.045574, 121.528325" zoom="17" on-click="addMarker()">
+        <div ng-repeat=" position in positions">
+           
+            <marker position="{{position.lat}},  {{position.lng}}"></marker>
+           
+          <!-- <input ng-click="showMarkers()" type="button" value="Show All Markers"> -->
+        </div>
+            <!-- ngRepeat: pos in positions -->
+    </map>
+        
         <form class="form-inline">
           <div class="form-group">
             <div class="input-group">
@@ -23,8 +20,7 @@
             </div>
           </div>
         </form>
+   
     	 
 
-	</div>
-
- 
+</div>
