@@ -1585,13 +1585,37 @@ module.exports = NoGapDef.component({
                             // update things in DB
                             return this.getModel().update(objValues, selector)
                             .bind(this)
-                            .then(function() {
+                            .spread(function(affectedRows) {
                                 // update memory sets
                                 if (id) {
                                     this._cacheDescriptor.idSetter(objValues, id);   // make sure, id is set (if it was not in values, but only in selector)
-                                }
+                                    var origObj = this.byId[id];
+                                    if (origObj) {
+                                        // we might not actually have updated anything
+                                        // match where against origObj
+                                        // TODO: This only works for trivial where statements...
 
-                                this.applyChange(objValues, queryInput, dontSendToClient);
+                                        // for (var propName in selector.where) {
+                                        //     var prop = selector.where[propName];
+                                        //     if (origObj[propName] !== prop) {
+                                        //         // object did not match
+                                        //         console.warn('object did not match. Difference in: ' + propName);
+                                        //         return;
+                                        //     }
+                                        // }
+                                    }
+
+                                    if (affectedRows) {
+                                        this.applyChange(objValues, queryInput, dontSendToClient);
+                                    }
+                                }
+                                else {
+                                    // could not update memory set
+                                    if (this.hasMemorySet()) {
+                                        this.Tools.logWarn('Cannot update memory set for object in cache `' + this.name + 
+                                            '` without id: ' + objValues);
+                                    }
+                                }
                             });
                         });
                     },

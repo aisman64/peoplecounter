@@ -136,6 +136,39 @@ module.exports = NoGapDef.component({
                                 }
                             }
                             return queryData;
+                        },
+
+                        compileUpdateObject: function(queryInput, ignoreAccessCheck) {
+                            if (!this.Instance.User.isStaff() && !ignoreAccessCheck) {
+                                return Promise.reject(makeError('error.invalid.permissions'));
+                            }
+                            if (!queryInput || isNaNOrNull(queryInput.deviceId)) {
+                                // invalid parameters
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            var values;
+                            var selector;
+                            if (_.isObject(queryInput.values)) {
+                                // allow specifying the exact `where`-abouts
+                                values = queryInput.values;
+                                selector = { where: queryInput.where || {} };
+                            }
+                            else {
+                                // default handling
+                                values = queryInput;
+                                selector = { where: {} };
+                            }
+
+                            // ALWAYS make sure, the `deviceId` is set!
+                            selector.where.deviceId = queryInput.deviceId;
+
+                            console.error(selector);
+
+                            return {
+                                values: values,
+                                selector: selector
+                            };
                         }
                     }
                 }
