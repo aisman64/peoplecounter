@@ -9,31 +9,33 @@ module.exports = NoGapDef.component({
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
-    Host: NoGapDef.defHost(function(Shared, Context) { return {
-        Assets: {
-            Files: {
-                string: {
-                    template: 'ResultPage.html'
+    Host: NoGapDef.defHost(function(Shared, Context) { 
+        return {
+            Assets: {
+                Files: {
+                    string: {
+                        template: 'ResultPage.html'
+                    }
+                },
+                AutoIncludes: {
                 }
             },
-            AutoIncludes: {
-            }
-        },
+                    
+            /**
+             * 
+             */
+            initHost: function() {
                 
-        /**
-         * 
-         */
-        initHost: function() {
+            },
             
-        },
-        
-        /**
-         * Host commands can be directly called by the client
-         */
-        Public: {
-            
-        },
-    }}),
+            /**
+             * Host commands can be directly called by the client
+             */
+            Public: {
+                
+            },
+        };
+    }),
     
     
     /**
@@ -52,16 +54,17 @@ module.exports = NoGapDef.component({
              */
             setupUI: function(UIMgr, app) {
                 // create Home controller
-                app.lazyController('deviceCtrl', function($scope) {
+                app.lazyController('resultCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
                     // customize your HomePage's $scope here:
                 });
 
                 // register page
-                Instance.UIMgr.registerPage(this, 'Result', this.assets.template, {
-                    iconClasses: 'fa fa-cogs'
-                });
+                // TODO
+                // Instance.UIMgr.registerPage(this, 'Result', this.assets.template, {
+                //     iconClasses: 'fa fa-'
+                // });
             },
             
             /**

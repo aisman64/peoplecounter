@@ -17,6 +17,14 @@ module.exports = NoGapDef.component({
                 }
             },
             AutoIncludes: {
+                js: [
+                    'http://maps.googleapis.com/maps/api/js?key=&sensor=false&extension=.js',
+                    'lib/angular/angular-google-maps.min',
+                    'lib/angular/ng-map.min',
+                    //'lib/angular/ng-map.js',
+                    'lib/angular/ng-map.debug.js'
+                    //'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js',
+                ]
             }
         },
                 
@@ -114,7 +122,7 @@ module.exports = NoGapDef.component({
 
                 // register page
                 Instance.UIMgr.registerPage(this, 'Map', this.assets.template, {
-                    iconClasses: 'fa fa-cogs'
+                    iconClasses: 'fa fa-map-marker'
                 });
             },
             

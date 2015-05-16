@@ -259,7 +259,7 @@ module.exports = NoGapDef.component({
 
                 // register page
                 Instance.UIMgr.registerPage(this, 'Device', this.assets.template, {
-                    iconClasses: 'fa fa-cogs'
+                    iconClasses: 'fa fa-cog'
                 });
             },
 
@@ -274,8 +274,11 @@ module.exports = NoGapDef.component({
                     // load all datasets into cache
                     Instance.WifiDataset.wifiDatasets.readObjects()
                 )
-                .then(function() {
+                .spread(function(users, devices, datasets) {
                     ThisComponent.page.invalidateView();
+                })
+                .catch(function(err) {
+                    ThisComponent.page.handleError(err);
                 });
             },
 
