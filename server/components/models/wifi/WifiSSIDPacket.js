@@ -94,12 +94,12 @@ module.exports = NoGapDef.component({
                             models.WifiSSIDPacket.belongsTo(models.SSID,
                                  { foreignKey: 'ssidId', as: 'SSID', constraints: false });
                              models.SSID.hasMany(models.WifiSSIDPacket,
-                                 { foreignKey: 'ssidId', as: 'packets', constraints: false });
+                                 { foreignKey: 'ssidId', as: 'SSIDPackets', constraints: false });
 
                             models.WifiSSIDPacket.belongsTo(models.MACAddress,
                                  { foreignKey: 'macId', as: 'MACAddress', constraints: false });
                             models.MACAddress.hasMany(models.WifiSSIDPacket,
-                                 { foreignKey: 'macId', as: 'packets', constraints: false });
+                                 { foreignKey: 'macId', as: 'SSIDPackets', constraints: false });
                         },
 
                         onAfterSync: function(models) {

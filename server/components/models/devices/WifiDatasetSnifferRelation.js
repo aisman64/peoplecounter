@@ -1,5 +1,6 @@
 /**
- * Each device is deployed in a physical location and captures WifiSSIDPackets in bundles of WifiDataSets.
+ * Each device is deployed in a fixed physical location and captures WifiSSIDPackets in bundles of WifiDataSets.
+ * The location of each device while capturing this dataset is stored in this table.
  */
 "use strict";
 
@@ -50,35 +51,29 @@ module.exports = NoGapDef.component({
                 /**
                  * 
                  */
-                return sequelize.define('WifiSnifferDevice', {
+                return sequelize.define('WifiDatasetSnifferRelation', {
                     datasetSnifferRelationId: { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
 
                     datasetId: Sequelize.INTEGER.UNSIGNED,
-
                     deviceId: Sequelize.INTEGER.UNSIGNED,
 
-                    lat: Sequelize.DECIMAL,
-                     
+                    lat: Sequelize.DECIMAL,                     
                     lng: Sequelize.DECIMAL
                 },{
 
                     freezeTableName: true,
-                    tableName: 'WifiSnifferDevice',
+                    tableName: 'WifiDatasetSnifferRelation',
                     classMethods: {
                         onBeforeSync: function(models) {
-                            // setup foreign key Association between user and device (one-to-one relationship)
-                            this.belongsTo(models.User,
-                                { foreignKey: 'uid', as: 'user', foreignKeyConstraint: true,
-                                onDelete: 'cascade', onUpdate: 'cascade' });
                         },
 
                         onAfterSync: function(models) {
                             var tableName = this.getTableName();
+
                             return Promise.join(
                                 // create indices
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['uid']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['isAssigned']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['resetTimeout'])
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['datasetId']),
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['deviceId'])
                             );
                         }
                     }
