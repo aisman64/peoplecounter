@@ -120,9 +120,6 @@ module.exports = NoGapDef.component({
 
                 // sanity check: Make sure, User cache is present
                 console.assert(this.Instance.User.users, 'INTERNAL ERROR: Cache installation failed.');
-
-                // resume user session
-                return this.Instance.User.resumeSession();
             },
         }
     };}),

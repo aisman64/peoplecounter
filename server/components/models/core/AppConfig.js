@@ -13,12 +13,23 @@ var SequelizeUtil = require(libRoot + 'SequelizeUtil');
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
+            OverridableConfigKeys: [
+                'currentScriptVersion',
+            ],
+
+            __ctor: function() {
+                this.OverridableConfigKeysMap = {};
+                for (var i = 0; i < this.OverridableConfigKeys.length; ++i) {
+                    this.OverridableConfigKeysMap[this.OverridableConfigKeys[i]] = 1;
+                };
+            },
+
             getValue: function(key) {
-                return this.defaultConfig[key];
+                return this.config[key];
             },
 
             getAll: function() {
-                return this.defaultConfig;
+                return this.config;
             },
 
             Private: {
@@ -56,17 +67,35 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function () {
                 this.defaultConfig = require(appRoot + 'appConfig');
+                this.config = _.clone(this.defaultConfig);
+            },
+
+            serializeConfig: function(cfg) {
+                return JSON.stringify(cfg, null, '\t');
+            },
+
+            deserializeConfig: function(cfgString) {
+                try {
+                    return JSON.parse(cfgString);
+                }
+                catch (err) {
+                    throw new Error('Could not parse config: ' + cfgString);
+                }
             },
 
             initModel: function() {
+                var ThisComponent = this;
+
                 /**
                  * AppConfig model definition: Contains all run-time editable configuration options.
                  */
                 return sequelize.define('AppConfig', {
                     configId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
 
-                    name: Sequelize.STRING(100),
-
+                    /**
+                     * Other config overrides
+                     */
+                    configOverrides: Sequelize.TEXT,
                 },{
                     freezeTableName: true,
                     tableName: 'AppConfig',
@@ -79,6 +108,27 @@ module.exports = NoGapDef.component({
                             // return Promise.join(
                             //     // create indices
                             // );
+
+                            var configDefaults = {
+                                currentScriptVersion: 1
+                            };
+
+                            // query config overrides from DB, or create new, if it does not exist yet
+                            return this.findOrCreate({
+                                where: { },       // get any config (for now, we only want one)
+                                defaults: {
+                                    configOverrides: ThisComponent.serializeConfig(configDefaults)
+                                }
+                            })
+                            .spread(function(runtimeConfig, created) {
+                                // get POD (plain-old data)
+                                runtimeConfig = runtimeConfig.get();
+
+                                // merge overrides into config
+                                this.runtimeConfig = runtimeConfig;
+                                this.runtimeConfigOverrides = ThisComponent.deserializeConfig(runtimeConfig.configOverrides);
+                                _.merge(ThisComponent.config, runtimeConfig);
+                            });
                         }
                     }
                 });
@@ -90,57 +140,30 @@ module.exports = NoGapDef.component({
                 /**
                  * Min privilege level required to use the system.
                  */
-                this.defaultConfig.minAccessRoleId = Shared.User.UserRole[this.defaultConfig.minAccessRole] || Shared.User.UserRole.StandardUser;
+                this.config.minAccessRoleId = Shared.User.UserRole[this.config.minAccessRole] || Shared.User.UserRole.StandardUser;
 
                 // update tracing settings
                 Shared.Libs.ComponentTools.TraceCfg.enabled = this.getValue('traceHost');
             },
 
-            // updateValue: function(key, value) {
-            //     if (!runtimeEditableConfig[key]) {
-            //         console.error('tried to update invalid config key: ' + key);
-            //         return Promise.reject('error.invalid.key');
-            //     }
+            updateValue: function(key, value) {
+                if (!this.OverridableConfigKeysMap[key]) {
+                    return Promise.reject(makeError('error.config.invalidKey', 'Config key cannot be overridden: ' + key));
+                }
 
-            //     // update in-memory cache
-            //     runtimeEditableConfig[key] = value;
+                // `this.runtimeConfig` is assigned right after DB initialization. Have to wait for it!
+                console.assert(!!this.runtimeConfig, 'Tried to run `AppConfig.updateValue` before server initialization finished');
 
-            //     // update DB
-            //     var values = {};
-            //     values[key] = value;
+                // update in-memory cache
+                this.runtimeConfigOverrides[key] = value;
+                this.runtimeConfig.configOverrides = this.serializeConfig(this.runtimeConfigOverrides);
 
-            //     var selector = {
-            //         where: {configId: runtimeEditableConfig.configId}
-            //     };
-            //     return this.Model.update(values, selector);
-            // },
-
-            // initModel: function() {
-            //     var AppConfig;
-            
-            //     /**
-            //      * Activity model definition.
-            //      */
-            //     return AppConfig = sequelize.define('AppConfig', {
-            //      configId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-            //         name: Sequelize.STRING(100),
-            //         settings: Sequelize.TEXT
-            //     },{
-            //         freezeTableName: true,
-            //         tableName: 'bjt_config',
-            //         classMethods: {
-            //             onBeforeSync: function(models) {
-            //             },
-
-            //             onAfterSync: function(models) {
-            //                 return Promise.join(
-            //                     // create indices
-            //                     SequelizeUtil.createIndexIfNotExists('bjt_config', ['configId'])
-            //                 );
-            //             }
-            //         }
-            //     });
-            // },
+                // update in DB
+                var selector = {
+                    where: {configId: this.runtimeConfig.configId}
+                };
+                return this.Model.update(values, selector);
+            },
 
             // ################################################################################################################
             // Config instance
@@ -150,7 +173,7 @@ module.exports = NoGapDef.component({
                 },
 
                 getClientCtorArguments: function() {
-                    return [this.Shared.defaultConfig]
+                    return [this.Shared.config, this.Shared.runtimeConfig]
                 },
 
                 onNewClient: function() {
@@ -194,10 +217,11 @@ module.exports = NoGapDef.component({
 
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         return {
-            __ctor: function (defaultConfig) {
-                this.defaultConfig = defaultConfig;
+            __ctor: function (config, runtimeConfig) {
+                this.config = config;
+                this.runtimeConfig = runtimeConfig;
 
-                Instance.Libs.ComponentTools.TraceCfg.enabled = defaultConfig.traceClient;
+                Instance.Libs.ComponentTools.TraceCfg.enabled = config.traceClient;
             },
 
             initClient: function() {

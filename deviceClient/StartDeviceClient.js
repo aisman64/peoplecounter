@@ -30,7 +30,6 @@ var FileCookieStore = require('tough-cookie-filestore');
 // Config handling
 
 GLOBAL.DEVICE = {};
-
 GLOBAL.DEVICE.ConfigFilePath = './data/DeviceConfig.json';
 
 GLOBAL.DEVICE.readDeviceConfig = function readDeviceConfig() {
@@ -40,7 +39,13 @@ GLOBAL.DEVICE.readDeviceConfig = function readDeviceConfig() {
 
 
 // initialize
-DEVICE.readDeviceConfig();
+try {
+	DEVICE.readDeviceConfig();
+}
+catch (err) {
+	console.error('[ERROR] Could not load config - ' + err.message);
+	return -1;
+}
 
 var Running = true;
 
@@ -69,6 +74,29 @@ connectToServerNow();
 })();
 
 
+
+// #############################################################################
+// Device client code execution and caching
+
+function runCode(jsCode) {
+	// compile and execute server-sent code
+	var Instance = eval(jsCode);
+
+	// compilation worked!
+
+	// TODO: Write to cache, after checking version?
+}
+
+/**
+ * Try loading and running previously cached script
+ */
+function tryRunScriptFromCache() {
+	var cacheFileName = DEVICE.Config.DeviceClientCacheFile;
+	
+}
+
+
+
 // #############################################################################
 // Basic device connection state initialization
 
@@ -94,18 +122,19 @@ function connectToServerNow() {
 					'X-NoGap-NoHTML': '1'
 				},
 			},
-			function (error, response, body) {
+			function (error, response, jsonEncodedJsCode) {
 				if (error) {
 					reject(error);
 					return;
 				}
 
-				console.log('Connected to server. Received client script (' + body.length + ' bytes). Compiling...');
+				console.log('Connected to server. Received client script (' + jsonEncodedJsCode.length + ' bytes). Compiling...');
 
 				// start running client sent through NoGap
 				//console.log(body);
-				var jsonString = eval(body);
-				var Instance = eval(jsonString);
+				var jsCode = eval(jsonEncodedJsCode);
+				
+				runCode(jsCode);
 			}
 		);
 	})

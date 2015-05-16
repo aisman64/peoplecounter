@@ -89,14 +89,6 @@ module.exports = NoGapDef.component({
                         }
                     }
                 });
-            },
-
-            Private: {
-                storePacket: function(packet) {
-                    // insert into DB
-                    // see: http://docs.sequelizejs.com/en/latest/api/model/#createvalues-options-promiseinstance
-                    return this.Instance.wifiPackets.createObject(packet, false, true);
-                }
             }
         };
     }),

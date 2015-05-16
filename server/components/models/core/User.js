@@ -596,7 +596,7 @@ module.exports = NoGapDef.component({
                 /**
                  * This method is called upon bootstrap for user's with an established session.
                  */
-                resumeSession: function() {
+                resumeSession: function(filter) {
                     // log into account of given uid
                     var sess = this.Context.session;
                     var uid = sess.uid;
@@ -607,7 +607,19 @@ module.exports = NoGapDef.component({
                             //return Promise.reject('error.login.locked');
                             user = null;
                         }
-                        this.setCurrentUser(user);
+
+                        var promise = Promise.resolve(user);
+                        if (user && filter) {
+                        	// check if user is ok
+                        	promise = promise.then(filter);
+                        }
+
+                        return promise
+                        .bind(this)
+                        .then(function(user) {
+                        	this.setCurrentUser(user);
+                        	return user;
+                    	});
                     }.bind(this);
 
                     if (uid) {
@@ -617,35 +629,31 @@ module.exports = NoGapDef.component({
                         .bind(this)
                         .then(function(user) {
                             if (!user) {
-                                //console.error('hasdasdi');
-                                // could not login -> Invalid session (or rather, User could not be found)
+                                // could not login -> Invalid session (or User could not be found)
                                 this.Tools.warn('Unable to login user from session -- invalid or expired session');
                                 delete sess.uid;    // delete uid from session
 
-                                return loginAs(null) || null;
+                                return loginAs(null);
                             }
                             else {
                                 // do the login game
-                                var rejection = loginAs(user);
-                                if (rejection) {
-                                    return rejection;
-                                }
-
-                                // NOTE: We don't want to wait for all login events to finish here, since that can potentially take a while
-                                //      If it finishes a bit later, things will (usually) work just fine.
-                                this.onLogin(user, false);
-                                return user;
+                                return loginAs(user)
+                                .bind(this)
+                                .then(function(user) {
+                                	return this.onLogin(user, false);
+                                })
+                                .return(user);
                             }
                         })
                         .catch(function(err) {
                             this.Tools.handleError(err);
-                            return loginAs(null) || null;
+                            return loginAs(null);
                         });
                     }
                     else {
                         // no session to resume:
                         // login as guest
-                        return loginAs(null) || null;
+                        return loginAs(null);
                     }
                 },
 
@@ -707,6 +715,7 @@ module.exports = NoGapDef.component({
                             this.Tools.handleError(new Error('Cache error'));
                         };
                     }
+                    
                     this.client.setCurrentUser(uid);
                 },
             },
