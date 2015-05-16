@@ -291,7 +291,8 @@ module.exports = NoGapDef.component({
                         var newDevice = {
                             uid: newUser.uid,
                             identityToken: this.Instance.DeviceConfiguration.generateIdentityToken(),
-                            rootPassword: this.Instance.DeviceConfiguration.generateRootPassword()
+                            rootPassword: this.Instance.DeviceConfiguration.generateRootPassword(),
+                            hostName: 'dv_one_dev_' + newUser.uid
                         };
                         this._resetDevice(newDevice);
                         return this.wifiSnifferDevices.createObject(newDevice);

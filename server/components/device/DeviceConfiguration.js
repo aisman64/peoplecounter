@@ -68,6 +68,7 @@ module.exports = NoGapDef.component({
                             cfg.deviceId = device.deviceId;
                             cfg.sharedSecret = user.sharedSecret;
 
+                            // TODO: Fix hostName
                             cfg.hostName = device.hostName;
                         });
                     }
