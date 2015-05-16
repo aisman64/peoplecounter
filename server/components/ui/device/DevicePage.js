@@ -274,8 +274,11 @@ module.exports = NoGapDef.component({
                     // load all datasets into cache
                     Instance.WifiDataset.wifiDatasets.readObjects()
                 )
-                .then(function() {
+                .spread(function(users, devices, datasets) {
                     ThisComponent.page.invalidateView();
+                })
+                .catch(function(err) {
+                    ThisComponent.page.handleError(err);
                 });
             },
 

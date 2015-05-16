@@ -133,7 +133,7 @@ module.exports = {
     'db' : {
         'host'     : 'localhost',
         'user'     : 'root',
-        'password' : '123',
+        'password' : 'r00t',
         'port'     : '3306',
         'database' : 'peoplecounter',
         'reconnectDelay':   '5'
@@ -196,7 +196,8 @@ module.exports = {
             'models/wifi/MACAddress',
             'models/wifi/SSID',
             'models/wifi/WifiDataset',
-            'models/wifi/WifiPacket',
+            'models/wifi/WifiSSIDPacket',
+            'models/wifi/WifiActivityPacket',
             'models/wifi/MAC_SSID_Relation',
             'models/devices/WifiSnifferDevice',
             'models/devices/DeviceStatus',
@@ -232,6 +233,9 @@ module.exports = {
             'ui/live/LivePage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
+            'ui/map/MapPage',
+            'ui/result/ResultPage',
+            // superuser pages:
 
             'ui/map/MapPage',
             'ui/result/ResultPage',

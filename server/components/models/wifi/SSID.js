@@ -48,7 +48,7 @@ module.exports = NoGapDef.component({
 
                     lat: Sequelize.DECIMAL,
                     
-                    lon: Sequelize.DECIMAL
+                    lng: Sequelize.DECIMAL
                 }, {
                     freezeTableName: true,
                     tableName: 'SSID',

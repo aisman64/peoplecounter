@@ -67,7 +67,8 @@ module.exports = NoGapDef.component({
                         .then(function(user) {
                             cfg.deviceId = device.deviceId;
                             cfg.sharedSecret = user.sharedSecret;
-                            //console.error("New Password: "+user.sharedSecret);
+
+                            cfg.hostName = device.hostName;
                         });
                     }
                     else {
@@ -97,7 +98,7 @@ module.exports = NoGapDef.component({
                 tryResetDevice: function(device, newDeviceStatus) {
                     var DeviceStatusId = Shared.DeviceStatus.DeviceStatusId;
 
-                    // this can fail in more than once place
+                    // this can fail in more than once place -> Log it!
                     var failed = false;
                     var onFail = function(err) {
                         if (failed) return;
@@ -123,7 +124,7 @@ module.exports = NoGapDef.component({
                         if (resetTimeout.getTime() < now.getTime()) {
                             // fail: reset time is already up!
                             newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
-                            return Promise.reject('device reset expired');
+                            return Promise.reject(makeError('device reset expired'));
                         }
 
                         // device is scheduled for reset
@@ -142,7 +143,11 @@ module.exports = NoGapDef.component({
                     .then(function(monitor) {
                         monitor.wait.catch(onFail);
                     })
-                    .catch(onFail);
+                    .catch(function(err) {
+                        onFail(err);
+
+                        return Promise.reject(err);
+                    });
                 },
 
                 /**
@@ -357,7 +362,6 @@ module.exports = NoGapDef.component({
                  * This is also called when a new device connects to the server for the first time, and is assigned a new configuration.
                  */
                 updateConfig: function(newIdentityToken, oldIdentityToken, newConfig) {
-                    // TODO: Update root password
                     console.warn('Resetting device configuration...');
 
                     request = require('request');   // HTTP client module
@@ -388,17 +392,17 @@ module.exports = NoGapDef.component({
                         // then update identityToken
                         return this.writeIdentityToken(newIdentityToken);
                     })
-                    /*.then(function() {
-                        // then Update hostname
-                        return Instance.DeviceMain.execAsync(
-                            "new=pcgalileo"+
-                            newConfig.DeviceId+
-                            "\n"+
-                            +this.assets.hostchanger);
+                    .then(function() {
+                        // TODO: Update root password
+                        // return Instance.DeviceMain.execAsync(
+                        //     "new=pcgalileo"+
+                        //     newConfig.DeviceId+
+                        //     "\n"+
+                        //     +this.assets.hostchanger);
                     })
                     .then(function() {
-                        return Instance.DeviceMain.execAsync("");
-                    })*/
+                        // TODO: Update root password
+                    })
                     .then(function() {
                         // tell Host, we are done
                         return this.host.deviceResetConfigurationAck(newConfig.deviceId, oldIdentityToken);
