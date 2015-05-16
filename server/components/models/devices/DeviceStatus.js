@@ -18,16 +18,17 @@ module.exports = NoGapDef.component({
                 LoginReset: 11,
                 LoginResetFailed: 12,
             }),
+            
+            Caches: {
+                deviceStatuses: {
+                    idProperty: 'deviceStatusId',
+                    members: {
+
+                    }
+                }
+            },
 
 	    	Private: {
-	    		Caches: {
-	    			deviceStatuses: {
-	    				idProperty: 'deviceStatusId',
-                        members: {
-
-                        }
-	    			}
-	    		}
 	    	}
 	    };
 	}),

@@ -8,9 +8,16 @@
 var NoGapDef = require('nogap').Def;
 
 
+var componentsRoot = '../../';
+var libRoot = componentsRoot + '../lib/';
+var bcrypt = require(libRoot + 'bcrypt');
+
+
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
+            CryptWorkFactorClient: 8,
+
             /**
              * @const
              */
@@ -75,75 +82,102 @@ module.exports = NoGapDef.component({
                 return userRole && userRole >= otherRole;
             },
 
-            Private: {
-                // Caches (static member)
-                Caches: {
-                    users: {
-                        idProperty: 'uid',
+            /**
+             * We never want to send passphrase as-is.
+             * Instead, we mix things up and one-time-hash them to create an even safer password.
+             *
+             * @see https://github.com/dcodeIO/bcrypt.js
+             * @param pepper Usually the user name or some other user-dependent information that is thrown into the mix to avoid equality of passwords of different users.
+             *
+             * @return A hashed version of the given passphrase
+             */
+            hashPassphrase: function(pepper, passphrase, salt) {
+                var sharedSecretRaw = pepper + ':' + passphrase;
+                bcrypt = (typeof(bcrypt) !== 'undefined') ? bcrypt : Shared.Main.assets.bcrypt;
 
-                        hasHostMemorySet: 1,
+                // create a hash asynchronously, so the actual password is never seen by anyone
+                return new Promise(function(resolve, reject) {
+                    salt = salt || Shared.AppConfig.getValue('userPasswordFirstSalt');
+                    bcrypt.hash(sharedSecretRaw, salt, function(err, sharedSecretV1) {
+                        if (err) {
+                            return reject(err);
+                        }
 
-                        indices: [
-                            {
-                                unique: true,
-                                key: ['userName']
-                            },
-                            {
-                                unique: true,
-                                key: ['facebookID']
-                            },
-                        ],
+                        resolve(sharedSecretV1);
+                    });
+                }.bind(this));
+            },
 
-                        InstanceProto: {
-                            initialize: function(users) {
-                                // add Instance object to new User instance
-                                Object.defineProperty(this, 'Instance', {
-                                    enumerable: false,
-                                    value: users.Instance
-                                });
+            // Caches (static member)
+            Caches: {
+                users: {
+                    idProperty: 'uid',
+
+                    hasHostMemorySet: 1,
+
+                    indices: [
+                        {
+                            unique: true,
+                            key: ['userName']
+                        },
+                        {
+                            unique: true,
+                            key: ['facebookID']
+                        },
+                    ],
+
+                    InstanceProto: {
+                        initialize: function(users) {
+                            // add Instance object to new User instance
+                            Object.defineProperty(this, 'Instance', {
+                                enumerable: false,
+                                value: users.Instance
+                            });
+                        }
+                    },
+
+                    members: {
+                        getObjectNow: function(queryInput, ignoreAccessCheck) {
+                            if (!this.hasMemorySet()) return null;
+
+                            if (!queryInput) return null;
+                            if (!ignoreAccessCheck && !this.Instance.User.isStaff()) {
+                                // currently, this query cannot be remotely called by client
+                                return null;
                             }
+
+                            if (queryInput.uid) {
+                                return this.byId[queryInput.uid];
+                            }
+                            else if (queryInput.facebookID) {
+                                return this.indices.facebookID.get(queryInput.facebookID);
+                            }
+                            else if (queryInput.userName) {
+                                return this.indices.userName.get(queryInput.userName);
+                            }
+                            return null;
                         },
 
-                        members: {
-                            getObjectNow: function(queryInput, ignoreAccessCheck) {
-                                if (!this.hasMemorySet()) return null;
-
-                                if (!queryInput) return null;
-                                if (!ignoreAccessCheck && !this.Instance.User.isStaff()) {
-                                    // currently, this query cannot be remotely called by client
-                                    return null;
-                                }
-
-                                if (queryInput.uid) {
-                                    return this.byId[queryInput.uid];
-                                }
-                                else if (queryInput.facebookID) {
-                                    return this.indices.facebookID.get(queryInput.facebookID);
-                                }
-                                else if (queryInput.userName) {
-                                    return this.indices.userName.get(queryInput.userName);
-                                }
-                                return null;
-                            },
-
-                            getObjectsNow: function(queryInput) {
-                                if (!this.hasMemorySet()) return null;
-                                if (queryInput && queryInput.uid instanceof Array) {
-                                    var result = [];
-                                    for (var i = 0; i < queryInput.uid.length; ++i) {
-                                        var uid = queryInput.uid[i];
-                                        var user = this.byId[uid];
-                                        if (user) {
-                                            result.push(user);
-                                        }
-                                    };
-                                    return result
-                                }
-                                return this.list;
-                            },
-                        }
+                        getObjectsNow: function(queryInput) {
+                            if (!this.hasMemorySet()) return null;
+                            if (queryInput && queryInput.uid instanceof Array) {
+                                var result = [];
+                                for (var i = 0; i < queryInput.uid.length; ++i) {
+                                    var uid = queryInput.uid[i];
+                                    var user = this.byId[uid];
+                                    if (user) {
+                                        result.push(user);
+                                    }
+                                };
+                                return result
+                            }
+                            return this.list;
+                        },
                     }
-                },
+                }
+            },
+
+            Private: {
 
 
                 // #################################################################################
@@ -187,9 +221,10 @@ module.exports = NoGapDef.component({
         var UserModel;
         var UserRole;
 
-        var componentsRoot = '../../';
-        var libRoot = componentsRoot + '../lib/';
-        var SequelizeUtil;
+        var SequelizeUtil,
+            TokenStore;
+
+        var CryptWorkFactor = 8;
 
         // TODO: Updates
         // see: http://stackoverflow.com/a/8158485/2228771
@@ -197,6 +232,7 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
+                TokenStore = require(libRoot + 'TokenStore');
             },
 
             initModel: function() {
@@ -223,6 +259,7 @@ module.exports = NoGapDef.component({
                     },
 
                     // a transformation of the user's password (which is unknown to the server)
+                    secretSalt: Sequelize.STRING(256),
                     sharedSecret: Sequelize.STRING(256),
 
                     realName: Sequelize.STRING(100),
@@ -250,84 +287,82 @@ module.exports = NoGapDef.component({
                 });
             },
 
-            Private: {
-                Caches: {
-                    users: {
-                        members: {
-                            filterClientObject: function(user) {
-                                // remove sensitive information before sending to client
-                                user.sharedSecret = null;
+            
+            Caches: {
+                users: {
+                    members: {
+                        filterClientObject: function(user) {
+                            // remove sensitive information before sending to client
+                            delete user.secretSalt;
+                            delete user.sharedSecret;
+                            delete user.facebookToken;
 
-                                return user;
-                            },
+                            return user;
+                        },
 
-                            onRemovedObject: function(user) {
-                                // due to a foreign key, devices of user account will also be deleted
-                                // so we will need to update the device cache manually
-                                var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
-                                var device = devices.indices.uid.get(user.uid);
-                                if (device) {
-                                    devices.applyRemove(device);
-                                }
-                            },
-
-                            /**
-                             * 
-                             */
-                            compileReadObjectQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
-                                // Possible input: uid, userName, facebookID
-                                if (!queryInput) {
-                                    return Promise.reject(makeError('error.invalid.request'));
-                                }
-                                if (!ignoreAccessCheck && !this.Instance.User.isStaff()) {
-                                    // currently, this query cannot be remotely called by client
-                                    return Promise.reject('error.invalid.permissions');
-                                }
-
-                                var queryData = {
-                                    include: Shared.User.userAssociations,
-                                    where: {},
-
-                                    // ignore sensitive attributes
-                                    attributes: Shared.User.visibleUserAttributes
-                                };
-
-                                if (queryInput.uid) {
-                                    queryData.where.uid = queryInput.uid;
-                                }
-                                else if (queryInput.facebookID) {
-                                    queryData.where.facebookID = queryInput.facebookID;
-                                }
-                                else if (queryInput.userName) {
-                                    queryData.where.userName = queryInput.userName;
-                                }
-                                else {
-                                    console.error(queryInput);
-                                    return Promise.reject(makeError('error.invalid.request'));
-                                }
-
-                                return queryData;
-                            },
-
-                            compileReadObjectsQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
-                                var queryData = {
-                                    //include: Shared.User.userAssociations,
-
-                                    // ignore sensitive attributes
-                                    attributes: Shared.User.visibleUserAttributes
-                                };
-                                if (queryInput && queryInput.uid instanceof Array) {
-                                    queryData.where = {
-                                        uid: queryInput.uid
-                                    };
-                                }
-                                return queryData;
+                        onRemovedObject: function(user) {
+                            // due to a foreign key, devices of user account will also be deleted
+                            // so we will need to update the device cache manually
+                            var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                            var device = devices.indices.uid.get(user.uid);
+                            if (device) {
+                                devices.applyRemove(device);
                             }
+                        },
+
+                        /**
+                         * 
+                         */
+                        compileReadObjectQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
+                            // Possible input: uid, userName, facebookID
+                            if (!queryInput) {
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            var queryData = {
+                                include: Shared.User.userAssociations,
+                                where: {},
+
+                                // ignore sensitive attributes
+                                attributes: Shared.User.visibleUserAttributes
+                            };
+
+                            if (queryInput.uid) {
+                                queryData.where.uid = queryInput.uid;
+                            }
+                            else if (queryInput.facebookID) {
+                                queryData.where.facebookID = queryInput.facebookID;
+                            }
+                            else if (queryInput.userName) {
+                                queryData.where.userName = queryInput.userName;
+                            }
+                            else {
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            return queryData;
+                        },
+
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
+                            var queryData = {
+                                //include: Shared.User.userAssociations,
+
+                                // ignore sensitive attributes
+                                attributes: Shared.User.visibleUserAttributes
+                            };
+                            if (queryInput && queryInput.uid instanceof Array) {
+                                queryData.where = {
+                                    uid: queryInput.uid
+                                };
+                            }
+                            
+                            return queryData;
                         }
                     }
-                },
+                }
+            },
 
-
+            Private: {
                 __ctor: function () {
                     this.events = {
                         create: new squishy.createEvent(),
@@ -410,9 +445,84 @@ module.exports = NoGapDef.component({
                     });
                 },
 
-                verifyCredentials: function(authData, userData) {
-                    // TODO: Use crypto and SHA1
-                    return true;                    
+                generateNewUserCredentials: function(sharedSecretV1, result) {
+                    var promise = Promise.resolve(sharedSecretV1);
+                    if (!_.isString(sharedSecretV1)) {
+                        var rawPassInfo = sharedSecretV1;
+                        if (!rawPassInfo || (!rawPassInfo.pepper && !rawPassInfo.userName) || !rawPassInfo.passphrase) {
+                            return Promise.reject(makeError('error.internal', 'Invalid arguments for `generateNewUserCredentials`'));
+                        }
+
+                        promise = promise
+                        .bind(this)
+                        .then(function() {
+                            return this.Shared.hashPassphrase(rawPassInfo.pepper || rawPassInfo.userName, rawPassInfo.passphrase);
+                        });
+                    }
+
+                    result = result || {};
+
+                    return promise
+                    .bind(this)
+                    .then(function(sharedSecretV1) {
+                        return new Promise(function(resolve, reject) {
+                            bcrypt.genSalt(CryptWorkFactor, function(err, secretSalt) {
+                                if (err) {
+                                    // never share this error with the outside world
+                                    this.Tools.handleError(err);
+                                    return reject('error.login.auth');
+                                }
+
+                                this._bcryptHash(sharedSecretV1, secretSalt)
+                                .then(function(sharedSecretV2) {
+                                    result.sharedSecret = sharedSecretV2;
+                                    result.secretSalt = secretSalt;
+                                    resolve(result);
+                                })
+                                .catch(reject);
+                            }.bind(this));
+                        }.bind(this));
+                    });
+                },
+
+                _bcryptHash: function(secret, secretSalt) {
+                    return new Promise(function(resolve, reject) {
+                        bcrypt.hash(secret || '', secretSalt, function(err, sharedSecretV2) {
+                            if (err) {
+                                // never share this error with the outside world
+                                this.Tools.handleError(err);
+                                return reject('error.login.auth');
+                            }
+
+                            resolve(sharedSecretV2);
+                        }.bind(this));
+                    }.bind(this));
+                },
+
+                _doesUserHavePasswordCredentials: function(user) {
+                    return !!user.secretSalt && !!user.sharedSecret;
+                },
+
+                verifyCredentials: function(user, authData) {
+                    if (!this._doesUserHavePasswordCredentials(user)) {
+                        // never allow password-based authentication for an account without password
+                        this.Tools.handleError('User without password tried to use password authentication');
+                        return Promise.reject('error.login.auth');
+                    }
+
+                    return this._bcryptHash(authData.sharedSecretV1, user.secretSalt)
+                    .bind(this)
+                    .then(function(sharedSecret) {
+                        if (user.sharedSecret !== sharedSecret) {
+                            // invalid user credentials
+                            this.Tools.handleError('User password authentication failed: ' + [user.sharedSecret, sharedSecret].join(' vs. '));
+                            return Promise.reject('error.login.auth');
+                        }
+                        else {
+                            // all good!
+                            return Promise.resolve();
+                        }
+                    });
                 },
 
                 /**
@@ -420,14 +530,15 @@ module.exports = NoGapDef.component({
                  */
                 tryLogin: function(authData) {
                     if (!authData) {
-                        return Promise.reject('error.login.auth');
+                        return Promise.reject(makeError('error.invalid.request'));
                     }
 
                     // query user from DB
                     var queryInput;
-                    var hasSpecialPermission = this.Context.clientIsLocal || Shared.AppConfig.getValue('dev');
+                    var hasSpecialPermission = this.Context.clientIsLocal;
                     var isFacebookLogin = !!authData.facebookID;
                     var hasAlreadyProvenCredentials = isFacebookLogin;
+
                     if (isFacebookLogin) {
                         // login using FB
                         queryInput = { facebookID: authData.facebookID };
@@ -441,6 +552,7 @@ module.exports = NoGapDef.component({
                     }
                     else {
                         // invalid user credentials
+                        this.Tools.handleError('invalid authentication arguments');
                         return Promise.reject('error.login.auth');
                     }
 
@@ -463,7 +575,11 @@ module.exports = NoGapDef.component({
                             if (hasSpecialPermission) {
                                 // dev mode and localhost always allow admin accounts
                                 authData.role = UserRole.Developer;
-                                return this.createAndLogin(authData);
+
+                                var promise = (!authData.sharedSecretV1 && Promise.resolve() ||
+                                    this.generateNewUserCredentials(authData.sharedSecretV1, authData));
+
+                                return promise.then(this.createNewUser.bind(this, authData, true));
                             }
                             else {
                                 // check if this is the first User
@@ -473,15 +589,16 @@ module.exports = NoGapDef.component({
                                     if (count == 0)  {
                                         // this is the first user: Create & login with highest privs
                                         authData.role = UserRole.Developer;
-                                        return this.createAndLogin(authData);
+                                        return this.createNewUser(authData, true);
                                     }
                                     else if (isFacebookLogin) {
                                         // standard user
                                         authData.role = UserRole.Unregistered;
-                                        return this.createAndLogin(authData);
+                                        return this.createNewUser(authData, true);
                                     }
                                     else {
                                         // invalid user credentials
+                                        this.Tools.handleError('invalid userName: ' + authData.userName);
                                         return Promise.reject('error.login.auth');
                                     }
                                 });
@@ -489,27 +606,28 @@ module.exports = NoGapDef.component({
                         }
                         else if (!user) {
                             // invalid user information
+                            this.Tools.handleError('missing userName during authentication');
                             return Promise.reject('error.login.auth');
                         }
                         else {
-                            if (!hasAlreadyProvenCredentials) {
-                                // verify credentials
-                                if (!this.verifyCredentials(authData, user)) {
-                                    // invalid user credentials
-                                    return Promise.reject('error.login.auth');
-                                }
-                            }
-
                             if (this.isLoginLocked(user)) {
                                 // "normals" cannot login when server is locked
                                 return Promise.reject('error.login.locked');
                             }
-                            
-                            // set current user data
-                            this.setCurrentUser(user);
 
-                            // fire login event
-                            return this.onLogin(user, true)
+                            var promise;
+                            if (!hasAlreadyProvenCredentials && !hasSpecialPermission) {
+                                // verify credentials
+                                promise = this.verifyCredentials(user, authData);
+                            }
+                            else {
+                                // this client is (hopefully) trustworthy!
+                                promise = Promise.resolve();
+                            }
+
+                            // setCurrentUser, then run onLogin logic
+                            return promise.then(this.setCurrentUser.bind(this, user))
+                            .then(this.onLogin.bind(this, user, true))
                             .return(user);
                         }
                     })
@@ -520,6 +638,7 @@ module.exports = NoGapDef.component({
                     })
                     .catch(function(err) {
                         return logLoginAttempt(null)
+                        .delay(1000)
                         .then(function() {
                             // propagate original error
                             return Promise.reject(err); 
@@ -527,11 +646,21 @@ module.exports = NoGapDef.component({
                     });
                 },
 
+                updateUserCredentials: function(userOrUid, sharedSecretV1) {
+                    console.assert(!!userOrUid, 'Invalid arguments for `updateUserCredentials`');
+
+                    return this.generateNewUserCredentials(sharedSecretV1)
+                    .bind(this)
+                    .then(function(update) {
+                        update.uid = userOrUid.uid || userOrUid;
+                        return this.users.updateObject(update, true);
+                    });
+                },
 
                 /**
                  * Create new account and login right away
                  */
-                createAndLogin: function(authData) {
+                createNewUser: function(authData, alsoLogin) {
                     var preferredLocale = authData.preferredLocale;
                     var role = authData.role || UserRole.StandardUser;
 
@@ -548,22 +677,29 @@ module.exports = NoGapDef.component({
                     }
 
                     var queryData = {
-                        userName: authData.userName, 
+                        userName: authData.userName,
+                        email: authData.email,
                         role: role, 
                         displayRole: role,
 
-                        //locale: Shared.AppConfig.getValue('defaultLocale') || 'en'
                         locale: preferredLocale,
+
+                        sharedSecret: authData.sharedSecret,
+                        secretSalt: authData.secretSalt,
 
                         facebookID: authData.facebookID,
                         facebookToken: authData.facebookToken
                     };
 
+                    this.Tools.logWarn('Creating new user account: ' + authData.userName);
+
                     return this.users.createObject(queryData, true)
                     .bind(this)
                     .then(function(user) {
-                        // set current user data
-                        this.setCurrentUser(user);
+                        if (alsoLogin) {
+                            // set current user data before raising any events
+                            this.setCurrentUser(user);
+                        }
 
                         // fire creation and login events
                         return this.events.create.fire(user)
@@ -574,7 +710,9 @@ module.exports = NoGapDef.component({
                             }
                         })
                         .then(function() {
-                            return this.onLogin(user, true);
+                            if (alsoLogin) {
+                                return this.onLogin(user, true);
+                            }
                         })
                         .return(user);
                     });
@@ -596,7 +734,10 @@ module.exports = NoGapDef.component({
                 /**
                  * This method is called upon bootstrap for user's with an established session.
                  */
-                resumeSession: function(filter) {
+                resumeSession: function(eventHandlers) {
+                    var preLogin = eventHandlers && eventHandlers.preLogin;
+                    var postLogin = eventHandlers && eventHandlers.postLogin;
+
                     // log into account of given uid
                     var sess = this.Context.session;
                     var uid = sess.uid;
@@ -609,16 +750,25 @@ module.exports = NoGapDef.component({
                         }
 
                         var promise = Promise.resolve(user);
-                        if (user && filter) {
-                        	// check if user is ok
-                        	promise = promise.then(filter);
+                        if (user && preLogin) {
+                        	// check if user is ok, and filter out if not
+                        	promise = promise.then(preLogin);
                         }
 
                         return promise
                         .bind(this)
                         .then(function(user) {
                         	this.setCurrentUser(user);
-                        	return user;
+
+                            return Promise.resolve()
+                            .bind(this)
+                            .then(function() {
+                                // post login event handler
+                                if (user && postLogin) {
+                                    return postLogin(user);
+                                }
+                            })
+                        	.return(user);
                     	});
                     }.bind(this);
 
@@ -630,7 +780,7 @@ module.exports = NoGapDef.component({
                         .then(function(user) {
                             if (!user) {
                                 // could not login -> Invalid session (or User could not be found)
-                                this.Tools.warn('Unable to login user from session -- invalid or expired session');
+                                this.Tools.logWarn('Unable to login user from session -- invalid or expired session');
                                 delete sess.uid;    // delete uid from session
 
                                 return loginAs(null);
@@ -722,6 +872,51 @@ module.exports = NoGapDef.component({
 
 
             Public: {
+                createNewUserPublic: function(email) {
+                    // TODO: Make sure, email is valid
+                    // TODO: Make sure, email has not been used yet
+                    // TODO: Check if email arrived?
+                    // TODO: Keep track of user activity
+
+                    if (!this.Instance.User.isStandardUser()) {
+                        // currently, we need an already logged in user to create more users
+                        // TODO: Captcha etc...
+                        return Promise.reject(makeError('error.invalid.permissions'));
+                    }
+
+                    var userName = email;
+                    var plainPassphrase = TokenStore.generateTokenString(32);       // random password
+
+                    var authData = {
+                        userName: userName,
+                        email: email,
+                        role: UserRole.StandardUser
+                    };
+
+                    // generate credentials
+                    return this.generateNewUserCredentials({
+                        userName: userName,
+                        passphrase: plainPassphrase
+                    }, authData)
+                    .bind(this)
+                    .then(function(authData) {
+                        // create the user
+                        return this.createNewUser(authData, false);
+                    })
+                    .then(function(user) {
+                        // finally, send out registration email
+                        var externalUrl = Shared.AppConfig.getValue('externalUrl');
+                        return this.Instance.SMTP.sendMail({
+                            to: email,
+                            //from: 'Wifi is hot!',
+                            subject: 'Welcome to Wifi is hot!',
+                            html: ['You have successfully registered an account with <b>Wifi is hot!</b>',
+                                'Use this email address and the following password to login at <a href="' + externalUrl + '">' + externalUrl + '</a>: ',
+                                plainPassphrase
+                            ].join('<br />')
+                        });
+                    });
+                },
 
                 /**
                  * Properly logout the current user
@@ -857,18 +1052,6 @@ module.exports = NoGapDef.component({
 
                     this.onCurrentUserChanged(true);
                 },
-
-                /**
-                 * We never want to send passwords as-is.
-                 * Instead, we mix things up and one-time-hash them to create an even safer password.
-                 *
-                 * @see https://github.com/dcodeIO/bcrypt.js
-                 */
-                makeCredentials: function(userName, passphrase) {
-                    var bcrypt = Instance.Main.assets.bcrypt;
-
-                    // TODO
-                }
             }
         };
     })

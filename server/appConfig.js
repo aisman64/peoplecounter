@@ -9,14 +9,14 @@ module.exports = {
     'deviceConfigDefaults': {
         'CookiesFile': './data/cookies.json',
         'HostIdentityTokenFile': './data/hostIdentityToken',
-        'DeviceClientCacheFile': './data/deviceClientCache.js',
+        'DeviceClientCacheFile': './data/deviceClientCache.min.js',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
     'deviceDefaultResetTimeout': 60 * 1000,// a few minutes
 
     'deviceImage': {
-        'downloadPath': '/Device/Image',
+        'downloadPath': '/Download/DeviceImage',
 
         // absolute file path
         'filePath': __dirname + '/data/DeviceImage.img'
@@ -31,6 +31,9 @@ module.exports = {
      */
     'registrationLocked': 0,
 
+    /**
+     * Whether non-priviliged users can currently login
+     */
     'loginLocked': 0,
 
 
@@ -46,7 +49,12 @@ module.exports = {
     // ########################################################################################################################
     // Host + networking settings
 
-    'hosts': ['localhost'],
+    /**
+     * Host name or IP that external clients can connect to
+     */
+    'externalHost': 'localhost',
+
+    'hosts': ['0.0.0.0'],
 
 
     // ########################################################################################################################
@@ -74,14 +82,34 @@ module.exports = {
     'console': 0,
 
     /**
-     * Whether to trace RPC calls on Client side
-     */
-    'traceClient': 1,
-
-    /**
      * Whether to trace RPC calls on Host side
      */
-    'traceHost': 1,
+    'traceHost': {
+        'enabled': 1,
+        'blackList': {
+            'functions': {
+                'DeviceCommunications.checkIn': 1
+            },
+            'components': {
+
+            }
+        }
+    },
+
+    /**
+     * Whether to trace RPC calls on Client side
+     */
+    'traceClient': {
+        'enabled': 1,
+        'blackList': {
+            'functions': {
+                'DeviceCommunications.host.checkIn': 1
+            },
+            'components': {
+                
+            }
+        }
+    },
 
 
     // ########################################################################################################################
@@ -164,12 +192,14 @@ module.exports = {
             'models/core/User',
 
             // all kinds of model components
-            'models/wifi/MacAddress',
+            'models/wifi/MACAddress',
             'models/wifi/SSID',
             'models/wifi/WifiDataset',
             'models/wifi/WifiPacket',
+            'models/wifi/MAC_SSID_Relation',
             'models/devices/WifiSnifferDevice',
             'models/devices/DeviceStatus',
+            'models/CommonDBQueries',
 
             // misc utilities
             'util/Auth',
@@ -178,6 +208,7 @@ module.exports = {
             'util/Log',
             'util/ValidationUtil',
             'util/FacebookApi',
+            'util/SMTP',
             
             // this one kicks off Instance code
             'Main',
@@ -191,14 +222,19 @@ module.exports = {
             'device/DeviceCapture',
 
             // guest + unregistered pages:
-            'ui/guest/GuestPage',
+            'ui/login/LoginPage',
+            'ui/mac/MACPage',
+            'ui/ssid/SSIDPage',
 
             // user pages:
             'ui/home/HomePage',
+            'ui/live/LivePage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
             'ui/map/MapPage',
-            'ui/result/ResultPage'
+            'ui/result/ResultPage',
+            // superuser pages:
+            'ui/admin/AdminPage'
         ]
     },
 };

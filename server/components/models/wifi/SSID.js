@@ -11,13 +11,14 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
-	    	Private: {
-	    		Caches: {
-	    			ssids: {
-	    				idProperty: 'ssidId'
-	    			}
-	    		}
-	    	}
+            Caches: {
+                ssids: {
+                    idProperty: 'ssidId'
+                }
+            },
+                
+            Private: {
+            },
 	    };
 	}),
 
@@ -43,7 +44,11 @@ module.exports = NoGapDef.component({
                      * The ssidId is a number, uniquely identifying the given ssid (which is actually a name string)
                      */
                     ssidId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-                    ssidName: { type: Sequelize.STRING(32), unique: true }
+                    ssidName: { type: Sequelize.STRING(32), unique: true },
+
+                    lat: Sequelize.DECIMAL,
+                    
+                    lon: Sequelize.DECIMAL
                 }, {
                     freezeTableName: true,
                     tableName: 'SSID',

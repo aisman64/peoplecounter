@@ -1,0 +1,70 @@
+<div class="fullscreen_bg" ng-controller="guestCtrl">
+
+    <div class="container container-page form-signin some-padding">
+        <h1 class="form-signin-heading">People Counter!</h1>
+            
+        <!-- Login locked -->
+        <div ng-if="isLoginLocked || !!errorMessage"
+            style="margin-bottom: 2em;"
+            class="container-stretched alert alert-danger">
+            <localize ng-if="!errorMessage" key="error.login.locked"></localize>
+
+            <localize ng-if="!!errorMessage" can-be-empty key="{{errorMessage}}"></localize>
+        </div>
+
+        <!-- Facebook login button -->
+        <a ng-disabled="busy" tabindex="3" class="container-stretched form-control btn btn-lg btn-primary btn-block" 
+            style="margin-bottom: 3em;"
+            href="/auth/facebook"
+            ng-click="clickFacebookLogin()">
+            <span>
+                <localize key="guest.facebooklogin" />
+                <i class="fa fa-thumbs-o-up"></i>    
+            </span>
+            <span ng-show="busy"><i class="fa fa-spinner fa-spin"></i></span>
+        </a>
+
+        <!-- Dev login form -->
+        <div ng-if="showDevLoginForm">
+            <hr />
+
+            <!-- User name input -->
+            <validated-text-input tabindex="1"
+                class="container-stretched form-control form-input" 
+                placeholder="{{localize('userName')}}" required autofocus
+                validate-model="loginData.userName"
+                validate-error="nameInvalid"
+                validate-result-invalid="true"
+                ng-enter="clickLogin()"> </validated-text-input>
+
+            <div class="vertical-space"></div>
+
+            <!-- Passphrase input -->
+            <input type="password" tabindex="2"
+                ng-model="loginData.passphrase" 
+                class="container-stretched form-control form-input"
+                placeholder="pass phrase"/>
+
+            <div class="vertical-space"></div>
+
+            <!-- Error Messages -->
+            <div ng-style="{visibility: nameInvalid && 'visible' || 'hidden'}"
+                class="container-stretched alert alert-danger no-padding"
+                style="margin-bottom: 20px">
+                <localize
+                    ng-show="nameInvalid"
+                    key="error.invalid.userName"></localize>
+                &nbsp;
+            </div>
+
+            <!-- Login button -->
+            <a ng-disabled="busy || nameInvalid" tabindex="3"
+                class="container-stretched form-control btn btn-lg btn-fancy btn-block" 
+                ng-click="clickLogin()"
+                ng-enter="clickLogin()">
+                <span>Login</span>
+                <span ng-style="{visibility: busy && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+            </a>
+        </div>
+    </div>
+</div>

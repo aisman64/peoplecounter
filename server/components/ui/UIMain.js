@@ -55,9 +55,13 @@ module.exports = NoGapDef.component({
                     'lib/angular/ng-map.min',
                     'lib/angular/ng-map.js',
                     'lib/angular/ng-map.debug.js',
-                    'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js'
+                    'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js',
 
                     
+
+                    // graph drawing
+                    'lib/springy/springy',
+                    'lib/springy/springyui'
                 ],
                 css: [
                     // bootstrap & font-awesome make things look pretty
@@ -130,15 +134,20 @@ module.exports = NoGapDef.component({
         // TODO: Set the guest user object; and use `displayRole` instead to determine user access
         var _defaultPageGroups = [
             /**
-             * Guest clients get access to these components.
+             * Everyone can access these components.
              */
             {
+                otherComponents: [
+                    'CommonDBQueries',
+                    'SMTP'
+                ],
                 pageComponents: [
-                    'GuestPage'
+                    'MACPage',
+                    'SSIDPage'
                 ],
                 mayActivate: function() {
-                    return !Instance.User.currentUser;
-                }
+                    return true;
+                } 
             },
 
             /**
@@ -152,11 +161,12 @@ module.exports = NoGapDef.component({
                 ],
 
                 pageComponents: [
-                    'HomePage',
+                    //'HomePage',
                     'DevicePage',
-                    'AccountPage',
                     'MapPage',
-                    'ResultPage'
+                    'ResultPage',
+                    'LivePage',
+                    'AccountPage'
                 ],
 
                 mayActivate: function() {
@@ -180,13 +190,25 @@ module.exports = NoGapDef.component({
                 }
             },
 
+            /**
+             * Guest clients get access to these components.
+             */
+            {
+                pageComponents: [
+                    'LoginPage'
+                ],
+                mayActivate: function() {
+                    return !Instance.User.currentUser;
+                }
+            },
+
 
             /**
              * Staff gets access to these additional components
              */
             {
                 pageComponents: [
-                    //'SettingsPage',
+                    'AdminPage',
                 ],
 
                 mayActivate: function() {

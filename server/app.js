@@ -93,13 +93,18 @@ GLOBAL.Promise = Sequelize.Promise || require('bluebird');
 GLOBAL.Promise.longStackTraces();
 
 // ####################################################################################
-// Node core settings
+// Global error handling
 
 // fix stacktrace length
 // see: http://stackoverflow.com/questions/7697038/more-than-10-lines-in-a-node-js-stack-error
 Error.stackTraceLimit = 100;    // TODO: For some reason, Bluebird node ignores us here
 //Error.stackTraceLimit = Infinity;
 
+// attach default error handler for promises
+// Promise.onPossiblyUnhandledRejection(function(err) {
+//     console.error(err.stack);
+//     //throw err;
+// });
 
 
 // ####################################################################################
@@ -118,7 +123,8 @@ var port = appConfig.httpd.port || 8080;
 var protocol = appConfig.isHttps && 'https' || 'http';
 
 // we are guessing that the first address is the external address
-app.externalUrl = protocol + '://' + hosts[0] + ':' + port;
+var externalHost = appConfig.externalHost || hosts[0];
+app.externalUrl = protocol + '://' + externalHost + ':' + port;
 
 // // for debugging purposes:
 // app.use(function(req, res, next) {

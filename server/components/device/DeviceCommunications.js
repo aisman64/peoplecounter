@@ -9,31 +9,76 @@ module.exports = NoGapDef.component({
     /**
      * Everything defined in `Base` is available on Host and Client.
      */
-    Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) { return {
-        /**
-         * 
-         */
-        initBase: function() {
-            
-        },
-    };}),
+    Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) { 
+    	return {
+	    	__ctor: function() {
+	    	},
+
+	        /**
+	         * 
+	         */
+	        initBase: function() {
+				// patch the existing (browser-based) communication layer
+				if (this.CommLayer) {
+		            var impl = Shared.Libs.ComponentCommunications.getComponentTransportImpl();
+		            for (var methodName in this.CommLayer) {
+		            	var method = this.CommLayer[methodName];
+		            	impl[methodName] = method.bind(impl);
+		            }
+		            this.CommLayer = null;
+		        }
+	        },
+
+	        Private: {
+	        	__ctor: function() {
+	        		// patch instance communication layer, too
+					if (this.CommLayer) {
+			            var connection = this.Instance.Libs.ComponentCommunications.getDefaultConnection();
+			            for (var methodName in this.CommLayer) {
+			            	var method = this.CommLayer[methodName];
+			            	connection[methodName] = method.bind(connection);
+			            }
+			            this.CommLayer = null;
+			        }
+	        	}
+	        }
+	    };
+	}),
 
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
-    Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { return {
-        /**
-         * 
-         */
-        initHost: function() {
-            
-        },
+    Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { 
+    	return {
+	    	CommLayer: {
+	    		checkForceActivatePreviouslyBootstrappedInstance: function(connectionState, requestMetadata) {
+	    			// if version is the same, just use the existing version, else reload (i.e. kill the process and restart)
+	    			var version = Shared.AppConfig.getValue('currentAppVersion');
 
-        Private: {
-            onClientBootstrap: function() {
-            }
-        },
-    }}),
+                	//console.error('############### versions: ' + [version, requestMetadata['x-nogap-currentappversion']]);
+	    			return requestMetadata['x-nogap-currentappversion'] === version.toString();
+	    		}
+	    	},
+
+	        /**
+	         * 
+	         */
+	        initHost: function() {
+	            
+	        },
+
+	        Private: {
+	            onClientBootstrap: function() {
+	            }
+	        },
+
+	        Public: {
+	        	checkIn: function() {
+
+	        	}
+	        }
+	    };
+	}),
     
     
     /**
@@ -41,19 +86,21 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
+        var process;
+        var lastConnectionErrorMessage;
 
         return {
         	CommLayer: {
-				 sendRequestToHost: function(clientRequestData, path, dontSerialize, headers) {
-			        var ComponentCommunications = this.Instance.Libs.ComponentCommunications;
-			        if (ComponentCommunications.hasRefreshBeenRequested()) {
-			            // already out of sync with server
-			            return Promise.reject('Tried to send request to server, but already out of sync');
-			        }
+        		onBeforeSendRequestToHost: function(options) {
+        			// add version to header
+        			options.requestMetadata['x-nogap-currentappversion'] = Instance.AppConfig.getValue('currentAppVersion');
+        		},
 
-			        // add security and other metadata, required by NoGap
-			        headers = headers || {};
-			        ComponentCommunications.prepareRequestMetadata(headers);
+	            sendRequestToHostImpl: function(options) {
+	                var clientRequestData = options.clientRequestData;
+	                var path = options.path;
+	                var dontSerialize = options.dontSerialize;
+	                var headers = options.requestMetadata;
 
 					return new Promise(function(resolve, reject) {
 						var Context = this.Context;
@@ -81,50 +128,65 @@ module.exports = NoGapDef.component({
 								body: clientRequestData
 							},
 							function (error, response, body) {
-					            if (error) {
-					                // TODO: Better error handling
-					                reject(error);
-					                return;
+					            if (error || !response) {
+					                return reject(error || 'connection failed');
 					            }
 
-			                    var hostReply;
-			                    try {
-			                        // Deserialize reply
-			                        hostReply = serializer.deserialize(body || '', true) || {};
-			                    }
-			                    catch (err) {
-			                        console.error(err.stack);
-			                        // TODO: Better error handling
-			                        err = 'Unable to parse reply sent by host. '
-			                            + 'Check out http://jsonlint.com/ to check the formatting. - \n'
-			                            + body.substring(0, 1000) + '...';
-			                        reject(err);
-			                        return;
-			                    }
-
-			                    // return host-sent data to caller (will usually be eval'ed by NoGap comm layer)
-			                    resolve(hostReply);
+			                    // return host-sent data to caller (will usually be eval'ed by NoGap communication layer)
+			                    resolve(body);
 					        }
 				        );
-					}.bind(this));
+					}.bind(this))
+					.then(function(result) {
+						if (!GLOBAL.DEVICE.IsConnectionGood) {
+							// we are good again
+							lastConnectionErrorMessage = null;
+	            			console.log('[STATUS] Re-established connection to server.');
+						}
+
+						GLOBAL.DEVICE.IsConnectionGood = true;		// we are "connected"
+						return result;
+					})
+					.catch(function(err) {
+						// connection failed
+						GLOBAL.DEVICE.IsConnectionGood = false;		// we are currently unable to reach the server
+
+            			if (lastConnectionErrorMessage !== err.message) {
+	            			lastConnectionErrorMessage = err.message;
+	            			console.error('[ERROR] Lost connection to server: ' + (err.stack || err));
+	            		}
+
+						return Promise.reject(err);			// keep propagating error
+					});
 			    },
 
 				refresh: function() {
-					// refresh was requested. Probably need to restart client app...
-					console.error('Refresh requested. Client is probably out of sync and needs to re-connect.');
+					// Refresh was requested. Client is probably running an older version than server...
+					console.error('Client is out of sync. Restarting...');
+					process.exit(0);
 				}
 			},
 
             __ctor: function() {
                 ThisComponent = this;
-
-				// patch the existing (browser-based) communication layer
-	            var connection = Instance.Libs.ComponentCommunications.getDefaultConnection();
-	            for (var methodName in this.CommLayer) {
-	            	var method = this.CommLayer[methodName];
-	            	connection[methodName] = method.bind(connection);
-	            }
+                process = require('process');
             },
+
+            initClient: function() {
+            	// ping server regularly
+            	var delay = Instance.AppConfig.getValue('deviceCheckInDelay') || 5 * 1000;
+
+            	ThisComponent.pingTimer = setInterval(function() {
+        			ThisComponent.host.checkIn()
+        			.then(function() {
+        				// we are good!
+        				lastMessage = null;
+        			})
+            		.catch(function(err) {
+            			// don't do anything
+            		});
+            	}, delay);
+            }
         };
     })
 });

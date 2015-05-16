@@ -20,7 +20,7 @@ module.exports = NoGapDef.component({
                      *
                      * @see https://github.com/dcodeIO/bcrypt.js
                      */
-                    bcrypt: libRoot + 'bcrypt.js'
+                    bcrypt: __dirname + '/' + libRoot + 'bcrypt.js'
                 }
             }
         },
@@ -29,10 +29,12 @@ module.exports = NoGapDef.component({
             // load default localization files
             Shared.Localizer.Default = Shared.Localizer.createLocalizer(cfg.localizer || {});
         },
+
+        __ctor: function() {
+            
+        },
         
         Private: {
-            __ctor: function() {
-            },
 
             getClientCtorArguments: function() {
                 if (!this.Context.clientNoHtml) {
@@ -52,10 +54,11 @@ module.exports = NoGapDef.component({
                     'User',
 
                     // model components
-                    'MacAddress',
+                    'MACAddress',
                     'SSID',
                     'WifiDataset',
                     'WifiPacket',
+                    'MAC_SSID_Relation',
 
                     'WifiSnifferDevice',
                     'DeviceStatus',

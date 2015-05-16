@@ -41,16 +41,7 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
-        var cities = [
-            {
-                city : 'HuaShan',
-                desc : 'Culture park',
-                latitude : 25.045574,
-                longitude : 121.528325
-            }
-        ];
-
-        return {
+               return {
             __ctor: function() {
                 ThisComponent = this;
             },

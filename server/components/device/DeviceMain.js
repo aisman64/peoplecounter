@@ -54,7 +54,7 @@ module.exports = NoGapDef.component({
         		// check if device's user account is attached to an actual device entry
         		//		and if so, send that device entry to the client.
         		var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
-        		return devices.getObject({uid: user.uid}, true, true, true)
+        		return devices.getObject({uid: user.uid}, true, false, true)
         		.bind(this)
         		.then(function(device) {
         			if (!device) {
@@ -62,6 +62,10 @@ module.exports = NoGapDef.component({
         				return Promise.reject('error.login.auth');
         			}
         			else if (!device.isAssigned) {
+                        // TODO: Reset automatically?
+                        //      Several issues: Can happen during resumeSession and (less so) tryLogin...
+                        //          Failed session resuming will cause client to send tryLogin before it knows its resetting.
+
 		                // var ipOrUserName = this.Instance.Libs.ComponentCommunications.getUserIdentifier();
 		                // var newDeviceStatus = {
 		                //     deviceId: device.deviceId,
@@ -76,9 +80,25 @@ module.exports = NoGapDef.component({
         		});
         	},
 
+            onAfterLogin: function(user) {
+                // send current device data to client
+                var device = this.getCurrentDevice();
+                if (!device) {
+                    this.Tools.handleError('Device not associated after device login...');
+                }
+
+                this.Tools.log('Sending device data to client...');
+
+                var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                devices.sendChangeToClient(device);
+            },
+
            	onClientBootstrap: function() {
                 // resume user session
-                return this.Instance.User.resumeSession(this.onBeforeLogin.bind(this));
+                return this.Instance.User.resumeSession({
+                    preLogin: this.onBeforeLogin.bind(this),
+                    postLogin: this.onAfterLogin.bind(this),
+                });
             }
         },
         
@@ -133,6 +153,7 @@ module.exports = NoGapDef.component({
 
                         if (!device.isAssigned) {
                     		resetAttempt = true;
+                            
                             return this.Instance.DeviceConfiguration.tryResetDevice(device, newDeviceStatus);
                         }
                         else {
@@ -144,15 +165,20 @@ module.exports = NoGapDef.component({
 
                             // all good! Now, try to login, using the device's user account
                             //		(so it fits in with our permission system)
+
                             var userAuthData = {
                                 uid: device.uid,
-                                sharedSecret: authData.sharedSecret      // TODO!
+                                sharedSecretV1: authData.sharedSecretV1
                             };
                             return this.Instance.User.tryLogin(userAuthData);
                         }
                     });
                 })
                 .then(function() {
+                    if (this.getCurrentDevice()) {
+                        // login succeeded and device data is ready -> Update client!
+                        this.onAfterLogin();
+                    }
                     newDeviceStatus.deviceStatus = newDeviceStatus.deviceStatus || DeviceStatusId.LoginOk;
                     return null;
                 })
@@ -168,7 +194,7 @@ module.exports = NoGapDef.component({
                 })
                 .finally(function() {
                     // try storing login attempt
-                    this.Instance.DeviceStatus.logStatus(newDeviceStatus);
+                    return this.Instance.DeviceStatus.logStatus(newDeviceStatus);
                 });
                 // .then(function() {
                 //     if (resetAttempt) return;
@@ -197,6 +223,9 @@ module.exports = NoGapDef.component({
              */
             initClient: function() {
             	// start capturing right away
+                this.DeviceClientInitialized = true;
+
+                console.log('[STATUS] Device client initialized.');
             	Instance.DeviceCapture.startCapturing();
             },
 
@@ -218,9 +247,10 @@ module.exports = NoGapDef.component({
 
                 var authData = tryResetting && {} || {
                     deviceId: DEVICE.Config.deviceId,
-                    sharedSecret: DEVICE.Config.sharedSecret,
+                    sharedSecretV1: DEVICE.Config.sharedSecret,
                     identityToken: identityToken
                 };
+
                 return ThisComponent.host.tryLogin(authData)
                 .then(function() {
                     // IMPORTANT: We might not be logged in yet, due to a pending reset!

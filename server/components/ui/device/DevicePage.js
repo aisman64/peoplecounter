@@ -51,14 +51,27 @@ module.exports = NoGapDef.component({
              * Prepares the home page controller.
              */
             setupUI: function(UIMgr, app) {
-                ThisComponent.selection = new Instance.UIMain.SelectionState('deviceId');
+                ThisComponent.deviceSelection = new Instance.UIMain.SelectionState('deviceId');
+                ThisComponent.datasetSelection = new Instance.UIMain.SelectionState('datasetId');
 
                 // create DevicePage controller
                 app.lazyController('deviceCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
                     // customize your $scope here:
+                    $scope.DeviceJobType = Instance.WifiSnifferDevice.DeviceJobType;
                     $scope.deviceCache = Instance.WifiSnifferDevice.wifiSnifferDevices;
+                    $scope.datasetCache = Instance.WifiDataset.wifiDatasets;
+
+
+                    $scope.onChange = function() {
+                        $scope.errorMessage = null;
+                        ThisComponent.deviceSaved = false;
+                    };
+
+
+                    // #########################################################################################################
+                    // Devices
 
                     $scope.registerNewDevice = function(name) {
                         $scope.onChange();
@@ -72,7 +85,7 @@ module.exports = NoGapDef.component({
                         })
                         .then(function(newDevice) {
                             // select new device!
-                            ThisComponent.selection.toggleSelection(newDevice);
+                            ThisComponent.deviceSelection.toggleSelection(newDevice);
                             ThisComponent.page.invalidateView();
                         })
                         .catch(function(err) {
@@ -87,7 +100,7 @@ module.exports = NoGapDef.component({
                     };
                     
 
-                    $scope.clickSave = function(device, done) {
+                    $scope.clickSaveDevice = function(device, done) {
                         $scope.onChange();
 
                         ThisComponent.deviceSaving = true;
@@ -103,7 +116,7 @@ module.exports = NoGapDef.component({
                         .then(function(newDevice) {
                             if (done) {
                                 // we are done editing
-                                ThisComponent.selection.unsetSelection();
+                                ThisComponent.deviceSelection.unsetSelection();
                             }
                             ThisComponent.page.invalidateView();
                         })
@@ -114,9 +127,9 @@ module.exports = NoGapDef.component({
                     };
 
                     $scope.showDeviceConfig = function(device) {
-                        if (ThisComponent.showConfig) {
+                        if (ThisComponent.showDeviceConfig) {
                             // toggle it off
-                            ThisComponent.showConfig = false;
+                            ThisComponent.showDeviceConfig = false;
                             return;
                         }
 
@@ -128,12 +141,46 @@ module.exports = NoGapDef.component({
                         })
                         .then(function(deviceSettings) {
                             ThisComponent.currentDeviceSettings = deviceSettings;
-                            ThisComponent.showConfig = true;
+                            ThisComponent.showDeviceConfig = true;
                             ThisComponent.page.invalidateView();
                         })
                         .catch($scope.handleError.bind($scope));
                     };
 
+                    $scope.setDataset = function(device, dataset) {
+                        $scope.updateDevice({
+                            deviceId: device.deviceId,
+                            currentDatasetId: dataset.datasetId
+                        });
+                    };
+
+                    $scope.setDeviceJobType = function(device, jobType) {
+                        $scope.updateDevice({
+                            deviceId: device.deviceId,
+                            currentJobType: jobType
+                        });
+                    };
+
+                    $scope.updateDevice = function(deviceUpdate) {
+                        ThisComponent.busy = true;
+
+                        var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
+
+                        return devices.updateObject(deviceUpdate)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function(deviceSettings) {
+                            // success!
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+
+                    };
+
+
+                    // #######################################################################################
+                    // Reset + Delete
 
                     $scope.tryResetDevice = function(device) {
                         $scope.errorMessage = null;
@@ -148,14 +195,15 @@ module.exports = NoGapDef.component({
                             'device privlege levels. ' +
                             'Do you really want to reset device `' + device.getUserNow().userName + '`?';
                         var onOk = function() {
-                            // user pressed Ok -> Tell host to delete it.
-                            doReset(device);
+                            // user pressed Ok -> Tell host to reset it.
+                            doResetDevice(device);
                         };
                         var onDismiss;      // don't do anything on dismiss
                         $scope.okCancelModal('', title, body, onOk, onDismiss);
                     };
 
-                    var doReset = function(device) {
+
+                    var doResetDevice = function(device) {
                         Instance.WifiSnifferDevice.host.resetDevice(device.deviceId)
                         .then(function() {
                             // invalidate view
@@ -163,7 +211,6 @@ module.exports = NoGapDef.component({
                         })
                         .catch($scope.handleError.bind($scope));
                     };
-
 
 
                     $scope.tryDeleteDevice = function(device) {
@@ -178,18 +225,21 @@ module.exports = NoGapDef.component({
                             'Do you really want to delete device `' + device.getUserNow().userName + '`?';
                         var onOk = function() {
                             // user pressed Ok -> Tell host to delete it.
-                            doDelete(device);
+                            doDeleteDevice(device);
                         };
                         var onDismiss;      // don't do anything on dismiss
                         $scope.okCancelModal('', title, body, onOk, onDismiss);
                     };
 
-                    var doDelete = function(device) {
+                    var doDeleteDevice = function(device) {
                         // delete user object (device will be deleted with it)
-                        Instance.User.users.deleteObject(device.getUserNow().uid)
+                        Promise.join(
+                            Instance.User.users.deleteObject(device.getUserNow().uid),
+                            Instance.WifiSnifferDevice.wifiSnifferDevices.deleteObject(device.deviceId)
+                        )
                         .then(function() {
                             // stop editing
-                            ThisComponent.selection.unsetSelection();
+                            ThisComponent.deviceSelection.unsetSelection();
 
                             // invalidate view
                             ThisComponent.page.invalidateView();
@@ -197,9 +247,13 @@ module.exports = NoGapDef.component({
                         .catch($scope.handleError.bind($scope));
                     };
 
-                    $scope.onChange = function() {
-                        $scope.errorMessage = null;
-                        ThisComponent.deviceSaved = false;
+
+                    // #########################################################################################################
+                    // Datasets
+
+                    $scope.startNewDataset = function(datasetName) {
+                        // TODO: Create new dataset, then assign name and devices to it.
+                        //      Eventually, archive the dataset...
                     };
                 });
 
@@ -211,11 +265,14 @@ module.exports = NoGapDef.component({
 
             onPageActivate: function() {
                 return Promise.join(
+                    // load all users into cache
+                    Instance.User.users.readObjects(),
+
                     // load all devices into cache
                     Instance.WifiSnifferDevice.wifiSnifferDevices.readObjects(),
 
-                    // load all users into cache
-                    Instance.User.users.readObjects()
+                    // load all datasets into cache
+                    Instance.WifiDataset.wifiDatasets.readObjects()
                 )
                 .then(function() {
                     ThisComponent.page.invalidateView();

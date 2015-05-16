@@ -6,15 +6,14 @@
 
 var NoGapDef = require('nogap').Def;
 
-var appRoot = '../../../';
+var appRoot = __dirname + '/../../../';
 var libRoot = appRoot + 'lib/';
-var SequelizeUtil = require(libRoot + 'SequelizeUtil');
 
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
             OverridableConfigKeys: [
-                'currentScriptVersion',
+                'userPasswordFirstSalt'
             ],
 
             __ctor: function() {
@@ -32,29 +31,40 @@ module.exports = NoGapDef.component({
                 return this.config;
             },
 
-            Private: {
-                Caches: {
-                    appConfig: {
-                        idProperty: 'configId',
+            updateTraceSettings: function(traceConfigName) {
+                var traceCfg = this.getValue(traceConfigName);
+                if (_.isObject(traceCfg)) {
+                    Shared.Libs.ComponentTools.TraceCfg = squishy.mergeWithoutOverride(traceCfg, Shared.Libs.ComponentTools.TraceCfg);
+                }
+                else {
+                    Shared.Libs.ComponentTools.TraceCfg.enabled = !!traceCfg;
+                }
+            },
 
-                        hasHostMemorySet: 1,
+            Caches: {
+                appConfig: {
+                    idProperty: 'configId',
 
-                        members: {
-                            getObjectNow: function(queryInput, ignoreAccessCheck) {
-                                if (isNaNOrNull(queryInput)) {
-                                    return Promise.reject(makeError('error.invalid.request'));
-                                }
+                    hasHostMemorySet: 1,
 
-                                return this.indices.byId[queryInput];
-                            },
-
-                            compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
-                                // all config options
-                                if (!queryInput) return {};
+                    members: {
+                        getObjectNow: function(queryInput, ignoreAccessCheck) {
+                            if (isNaNOrNull(queryInput)) {
+                                return Promise.reject(makeError('error.invalid.request'));
                             }
+
+                            return this.indices.byId[queryInput];
+                        },
+
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
+                            // all config options
+                            if (!queryInput) return {};
                         }
                     }
                 }
+            },
+
+            Private: {
             }
         };
     }),
@@ -63,11 +73,21 @@ module.exports = NoGapDef.component({
     	var ConfigModel;
         var UserRole;
 
+        var SequelizeUtil,
+            TokenStore,
+            bcrypt,
+            fs;
+
 
         return {
             __ctor: function () {
                 this.defaultConfig = require(appRoot + 'appConfig');
                 this.config = _.clone(this.defaultConfig);
+
+                SequelizeUtil = require(libRoot + 'SequelizeUtil');
+                TokenStore = require(libRoot + 'TokenStore');
+                bcrypt = require(libRoot + 'bcrypt');
+                fs = require('fs');
             },
 
             serializeConfig: function(cfg) {
@@ -110,14 +130,13 @@ module.exports = NoGapDef.component({
                             // );
 
                             var configDefaults = {
-                                currentScriptVersion: 1
                             };
 
                             // query config overrides from DB, or create new, if it does not exist yet
                             return this.findOrCreate({
                                 where: { },       // get any config (for now, we only want one)
                                 defaults: {
-                                    configOverrides: ThisComponent.serializeConfig(configDefaults)
+                                    configOverrides: ThisComponent.serializeConfig(configDefaults),
                                 }
                             })
                             .spread(function(runtimeConfig, created) {
@@ -125,9 +144,22 @@ module.exports = NoGapDef.component({
                                 runtimeConfig = runtimeConfig.get();
 
                                 // merge overrides into config
-                                this.runtimeConfig = runtimeConfig;
-                                this.runtimeConfigOverrides = ThisComponent.deserializeConfig(runtimeConfig.configOverrides);
-                                _.merge(ThisComponent.config, runtimeConfig);
+                                ThisComponent.runtimeConfig = runtimeConfig;
+                                ThisComponent.runtimeConfigOverrides = ThisComponent.deserializeConfig(runtimeConfig.configOverrides);
+
+                                return Promise.resolve()
+                                .then(function() {
+                                    // make sure, `userPasswordFirstSalt` is set
+                                    if (!ThisComponent.runtimeConfigOverrides.userPasswordFirstSalt) {
+                                        var saltGenerator = bcrypt.genSaltSync.bind(bcrypt, 10);
+                                        var salt = TokenStore.getToken('userPasswordFirstSalt', saltGenerator);
+                                        ThisComponent.updateValue('userPasswordFirstSalt', salt);
+                                    }
+                                })
+                                .then(function() {
+                                    // merge things and finish it up
+                                    _.merge(ThisComponent.config, ThisComponent.runtimeConfigOverrides);
+                                });
                             });
                         }
                     }
@@ -143,7 +175,40 @@ module.exports = NoGapDef.component({
                 this.config.minAccessRoleId = Shared.User.UserRole[this.config.minAccessRole] || Shared.User.UserRole.StandardUser;
 
                 // update tracing settings
-                Shared.Libs.ComponentTools.TraceCfg.enabled = this.getValue('traceHost');
+                this.updateTraceSettings('traceHost');
+
+                // some default config entries
+                this.config.externalUrl = app.externalUrl;
+
+                // handle version
+                var versionFilePath = appRoot + 'data/currentAppVersion';
+                var lastVersion;
+                var version;
+                try {
+                    if (!fs.existsSync(versionFilePath)) {
+                        lastVersion = 0;
+                    }
+                    else {
+                        var versionString = fs.readFileSync(versionFilePath).toString();
+                        lastVersion = parseInt(versionString);
+                        if (isNaNOrNull(lastVersion)) {
+                            throw new Error('Could not read version from file: ' + versionString);
+                        }
+                    }
+
+                    // new version
+                    version = lastVersion+1;
+
+                    // write new version back to file
+                    fs.writeFileSync(versionFilePath, version);
+                }
+                catch (err) {
+                    throw new Error('Could not initialize app version: ' + (err.stack || err));
+                }
+
+                // remember config
+                console.log('Current version: ' + version);
+                this.config.currentAppVersion = version;
             },
 
             updateValue: function(key, value) {
@@ -155,6 +220,7 @@ module.exports = NoGapDef.component({
                 console.assert(!!this.runtimeConfig, 'Tried to run `AppConfig.updateValue` before server initialization finished');
 
                 // update in-memory cache
+                this.config[key] = value;
                 this.runtimeConfigOverrides[key] = value;
                 this.runtimeConfig.configOverrides = this.serializeConfig(this.runtimeConfigOverrides);
 
@@ -162,7 +228,7 @@ module.exports = NoGapDef.component({
                 var selector = {
                     where: {configId: this.runtimeConfig.configId}
                 };
-                return this.Model.update(values, selector);
+                return this.Model.update(this.runtimeConfig, selector);
             },
 
             // ################################################################################################################
@@ -173,6 +239,9 @@ module.exports = NoGapDef.component({
                 },
 
                 getClientCtorArguments: function() {
+                    // TODO: Filter sensitive information from config
+                    // console.error(JSON.stringify(this.Shared.config, null, '\t'));
+
                     return [this.Shared.config, this.Shared.runtimeConfig]
                 },
 
@@ -221,7 +290,7 @@ module.exports = NoGapDef.component({
                 this.config = config;
                 this.runtimeConfig = runtimeConfig;
 
-                Instance.Libs.ComponentTools.TraceCfg.enabled = config.traceClient;
+                this.updateTraceSettings('traceClient');
             },
 
             initClient: function() {

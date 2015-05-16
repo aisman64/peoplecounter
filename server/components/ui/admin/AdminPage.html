@@ -1,0 +1,104 @@
+<div class="fill container-page" ng-controller="adminCtrl">
+    <!-- ######################################################################################################################## -->
+    <!-- User list -->
+
+    <div class="alert alert-danger"
+        ng-if="!!errorMessage">
+        <span>{{errorMessage}}</span>
+    </div>
+
+    <div class="alert alert-info"
+        ng-if="!!infoMessage">
+        <span>{{infoMessage}}</span>
+    </div>
+
+    <div ng-controller="adminUsersCtrl"
+        class="panel panel-primary"
+        ng-init="UsersView.showPanel = true;">
+        <div class="panel-heading">
+            <div class="panel-title"
+                ng-click="PC.toggleUserPanel();">
+                <span class="">Users <span style="color: #DDDDDD"> ({{UsersView.users.list.length || 0}})</span></span>
+
+            	<span class="pull-right">
+            		<span ng-show="UsersView.loading"><i class="fa fa-spinner fa-spin"></i></span>
+	                <a href="" class="btn btn-sm">
+	                    <!-- <i class="fa fa-edit" style="margin-bottom: -1em;"></i> -->
+	                    <span ng-show="!UsersView.showPanel">Show</span>
+	                    <span ng-show="UsersView.showPanel">Hide</span>
+	                </a>
+                </span>
+            </div>
+        </div>
+        <div class="panel-body no-padding"
+             collapse="!UsersView.showPanel"
+             ng-if="UsersView.showPanel">
+            <table class="table">
+                <thead style="cursor:pointer">
+                    <th class="col-xs-8"
+                        ng-click="PC.changeSortBy('name')">
+                        name 
+                        <i ng-if="UsersView.orderByName === 'name' && UsersView.orderReversed" class="fa fa-caret-down"></i>
+                        <i ng-if="UsersView.orderByName === 'name' && !UsersView.orderReversed" class="fa fa-caret-up"></i>
+                    </th>
+                    <th class="col-xs-2"
+                        ng-click="PC.changeSortBy('role')">
+                        role
+                        <i ng-if="UsersView.orderByName === 'role' && UsersView.orderReversed" class="fa fa-caret-down"></i>
+                        <i ng-if="UsersView.orderByName === 'role' && !UsersView.orderReversed" class="fa fa-caret-up"></i>
+                    </th>
+                    <th class="col-xs-2">
+                    </th>
+                </thead>
+                <tbody>
+                <tr ng-repeat="user in UsersView.users.list | orderBy: UsersView.orderBy:UsersView.orderReversed">
+                    <td class="col-xs-8"
+                        ng-class="{ 'text-bold': user.role > UserRole.StandardUser, darkdarkgrey: user.role > UserRole.StandardUser }"
+                        style="vertical-align: middle;">
+                        <span>
+                            {{user.userName}}
+                        </span>
+                    </td>
+
+                    <td class="col-xs-2"
+                        style="vertical-align: middle;">
+                        <span>
+                            {{userRoleToString(user.role)}} &nbsp;
+                        </span>
+                    </td>
+
+                    <td class="col-xs-2"
+                        style="vertical-align: middle;">
+                        <span ng-if="user.role != UserRole.Device">
+	                        <button ng-if="user.role < UserRole.Admin"
+	                            class="btn btn-success"
+	                            ng-click="changeUserRole(user, UserRole.Admin)">
+	                            Promote
+	                        </button>
+	                        <button ng-if="user.role > UserRole.StandardUser && user !== currentUser"
+	                            class="btn btn-danger"
+	                            ng-click="changeUserRole(user, UserRole.StandardUser)">
+	                            Demote
+	                        </button>
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <hr />
+
+            <div class="some-padding">
+                <!-- Add user button -->
+                <input type="text" ng-model="UsersView.newUserEmail" placeholder="new user email">
+                <a class="btn btn-lg btn-fancy"
+                    style="margin-top: .5em; margin-bottom: .5em;"
+                    ng-disabled="UsersView.busy || !UsersView.newUserEmail || !UsersView.newUserEmail.length"
+                    ng-click="PC.createNewAccount()">
+                    <i class="fa fa-plus"></i> &nbsp;
+                    <span>Add new user!</span> &nbsp;
+                    <span ng-show="UsersView.busy"><i class="fa fa-spinner fa-spin"></i></span>
+                </a>
+            </div>
+        </div>
+    </div>  <!-- users -->

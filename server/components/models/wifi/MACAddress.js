@@ -12,12 +12,54 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
+            Caches: {
+                macAddresses: {
+                    idProperty: 'macId',
+
+                    indices: [
+                        {
+                            unique: true,
+                            key: ['macAddress']
+                        }
+                    ],
+
+                    members: {
+                        getObjectNow: function(queryInput, ignoreAccessCheck) {
+                            if (!queryInput || 
+                                (isNaNOrNull(queryInput.macId) &&
+                                isNaNOrNull(queryInput.macAddress))) {
+                                return null;
+                            }
+
+                            if (!isNaNOrNull(queryInput.macId)) {
+                                return this.byId[queryInput.macId];
+                            }
+                            if (!isNaNOrNull(queryInput.macAddress)) {
+                                return this.indices.macAddress.get(queryInput.macAddress);
+                            }
+                        },
+
+                        compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
+                            if (!queryInput || 
+                                (isNaNOrNull(queryInput.macId) &&
+                                isNaNOrNull(queryInput.macAddress))) {
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            var queryData = { where: { } };
+                            if (!isNaNOrNull(queryInput.macId)) {
+                                queryData.where.macId = queryInput.macId;
+                            }
+                            if (!isNaNOrNull(queryInput.macAddress)) {
+                                queryData.where.macAddress = queryInput.macAddress;
+                            }
+                            return queryData;
+                        }
+                    }
+                }
+            },
+            
 	    	Private: {
-	    		Caches: {
-	    			macAddresses: {
-	    				idProperty: 'macId'
-	    			}
-	    		}
 	    	}
 	    };
 	}),

@@ -26,97 +26,76 @@ var request = require('request');	// HTTP client module
 var FileCookieStore = require('tough-cookie-filestore');
 
 
-// #############################################################################
-// Config handling
-
-GLOBAL.DEVICE = {};
-GLOBAL.DEVICE.ConfigFilePath = './data/DeviceConfig.json';
-
-GLOBAL.DEVICE.readDeviceConfig = function readDeviceConfig() {
-	var contentString = fs.readFileSync(GLOBAL.DEVICE.ConfigFilePath).toString();
-	this.Config = JSON.parse(contentString);
-};
-
-
-// initialize
-try {
-	DEVICE.readDeviceConfig();
-}
-catch (err) {
-	console.error('[ERROR] Could not load config - ' + err.message);
-	return -1;
-}
-
-var Running = true;
-
-
 
 // #############################################################################
-// Connect to server and get started
+// Device client config, code execution and caching
 
-// create cookies file if it does not exist, and wait for request to finish
-var CookiesFolder = path.dirname(DEVICE.Config.CookiesFile);
-if (!fs.existsSync(CookiesFolder)) {
-	fs.mkdirSync(CookiesFolder);
+function reinitializeConfigFromFile() {
+	var contentString = fs.readFileSync(ConfigFilePath).toString();
+	Config = JSON.parse(contentString);
 }
-touch.sync(DEVICE.Config.CookiesFile);
-
-// create and set file-backed cookie jar
-var jar = request.jar(new FileCookieStore(DEVICE.Config.CookiesFile));
-request = request.defaults({ jar : jar })
-
-// start!
-connectToServerNow();
-
-// keep Node open
-(function wait () {
-   if (Running) setTimeout(wait, 1000);
-})();
 
 
-
-// #############################################################################
-// Device client code execution and caching
-
-function runCode(jsCode) {
+function runCode(jsCode, isFromCache) {
 	// compile and execute server-sent code
-	var Instance = eval(jsCode);
+	try {
+		Instance = eval(jsCode);
+	}
+	catch (err) {
+		throw new Error('[ERROR] Could not run device client - ' + (err.stack || err));
+	}
 
 	// compilation worked!
-
-	// TODO: Write to cache, after checking version?
+	if (!isFromCache) {
+		// write to cache
+		try {
+			var cacheFileName = Config.DeviceClientCacheFile;
+			fs.writeFileSync(cacheFileName, jsCode);	
+		}
+		catch (err) {
+			throw new Error('[ERROR] Could not write device client code to cache - ' + (err.stack || err));
+		}
+	}
 }
 
+
 /**
- * Try loading and running previously cached script
+ * Try loading and running previously cached code
  */
-function tryRunScriptFromCache() {
-	var cacheFileName = DEVICE.Config.DeviceClientCacheFile;
-	
+function tryRunCodeFromCache() {
+	var cacheFileName = Config.DeviceClientCacheFile;
+	console.log('[STATUS] Running device client code from cache...');
+	try {
+		var code = fs.readFileSync(cacheFileName).toString('utf8');
+		runCode(code, true);
+	}
+	catch (err) {
+		console.error('[ERROR] Could not run device client code from cache - ' + (err.stack || err));
+	}
 }
 
 
 
 // #############################################################################
-// Basic device connection state initialization
+// Connect to server
 
-function connectToServerLater() {
+function reconnect(delay) {
 	if (!Running) return;
 
-	return Promise
-	.resolve('Reconnecting in ' + (DEVICE.Config.ReconnectDelay/1000).toFixed(1) + ' seconds...')
-	.then(console.log.bind(console))
-	.delay(DEVICE.Config.ReconnectDelay)
-	.then(connectToServerNow);
-}
+	var delay = delay !== undefined && delay || Config.ReconnectDelay;
+
+	console.log('[STATUS] Reconnecting in ' + (delay/1000).toFixed(1) + ' seconds...');
+	setTimeout(connectToServerNow, delay);
+};
+
 
 function connectToServerNow() {
 	if (!Running) return;
 
-	console.log('Connecting to `' + DEVICE.Config.HostUrl + '`...')
+	console.log('[STATUS] Connecting to `' + Config.HostUrl + '`...')
 	return new Promise(function(resolve, reject) {
 		request({
-				url: DEVICE.Config.HostUrl,
+				url: Config.HostUrl,
 				headers: {
 					// don't get HTML, only the pure JS client
 					'X-NoGap-NoHTML': '1'
@@ -124,26 +103,93 @@ function connectToServerNow() {
 			},
 			function (error, response, jsonEncodedJsCode) {
 				if (error) {
-					reject(error);
-					return;
+					return reject(error);
 				}
 
-				console.log('Connected to server. Received client script (' + jsonEncodedJsCode.length + ' bytes). Compiling...');
-
-				// start running client sent through NoGap
-				//console.log(body);
-				var jsCode = eval(jsonEncodedJsCode);
-				
-				runCode(jsCode);
+				resolve(jsonEncodedJsCode);
 			}
 		);
 	})
-	.then(function() {
-		// keep re-connecting!
-		connectToServerLater();
+	.then(function(jsonEncodedJsCode) {
+		GLOBAL.DEVICE.IsConnectionGood = true;		// we are "connected"
+
+		// get to it!
+		console.log('[STATUS] Connected to server. Received client code (' + jsonEncodedJsCode.length + ' bytes). Compiling...');
+
+		// start running NoGap client
+		var jsCode = eval(jsonEncodedJsCode);
+		
+		runCode(jsCode, false);
 	})
 	.catch(function(err) {
 		console.error('Connection error: ' + err && (err.stack || err.message) || err);
-		connectToServerLater();
+
+		// try running code from cache
+		if (!Instance || !Instance.DeviceMain) {		// DeviceMain component not available -> initialization most certainly did not succeed
+			tryRunCodeFromCache();
+		}
+
+		// keep trying to re-connect!
+		reconnect();
 	});
 };
+
+
+
+// #############################################################################
+// Initialize client configuration
+
+var ConfigFilePath = './data/DeviceConfig.json';
+var Config;
+
+var Running = true;
+var Instance; 	// current Instance object
+
+
+// initialize config
+try {
+	reinitializeConfigFromFile();
+}
+catch (err) {
+	console.error('[ERROR] Could not load config - ' + err.message);
+	return -1;
+}
+
+// setup global DEVICE state object, for communicating between this script and the server-sent client
+GLOBAL.DEVICE = {
+	Config: Config,
+	
+	ConfigFilePath: ConfigFilePath,
+
+	reinitializeConfigFromFile: reinitializeConfigFromFile,
+
+	reconnect: reconnect
+};
+
+
+
+// #############################################################################
+// Connect to server and get started
+
+// create cookies file if it does not exist
+var CookiesFolder = path.dirname(Config.CookiesFile);
+if (!fs.existsSync(CookiesFolder)) {
+	fs.mkdirSync(CookiesFolder);
+}
+touch.sync(Config.CookiesFile);
+
+
+// create and set file-backed cookie jar
+var jar = request.jar(new FileCookieStore(Config.CookiesFile));
+request = request.defaults({ jar : jar })
+
+
+// start!
+connectToServerNow();
+
+
+
+// keep Node open (without this code, Node would close right away)
+(function _keepNodeOpen() {
+   if (Running) setTimeout(_keepNodeOpen, 1000);
+})();

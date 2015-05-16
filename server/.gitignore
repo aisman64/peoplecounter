@@ -11,3 +11,6 @@ appConfig.user.js
 # ignore uploaded files
 uploads/*
 pub/uploads/*
+
+#Ignore Swap Files
+*.sw*
