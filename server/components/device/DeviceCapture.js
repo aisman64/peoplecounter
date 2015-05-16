@@ -41,7 +41,7 @@ module.exports = NoGapDef.component({
          * Host commands can be directly called by the client
          */
         Public: {
-            storePackets: function(packets) {
+            storePacket: function(packet) {
             	var user = this.Instance.User.currentUser;
                 if (!this.Instance.User.isDevice()) return Promise.reject('error.invalid.permissions');
 
@@ -57,17 +57,33 @@ module.exports = NoGapDef.component({
                 // this.Instance.WifiDataSet...
                 
                 // insert everything, and wait for it all to finish
-                return Promise.map(packets, function(packet) {
-	                // add deviceId to packet
-	                packet.deviceId = device.deviceId;
+                //return Promise.map(packets, function(packet) {
+                // add deviceId to packet
+                packet.deviceId = device.deviceId;
 
-	                // TODO: run findOrCreate on SSID and MACAddress, and only store their ids in WifiPacket table
+                // TODO: run findOrCreate on SSID and MACAddress, and only store their ids in WifiPacket table
 
-                    // insert packet into DB
-                    // make sure, the fields of `packet` match the table definition in WifiPacket (sequelize.define)
-                    // see: http://sequelize.readthedocs.org/en/latest/api/model/index.html#createvalues-options-promiseinstance
-                    return Shared.WifiPacket.Model.create(packet);
+                // insert packet into DB
+                // make sure, the fields of `packet` match the table definition in WifiPacket (sequelize.define)
+                // see: http://sequelize.readthedocs.org/en/latest/api/model/index.html#createvalues-options-promiseinstance
+                //return Shared.WifiPacket.Model.create(packet);
+                //});
+
+                // call stored procedure to take care of packet insertion
+                sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
+                    replacements: [
+                        packet.mac,
+                        packet.signalStrength,
+                        packet.time,
+                        packet.seqnum,
+                        packet.ssid,
+                        packet.deviceId
+                    ],
+                    type: sequelize.QueryTypes.SELECT
                 });
+                // .spread(function() {
+
+                // });
             }
         },
     }}),
@@ -101,14 +117,16 @@ module.exports = NoGapDef.component({
              * This method is called by DeviceMain, once we are logged into the server!
              */
 
-            storePackets: function(packets) {
+            storePacket: function(packet) {
                 // send packet to server
-                return this.host.storePackets(packets)
+                return this.host.storePacket(packet)
                 .then(function() {
+                    console.log("Packet sent successfully");
                     // DB successfully stored packet
                 })
                 .catch(function(err) {
-                    queue.push(packets[0], function(err) { 
+                    console.error(err.stack);
+                    queue.push(packet, function(err) { 
                         if(err) throw err; 
                         queue.length(function(err,len) { console.log(len); });
                     });
@@ -123,8 +141,9 @@ module.exports = NoGapDef.component({
                         l = struct[i].toString(16);
                         result += l.length === 1 ? '0' + l: l;
 		        }
-        	return result;
+        	   return result;
             },
+
             execAsync: function(cmd) {
                 return new Promise(function(resolve, reject) {
                     exec(cmd, function(err, stdout, stderr) {
@@ -142,6 +161,7 @@ module.exports = NoGapDef.component({
                     });
                 });       
             },
+
             preCapture: function() {
                 return Promise.join(
 	            ThisComponent.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp"),
@@ -166,10 +186,12 @@ module.exports = NoGapDef.component({
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.ssid = packet.payload.ieee802_11Frame.probe.tags[0].ssid;
-                ThisComponent.storePackets([result]);
+                ThisComponent.storePacket(result);
             },
+
             startCapturing: function() {
                 if (!pcap) return;
+
                 ThisComponent.preCapture()
                 .then(function() {
                     var pcap_session = pcap.createSession("mon0", "wlan type mgt subtype probe-req");
@@ -180,10 +202,6 @@ module.exports = NoGapDef.component({
                 });
             },
 
-            onCurrentUserChanged: function(privsChanged) {
-
-            },
-            
             /**
              * Client commands can be directly called by the host
              */

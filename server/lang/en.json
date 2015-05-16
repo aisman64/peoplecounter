@@ -45,6 +45,7 @@
 
     "page.Login": "Login",
     "page.Home": "Home",
+    "page.Live": "Live",
     "page.MAC": "Who am I?",
     "page.SSID": "Networks",
     "page.Group": "Group",
@@ -83,6 +84,11 @@
     "account.userInfo": "Username: {1}",
     "account.changeToStandardUserView" : "Change to standard user View",
     "account.currentLanguage": "Language",
+
+    "device.jobtype.": "<no job>",
+    "device.jobtype.SSIDSniffer": "SSID Sniffer",
+    "device.jobtype.ActivitySniffer": "Activity Sniffer",
+    "device.jobtype.ProximityScanner": "Proximity Scanner",
 
     "queries.names.AllDataOfMacAddress": "",
 

@@ -16,6 +16,7 @@
 	    "squishy": "*",
 	    "bluebird": "*",
 	    "promisify-node": "*",
+            "forever": "*",
 
 	    "debug": "~0.7.4",
 	    "mime": "*",

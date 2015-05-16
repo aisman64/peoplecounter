@@ -9,7 +9,7 @@ module.exports = {
     'deviceConfigDefaults': {
         'CookiesFile': './data/cookies.json',
         'HostIdentityTokenFile': './data/hostIdentityToken',
-        'DeviceClientCacheFile': './data/deviceClientCache.js',
+        'DeviceClientCacheFile': './data/deviceClientCache.min.js',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
@@ -82,14 +82,34 @@ module.exports = {
     'console': 0,
 
     /**
-     * Whether to trace RPC calls on Client side
-     */
-    'traceClient': 1,
-
-    /**
      * Whether to trace RPC calls on Host side
      */
-    'traceHost': 1,
+    'traceHost': {
+        'enabled': 1,
+        'blackList': {
+            'functions': {
+                'DeviceCommunications.checkIn': 1
+            },
+            'components': {
+
+            }
+        }
+    },
+
+    /**
+     * Whether to trace RPC calls on Client side
+     */
+    'traceClient': {
+        'enabled': 1,
+        'blackList': {
+            'functions': {
+                'DeviceCommunications.host.checkIn': 1
+            },
+            'components': {
+                
+            }
+        }
+    },
 
 
     // ########################################################################################################################
@@ -208,6 +228,7 @@ module.exports = {
 
             // user pages:
             'ui/home/HomePage',
+            'ui/live/LivePage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
 

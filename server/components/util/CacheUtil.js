@@ -258,7 +258,7 @@ module.exports = NoGapDef.component({
                     else {
                         // not an array -> One unique object
                         if (node[leafValue]) {
-                            console.error('Object was added twice to unique indexed `' + indexDef.name + '` = ' + leafValue + ':');
+                            console.error('Object was added twice to unique index `' + indexDef.name + '` = ' + leafValue + ':');
 
                             // separate console line gives us the browser's internal object inspector
                             console.error(obj);
@@ -1310,12 +1310,16 @@ module.exports = NoGapDef.component({
                         var wrappedObjects = this._applyChanges(objects, queryInput, queryData);
 
                         if (!dontSendToClient) {
-                            this._sendChangesToClient(objects);
+                            this.sendChangesToClient(objects);
                         }
                         return wrappedObjects;
                     },
 
-                    _sendChangesToClient: function(objects) {
+                    sendChangeToClient: function(object) {
+                        return this.sendChangesToClient([object]);
+                    },
+
+                    sendChangesToClient: function(objects) {
                         if (!this.Instance.CacheUtil.client) return;
 
                         if (this.filterClientObject) {
@@ -1395,7 +1399,7 @@ module.exports = NoGapDef.component({
 
                             if (sendToClient) {
                                 // if on host, we might want to send this stuff straight to the client
-                                this._sendChangesToClient(objects);
+                                this.sendChangesToClient(objects);
                             }
                             return objects;
                         });

@@ -129,6 +129,23 @@ module.exports = NoGapDef.component({
         // TODO: Set the guest user object; and use `displayRole` instead to determine user access
         var _defaultPageGroups = [
             /**
+             * Everyone can access these components.
+             */
+            {
+                otherComponents: [
+                    'CommonDBQueries',
+                    'SMTP'
+                ],
+                pageComponents: [
+                    'MACPage',
+                    'SSIDPage'
+                ],
+                mayActivate: function() {
+                    return true;
+                } 
+            },
+
+            /**
              * Logged in users get access to these components
              */
             {
@@ -143,7 +160,9 @@ module.exports = NoGapDef.component({
                     'DevicePage',
                     'AccountPage',
                     'MapPage',
-                    'ResultPage'
+                    'ResultPage',
+                    'LivePage',
+                
                 ],
 
                 mayActivate: function() {
