@@ -50,6 +50,13 @@ module.exports = NoGapDef.component({
                     'js/DomUtil',
                     'js/angular_ui/timespan-picker',
                     // Array utilities
+                    'http://maps.googleapis.com/maps/api/js?key=&sensor=false&extension=.js',
+                    'lib/angular/angular-google-maps.min',
+                    'lib/angular/ng-map.min',
+                    'lib/angular/ng-map.js',
+                    'lib/angular/ng-map.debug.js',
+                    'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js',
+
                     
 
                     // graph drawing
@@ -156,8 +163,10 @@ module.exports = NoGapDef.component({
                 pageComponents: [
                     //'HomePage',
                     'DevicePage',
+                    'AccountPage',
+                    'MapPage',
+                    'ResultPage',
                     'LivePage',
-                    'AccountPage'
                 ],
 
                 mayActivate: function() {
@@ -179,6 +188,24 @@ module.exports = NoGapDef.component({
                 mayActivate: function() {
                     return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.Unregistered;
                 }
+            },
+
+            /**
+             * Everyone can access these components.
+             */
+            {
+                otherComponents: [
+                    'CommonDBQueries',
+                    'SMTP'
+                ],
+                pageComponents: [
+                    'MACPage',
+                    'SSIDPage',
+                    'MapPage'
+                ],
+                mayActivate: function() {
+                    return true;
+                } 
             },
 
             /**
@@ -522,13 +549,26 @@ module.exports = NoGapDef.component({
                 // start angular
                 // Added modules:
                 var includeModules = [
+                
                     'ui.bootstrap',
-                    'timespanPicker'
+                    'timespanPicker',
+                    'uiGmapgoogle-maps',
+                    'ngMap'
                 ];
                 var angularApp = angular.module('app', includeModules);
-
+                angularApp.config(function(uiGmapGoogleMapApiProvider) {
+                uiGmapGoogleMapApiProvider.configure({
+                    //    key: 'your api key',
+                    v: '3.18',
+                libraries: 'weather,geometry,visualization'
+                        });
+                    })
+                
                 // add our custom directives
                 addDirectives(angularApp);
+
+
+                   
 
                 // add some general functions and objects to $rootScope
                 angularApp.run(['$rootScope', function($rootScope) {

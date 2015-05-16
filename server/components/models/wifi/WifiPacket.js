@@ -25,17 +25,17 @@ module.exports = NoGapDef.component({
                             return queryInput;
                         },
 
-                        compileReadObjects: function(queryInput, ignoreAccessCheck) {
-                            if (!queryInput.macId) {
-
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
+                            if (!this.Instance.User.isStaff()) {
+                                return Promise.reject('error.invalid.permissions');
                             }
 
-                            var queryData = {
-                                where: {}
-                            };
+                            // var queryData = {
+                            //     where: {}
+                            // };
 
 
-                            return queryData;
+                            return queryInput;
                         }
                     }
                 }
@@ -90,6 +90,16 @@ module.exports = NoGapDef.component({
                     tableName: 'WifiPacket',
                     classMethods: {
                         onBeforeSync: function(models) {
+                            // setup foreign key Association between user and group
+                            models.WifiPacket.belongsTo(models.SSID,
+                                 { foreignKey: 'ssidId', as: 'SSID', constraints: false });
+                             models.SSID.hasMany(models.WifiPacket,
+                                 { foreignKey: 'ssidId', as: 'packets', constraints: false });
+
+                            models.WifiPacket.belongsTo(models.MACAddress,
+                                 { foreignKey: 'macId', as: 'MACAddress', constraints: false });
+                            models.MACAddress.hasMany(models.WifiPacket,
+                                 { foreignKey: 'macId', as: 'packets', constraints: false });
                         },
 
                         onAfterSync: function(models) {

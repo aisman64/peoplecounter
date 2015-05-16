@@ -2,7 +2,7 @@
 
 dbName="peoplecounter"
 dbUser="root"
-dbPass="r00t"
+dbPass=""
 dbCharset="utf8"
 
 
@@ -35,7 +35,7 @@ echo "selected $fileNumber: $file"
 
 
 echo "importing database..."
-mysql --database=$dbName --user=$dbUser --password=$dbPass --default_character_set=$dbCharset < $file
+mysql --user=$dbUser --password=$dbPass --default_character_set=$dbCharset < $file
 
 echo "finished"
 exit 0

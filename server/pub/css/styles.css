@@ -501,3 +501,31 @@ title, tt, u, var {
 .darkgold {
   color: #DAA520;
 }
+
+.angular-google-map-container { height: 400px; }
+#map {
+    height:400px;
+    width:600px;
+}
+.infoWindowContent {
+    font-size:  14px !important;
+    border-top: 1px solid #ccc;
+    padding-top: 10px;
+}
+h2 {
+    margin-bottom:0;
+    margin-top: 0;
+}
+div[ng-controller='mapCtrl'] {
+      position: relative;
+    }
+    div[ng-controller='mapCtrl'] #panel {
+      position: absolute;
+      top: 40px;
+      left: 50%;
+      margin-left: -180px;
+      z-index: 5;
+      background-color: #fff;
+      padding: 5px;
+      border: 1px solid #999;
+    }

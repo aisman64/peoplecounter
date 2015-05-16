@@ -31,15 +31,6 @@ module.exports = NoGapDef.component({
              * 
              */
             initHost: function() {
-                packetIncludes = [{
-                    model: Shared.SSID.Model,
-                    as: 'SSID',
-                    attributes: ['ssidName']
-                },{
-                    model: Shared.MACAddress.Model,
-                    as: 'MACAddress',
-                    attributes: ['macAddress']
-                }];
             },
             
             /**
@@ -47,11 +38,21 @@ module.exports = NoGapDef.component({
              */
             Public: {
                 getMostRecentPackets: function(lastId) {
+                    packetIncludes = [{
+                        model: Shared.SSID.Model,
+                        as: 'SSID',
+                        attributes: ['ssidName']
+                    },{
+                        model: Shared.MACAddress.Model,
+                        as: 'MACAddress',
+                        attributes: ['macAddress']
+                    }];
+
                     var where = {};
                     var queryData = {
                         where: where,
                         include: packetIncludes,
-                        order: 'packetId DESC'
+                        order: 'time DESC'
                     };
 
                     if (lastId) {
@@ -74,10 +75,15 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
+        var maxId;
+        var refreshDelay;
+        var refreshTimer;
 
         return {
             __ctor: function() {
                 ThisComponent = this;
+                maxId = null;
+                refreshDelay = 500; // .5 seconds
             },
 
             /**
@@ -98,6 +104,21 @@ module.exports = NoGapDef.component({
             },
 
             onPageActivate: function() {
+                if (!refreshTimer) {
+                    refreshTimer = setInterval(ThisComponent.refetchPackets.bind(ThisComponent), refreshDelay);
+                }
+
+                this.refetchPackets();
+            },
+
+            onPageDeactivate: function() {
+                if (refreshTimer) {
+                    clearInterval(refreshTimer);
+                    refreshTimer = null;
+                }
+            },
+
+            refetchPackets: function() {
                 this.busy = true;
 
                 this.host.getMostRecentPackets()
@@ -105,15 +126,10 @@ module.exports = NoGapDef.component({
                     this.busy = false;
                 })
                 .then(function(packets) {
-                    console.log(packets);
                     ThisComponent.packets = packets;
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent));
-            },
-
-            onPageDeactivate: function() {
-
             },
             
             /**

@@ -108,7 +108,7 @@ module.exports = NoGapDef.component({
                         var passphrase = $scope.loginData.passphrase;
                         $scope.loginData.passphrase = null;
 
-                        return (!passphrase && Promise.resolve() ||
+                        return (!passphrase && Promise.resolve(null) ||
                         Instance.User.hashPassphrase($scope.loginData.userName, passphrase))
                         .then(function(sharedSecretV1) {
                             return ThisComponent.host.tryLogin($scope.loginData.userName, sharedSecretV1, Instance.User.getCurrentLocale());
@@ -118,7 +118,7 @@ module.exports = NoGapDef.component({
                         })
                         .then(function() {
                             // success!
-                            $scope.$apply();
+                            $scope.safeDigest();
                         })
                         .catch($scope.handleError.bind($scope));
                     };

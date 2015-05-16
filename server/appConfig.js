@@ -88,7 +88,8 @@ module.exports = {
         'enabled': 1,
         'blackList': {
             'functions': {
-                'DeviceCommunications.checkIn': 1
+                'DeviceCommunications.checkIn': 1,
+                'LivePage.getMostRecentPackets': 1
             },
             'components': {
 
@@ -132,7 +133,7 @@ module.exports = {
     'db' : {
         'host'     : 'localhost',
         'user'     : 'root',
-        'password' : 'r00t',
+        'password' : '123',
         'port'     : '3306',
         'database' : 'peoplecounter',
         'reconnectDelay':   '5'
@@ -232,7 +233,9 @@ module.exports = {
             'ui/device/DevicePage',
             'ui/account/AccountPage',
 
-            // superuser pages:
+            'ui/map/MapPage',
+            'ui/result/ResultPage',
+
             'ui/admin/AdminPage'
         ]
     },

@@ -1,0 +1,26 @@
+
+<div class="ng-scope" ng-controller="mapCtrl" >
+
+    <map center="25.045574, 121.528325" zoom="17" on-click="addMarker()">
+        <div ng-repeat=" position in positions">
+           
+            <marker position="{{position.lat}},  {{position.lng}}"></marker>
+           
+          <!-- <input ng-click="showMarkers()" type="button" value="Show All Markers"> -->
+        </div>
+            <!-- ngRepeat: pos in positions -->
+    </map>
+        
+        <form class="form-inline">
+          <div class="form-group">
+            <div class="input-group">
+              <div class="input-group-addon">Please input your mac address</div>
+              <input type="text" ng-model="macId" class="form-control" id="macId" placeholder="mac address">
+              <div style="cursor:pointer;"class="input-group-addon btn btn-primary"  ng-click="queryByMacId(macId)">Submit</div>
+            </div>
+          </div>
+        </form>
+   
+    	 
+
+</div>
