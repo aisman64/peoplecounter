@@ -312,11 +312,12 @@
                                 <span>{{dataset.datasetName}}</span>
                             </div>
                             <div class="col-xs-5">
-                                <span ng-repeat="deviceRelation in dataset.deviceRelations"
-                                    code="device = deviceCache.byId[deviceRelation.deviceId];
-                                        user = device.getUserNow();"
-                                    style="background-color: lightgrey">
-                                    {{ user.userName }}
+                                <span ng-repeat="deviceRelation in dataset.deviceRelations">
+                                    <span code="device = deviceCache.byId[deviceRelation.deviceId];
+                                            user = device.getUserNow();"
+                                        style="background-color: lightgrey">
+                                        {{ user.userName }}
+                                    </span>&nbsp;
                                 </span>
                             </div>
                             <div class="col-xs-4">
@@ -334,15 +335,16 @@
                             </div>
 
                             <div class="col-xs-5">
-                                <a class="btn btn-default"
-                                    ng-repeat="deviceRelation in dataset.deviceRelations"
-                                    code="device = deviceCache.byId[deviceRelation.deviceId];
-                                        user = device.getUserNow();"
-                                    style="background-color: lightgrey"
-                                    ng-click="removeDeviceFromDataset(device, dataset)">
-                                    {{ user.userName }}
-                                    <i class="fa fa-times red"></i>
-                                </a>
+                                <span ng-repeat="deviceRelation in dataset.deviceRelations">
+                                    <a class="btn btn-default"
+                                        code="device = deviceCache.byId[deviceRelation.deviceId];
+                                            user = device.getUserNow();"
+                                        style="background-color: lightgrey"
+                                        ng-click="removeDeviceFromDataset(device, dataset)">
+                                        {{ user.userName }}
+                                        <i class="fa fa-times red"></i>
+                                    </a>&nbsp;
+                                </span>
                             </div>
 
                             <div class="col-xs-4">

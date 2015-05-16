@@ -61,8 +61,16 @@ module.exports = NoGapDef.component({
                                 datasetId: datasetId
                             }
                         })
-                        .then(SequelizeUtil.getValuesFromRows)
-                    );
+                        .spread(function(relation, created) {
+                            if (created) {
+                                return SequelizeUtil.getValuesFromRows(relation);
+                            }
+                            return null;
+                        })
+                    )
+                    .spread(function(deviceUpdate, newRelation) {
+                        return newRelation;
+                    });
                 },
 
                 removeDeviceFromDataset: function(deviceId, datasetId) {
@@ -73,20 +81,24 @@ module.exports = NoGapDef.component({
                     var datasetDeviceRelations = this.Instance.WifiDatasetSnifferRelation.datasetSnifferRelation;
                     
                     return Promise.join(
-                        // unset device's currentDataset
+                        // unset device's currentDataset (if it's currently the given datasetId)
                         devices.updateObject({
                             deviceId: deviceId,
-                            currentDatasetId: datasetId
+                            values: {
+                                currentDatasetId: 0
+                            },
+                            where: {
+                                currentDatasetId: datasetId
+                            }
                         }),
 
-                        // insert the device/dataset pair into relationship table if not already exists
-                        datasetDeviceRelations.getModel().findOrCreate({
+                        // delete the device/dataset pair from the relationship table
+                        datasetDeviceRelations.getModel().destroy({
                             where: {
                                 deviceId: deviceId,
                                 datasetId: datasetId
                             }
                         })
-                        .then(SequelizeUtil.getValuesFromRows)
                     );
                 }
             },
@@ -316,8 +328,13 @@ module.exports = NoGapDef.component({
                         .finally(function() {
                             ThisComponent.busy = false;
                         })
-                        .then(function(deviceSettings) {
+                        .then(function(newRelation) {
                             // success!
+                            if (newRelation) {
+                                // add to set of associated relations
+                                dataset.deviceRelations = dataset.deviceRelations || [];
+                                dataset.deviceRelations.push(newRelation);
+                            }
                             ThisComponent.page.invalidateView();
                         })
                         .catch($scope.handleError.bind($scope));
@@ -330,8 +347,15 @@ module.exports = NoGapDef.component({
                         .finally(function() {
                             ThisComponent.busy = false;
                         })
-                        .then(function(deviceSettings) {
+                        .then(function() {
                             // success!
+                            // remove from set of associated relations
+                            dataset.deviceRelations = dataset.deviceRelations || [];
+                            _.remove(dataset.deviceRelations, {
+                                deviceId: device.deviceId,
+                                datasetId: dataset.datasetId
+                            });
+
                             ThisComponent.page.invalidateView();
                         })
                         .catch($scope.handleError.bind($scope));
