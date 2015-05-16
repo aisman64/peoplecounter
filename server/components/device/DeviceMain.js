@@ -25,6 +25,25 @@ module.exports = NoGapDef.component({
             
         },
 
+        execAsync: function(cmd) {
+            return new Promise(function(resolve, reject) {
+                var exec = require('child_process').exec;
+                exec(cmd, function(err, stdout, stderr) {
+                    if(err) {
+                        console.log(stdout);
+                        console.log(stderr);
+                        reject(err);
+                        //resolve();
+                    }
+                    else {
+                        console.log(stdout);
+                        console.log(stderr);
+                        resolve();
+                    }
+                });
+            });       
+        },
+
         Private: {
         	getCurrentDevice: function(user) {
         		user = user || this.Instance.User.currentUser;
@@ -261,7 +280,7 @@ module.exports = NoGapDef.component({
 	                    console.error('[FATAL ERROR] Failed to login more than once. Giving up! - ' + (err.message || err));
 	            	}
 	            	else {
-                    	console.error('Failed to login - Retrying... (' + (err.message || err) + ')');
+                    	console.error('Failed to login - Retrying... (' + (err.stack || err) + ')');
                     	Promise.delay(300)
                     	.then(function() {
                     		// retry!
@@ -273,6 +292,7 @@ module.exports = NoGapDef.component({
 
             onLogin: function() {
             	// we have logged in successfully, and now have Device privilege level
+                Instance.DeviceCapture.flushQueue();
             },
 
             /**

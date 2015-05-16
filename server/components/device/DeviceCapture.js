@@ -70,7 +70,7 @@ module.exports = NoGapDef.component({
                 //});
 
                 // call stored procedure to take care of packet insertion
-                sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
+                return sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
                     replacements: [
                         packet.mac,
                         packet.signalStrength,
@@ -79,7 +79,7 @@ module.exports = NoGapDef.component({
                         packet.ssid,
                         packet.deviceId
                     ],
-                    type: sequelize.QueryTypes.SELECT
+                    type: sequelize.QueryTypes.RAW
                 });
                 // .spread(function() {
 
@@ -99,6 +99,7 @@ module.exports = NoGapDef.component({
         var exec;
         var Queue;
         var queue;
+        var promisify = require("promisify-node");
         return {
             __ctor: function() {
                 ThisComponent = this;
@@ -144,30 +145,25 @@ module.exports = NoGapDef.component({
         	   return result;
             },
 
-            execAsync: function(cmd) {
-                return new Promise(function(resolve, reject) {
-                    exec(cmd, function(err, stdout, stderr) {
-                        if(err) {
-                            console.log(stdout);
-                            console.log(stderr);
-                            //reject(err);
-                            resolve();
-                        }
-                        else {
-                            console.log(stdout);
-                            console.log(stderr);
-                            resolve();
-                        }
-                    });
-                });       
-            },
 
             preCapture: function() {
                 return Promise.join(
-	            ThisComponent.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp"),
-            	    ThisComponent.execAsync("ntp-wait -v"),
-                    ThisComponent.execAsync("iw phy phy0 interface add mon0 type monitor"),
-                    ThisComponent.execAsync("ifconfig mon0 up"),
+	            Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
+                        }),
+            	    Instance.DeviceMain.execAsync("ntp-wait -v")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
+                        }),
+                    Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
+                        }),
+                    Instance.DeviceMain.execAsync("ifconfig mon0 up")
+                        .catch(function(err) {
+                         //   console.log(err.stack || err); 
+                        }),
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err)
@@ -187,6 +183,62 @@ module.exports = NoGapDef.component({
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.ssid = packet.payload.ieee802_11Frame.probe.tags[0].ssid;
                 ThisComponent.storePacket(result);
+            },
+
+
+
+            flushQueue: function() {
+                console.log("Flush Queue");
+                var dummies = [];
+                exec("ls tmp/new/*.galileo | wc -l", function(error, stdout, stderr) {
+                    var length = parseInt(stdout);
+                    for(var i=0; i<length; i++)
+                        {
+                        dummies.push(0);
+                        }
+                    return Promise.map(dummies, function(dummy) {
+                        return new Promise(function(resolve, reject) {
+                            queue.tpop(function(err, packet, commit, rollback) {
+                                if (err)
+                                    {
+                                    reject(err);
+                                    }
+                                ThisComponent.host.storePacket(packet)
+                                .then(function() {
+                                    commit(function(err) {
+                                        if (err) {
+                                            reject(err);
+                                        }
+                                        else {
+                                            console.log("Stored Packet Uploaded");
+                                            resolve();
+                                        }
+                                    });
+                                })
+                                .catch(function(err) {
+                                    rollback(function(err2) {
+                                        if (err2) {
+                                            console.error('[ERROR] Unable to rollback: ' + err2.stack);
+                                        }
+                                        reject(err);
+                                    });
+                                });
+                            });
+                        });
+                    }, {
+                        concurrency: 5              // how many packets in-flight, at the same time
+                    });
+                });
+
+                /*queue.length(function(err, length) {
+                    for(var i=0; i<5; i++) {
+                        queue.tpop(function(err, packet, commit, rollback) {
+                            ThisComponent.host.storePacket(packet)
+                                .then(function() { commit(function(err) { if(err) throw err; console.log("Stored Packet uploaded");})})
+                                .catch(function() { rollback(function(err) { if (err) throw err; console.log("Stored Packet Problem");})});
+                        }); 
+                    }
+                });*/
             },
 
             startCapturing: function() {
