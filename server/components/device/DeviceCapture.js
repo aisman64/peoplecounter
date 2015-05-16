@@ -51,24 +51,7 @@ module.exports = NoGapDef.component({
                 	throw new Error('Device was logged in with its user account, but device entry was not ready: ' +
                 		user.userName);
                 }
-
-                // TODO: Dataset management (must be controlled in front-end)
-                // Shared.WifiDataSet...
-                // this.Instance.WifiDataSet...
-                
-                // insert everything, and wait for it all to finish
-                //return Promise.map(packets, function(packet) {
-                // add deviceId to packet
                 packet.deviceId = device.deviceId;
-
-                // TODO: run findOrCreate on SSID and MACAddress, and only store their ids in WifiSSIDPacket table
-
-                // insert packet into DB
-                // make sure, the fields of `packet` match the table definition in WifiSSIDPacket (sequelize.define)
-                // see: http://sequelize.readthedocs.org/en/latest/api/model/index.html#createvalues-options-promiseinstance
-                //return Shared.WifiSSIDPacket.Model.create(packet);
-                //});
-
                 // call stored procedure to take care of packet insertion
                 return sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
                     replacements: [
@@ -77,6 +60,32 @@ module.exports = NoGapDef.component({
                         packet.time,
                         packet.seqnum,
                         packet.ssid,
+                        packet.deviceId
+                    ],
+                    type: sequelize.QueryTypes.RAW
+                });
+                // .spread(function() {
+
+                // });
+            },
+            storePacket2: function(packet) {
+            	var user = this.Instance.User.currentUser;
+                if (!this.Instance.User.isDevice()) return Promise.reject('error.invalid.permissions');
+
+                var device = this.Instance.DeviceMain.getCurrentDevice();
+                if (!device) {
+                	// internal error: something went wrong in our authentication process
+                	throw new Error('Device was logged in with its user account, but device entry was not ready: ' +
+                		user.userName);
+                }
+                packet.deviceId = device.deviceId;
+                // call stored procedure to take care of packet insertion
+                return sequelize.query('CALL storePacket2(?, ?, ?, ?, ?, ?);', { 
+                    replacements: [
+                        packet.mac,
+                        packet.signalStrength,
+                        packet.time,
+                        packet.seqnum,
                         packet.deviceId
                     ],
                     type: sequelize.QueryTypes.RAW
@@ -191,9 +200,8 @@ module.exports = NoGapDef.component({
                 result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
-                if(result.signalStrength >= -15)
-                    console.log(result.mac);
-                    //ThisComponent.storePacket(result);
+                if(result.signalStrength >= -25)
+                    ThisComponent.storePacket2(result);
             },
 
 
@@ -256,7 +264,7 @@ module.exports = NoGapDef.component({
 
                 ThisComponent.preCapture()
                 .then(function() {
-                    var device = DeviceMain.getCurrentDevice(); 
+                    var device = Instance.DeviceMain.getCurrentDevice(); 
                     var jobType = Instance.WifiSnifferDevice.DeviceJobType;
                     var pcap_session;
                     if(device.currentJobType == jobType.ActivitySniffer) {
