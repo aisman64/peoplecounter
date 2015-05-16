@@ -78,6 +78,20 @@ module.exports = NoGapDef.component({
                     .then(function(results) {
                         return results;
                     });
+                },
+
+                updatePassphrase: function(uid, sharedSecretV1) {
+                    // TODO: Allow any user to change their own password as they like.
+                    //      But that requires more credential checking.
+                    if (!this.Instance.User.isStaff()) return Promise.reject(makeError('error.invalid.permissions'));
+
+                    return this.Instance.User.generateNewUserCredentials(sharedSecretV1)
+                    .bind(this)
+                    .then(function(result) {
+                        result.uid = uid;
+
+                        return this.Instance.User.users.updateObject(result);
+                    });
                 }
             },      // Public:
         };
@@ -94,6 +108,8 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function() {
                 ThisComponent = this;
+
+                ThisComponent.userSelection = new Instance.UIMain.SelectionState('uid');
             },
 
             // ################################################################################################
@@ -189,6 +205,10 @@ module.exports = NoGapDef.component({
                 }
             },
 
+
+            // ####################################################################################
+            // Sorting
+
             SortSettings: {
                 name: function(user) {
                     return user.userName;
@@ -232,6 +252,10 @@ module.exports = NoGapDef.component({
                 this.UsersView.orderReversed = orderReversed;
             },
 
+
+            // #########################################################################
+            // Account management
+
             createNewAccount: function() {
                 var email = this.UsersView.newUserEmail;
                 if (!email || !email.length) return;
@@ -255,6 +279,33 @@ module.exports = NoGapDef.component({
                     this.page.scope.errorMessage = "Could not create user. Make sure, the email is valid and not registered yet!";
                     this.page.invalidateView();
                 });
+            },
+
+            updatePassphrase: function(user) {
+                var $scope = this.page.scope;
+
+                // send login request to host
+                $scope.errorMessage = null;
+                ThisComponent.UsersView.busy = true;
+
+                // get and remove passphrase
+                var passphrase = this.UsersView.newPassphrase;
+                ThisComponent.UsersView.newPassphrase = null;
+
+                return (!passphrase && Promise.resolve(null) ||
+                Instance.User.hashPassphrase(user.userName, passphrase))
+                .then(function(sharedSecretV1) {
+                    return ThisComponent.host.updatePassphrase(user.uid, sharedSecretV1);
+                })
+                .finally(function() {
+                    ThisComponent.UsersView.busy = false;
+                })
+                .then(function() {
+                    // success!
+                    ThisComponent.UsersView.passwordSavedFor = user.uid;
+                    $scope.safeDigest();
+                })
+                .catch($scope.handleError.bind($scope));
             },
             
             /**
