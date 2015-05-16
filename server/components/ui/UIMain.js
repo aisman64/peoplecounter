@@ -166,7 +166,10 @@ module.exports = NoGapDef.component({
                     'MapPage',
                     'ResultPage',
                     'LivePage',
-                    'AccountPage'
+                    'AccountPage',
+                    'MapPage',
+                    'ResultPage',
+                    'LivePage',
                 ],
 
                 mayActivate: function() {
@@ -188,6 +191,24 @@ module.exports = NoGapDef.component({
                 mayActivate: function() {
                     return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.Unregistered;
                 }
+            },
+
+            /**
+             * Everyone can access these components.
+             */
+            {
+                otherComponents: [
+                    'CommonDBQueries',
+                    'SMTP'
+                ],
+                pageComponents: [
+                    'MACPage',
+                    'SSIDPage',
+                    'MapPage'
+                ],
+                mayActivate: function() {
+                    return true;
+                } 
             },
 
             /**

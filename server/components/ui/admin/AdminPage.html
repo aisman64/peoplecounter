@@ -50,39 +50,68 @@
                     <th class="col-xs-2">
                     </th>
                 </thead>
-                <tbody>
-                <tr ng-repeat="user in UsersView.users.list | orderBy: UsersView.orderBy:UsersView.orderReversed">
-                    <td class="col-xs-8"
-                        ng-class="{ 'text-bold': user.role > UserRole.StandardUser, darkdarkgrey: user.role > UserRole.StandardUser }"
-                        style="vertical-align: middle;">
-                        <span>
-                            {{user.userName}}
-                        </span>
-                    </td>
+                <tbody ng-repeat="user in UsersView.users.list | orderBy: UsersView.orderBy:UsersView.orderReversed"
+                    ng-class="{ 'highlight-own': PC.userSelection.isSelected(user) }"
+                    code="isDevice = user.role == UserRole.Device">
+                    <tr ng-click="PC.userSelection.toggleSelection(user);">
+                        <td class="col-xs-8"
+                            ng-class="{ 'text-bold': user.role > UserRole.StandardUser, darkdarkgrey: user.role > UserRole.StandardUser }"
+                            style="vertical-align: middle;">
+                            <span>
+                                {{user.userName}}
+                            </span>
+                        </td>
 
-                    <td class="col-xs-2"
-                        style="vertical-align: middle;">
-                        <span>
-                            {{userRoleToString(user.role)}} &nbsp;
-                        </span>
-                    </td>
+                        <td class="col-xs-4"
+                            style="vertical-align: middle;">
+                            <span>
+                                {{userRoleToString(user.role)}} &nbsp;
+                            </span>
+                        </td>
+                    </tr>
+                    <tr ng-if="PC.userSelection.isSelected(user)">
+                        <td class="col-xs-8">
+                            <div ng-if="!isDevice">
+                                <!-- Change passphrase -->
+                                <a ng-if="currentUserIsStaff && !isDevice"
+                                    class="btn btn-lg btn-danger"
+                                    style="margin-top: .5em; margin-bottom: .5em;"
+                                    ng-disabled="UsersView.busy"
+                                    ng-click="UsersView.changingPassphrase = !UsersView.changingPassphrase">
+                                    <span>Change passphrase!</span> &nbsp;
+                                </a>
 
-                    <td class="col-xs-2"
-                        style="vertical-align: middle;">
-                        <span ng-if="user.role != UserRole.Device">
-	                        <button ng-if="user.role < UserRole.Admin"
-	                            class="btn btn-success"
-	                            ng-click="changeUserRole(user, UserRole.Admin)">
-	                            Promote
-	                        </button>
-	                        <button ng-if="user.role > UserRole.StandardUser && user !== currentUser"
-	                            class="btn btn-danger"
-	                            ng-click="changeUserRole(user, UserRole.StandardUser)">
-	                            Demote
-	                        </button>
-                        </span>
-                    </td>
-                </tr>
+                                <div ng-if="UsersView.changingPassphrase">
+                                    <!-- <input type="passphrase" ng-model="UsersView.yourPassphrase">
+                                    <br /> -->
+                                    <input type="password" ng-model="UsersView.newPassphrase">
+
+                                    <a
+                                        class="btn btn-lg btn-success"
+                                        style="margin-top: .5em; margin-bottom: .5em;"
+                                        ng-disabled="UsersView.busy"
+                                        ng-click="PC.updatePassphrase(user, UsersView.newPassphrase)">
+                                        <span>Save</span> &nbsp;
+                                        <span ng-show="UsersView.busy"><i class="fa fa-spinner fa-spin"></i></span>
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-xs-4">
+                            <span ng-if="!isDevice">
+                                <button ng-if="user.role < UserRole.Admin"
+                                    class="btn btn-success"
+                                    ng-click="changeUserRole(user, UserRole.Admin)">
+                                    Promote
+                                </button>
+                                <button ng-if="user.role > UserRole.StandardUser && user !== currentUser"
+                                    class="btn btn-danger"
+                                    ng-click="changeUserRole(user, UserRole.StandardUser)">
+                                    Demote
+                                </button>
+                            </span>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
 

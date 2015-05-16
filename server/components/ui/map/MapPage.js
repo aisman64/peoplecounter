@@ -68,6 +68,44 @@ module.exports = NoGapDef.component({
 
                     
 
+                     $scope.queryByMacId = function(macId) {
+                        if (typeof macId !== 'undefined') {
+                            var queryData = {
+                                where: {
+                                    macId: macId
+                                }
+                            };
+                            console.log('hello');
+                            Instance.WifiPacket.wifiPackets.getObjects(queryData)
+                            .then(function(data) {
+                                console.log("then");
+                                console.log(data);
+
+                            })
+                            .catch(function(error){
+                                console.log("catch");
+                                console.log(error);
+
+                            });
+                            // console.log(Instance.WifiPacket);
+
+                        }
+
+
+
+
+                     }
+                    // $scope.addMarker = function(event) {
+                    //     google.maps.event.addListener($scope.map, "click", function(event) {
+                    //         var lat = event.latLng.lat();
+                    //         var lng = event.latLng.lng();
+                    //         // populate yor box/field with lat, lng
+                    //         alert("Lat=" + lat + "; Lng=" + lng);
+                    //     });
+                    //     $scope.positions.push({latitude:lat,  longitude: lon});
+                    //  }   
+                    
+
 
                         // https://github.com/angular-ui/angular-google-maps/blob/7edede9372a95fba99b1abd49ebcfd2a85ec8c66/example/assets/scripts/controllers/example.js#L252
                                                               

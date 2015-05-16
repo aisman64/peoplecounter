@@ -88,7 +88,8 @@ module.exports = {
         'enabled': 1,
         'blackList': {
             'functions': {
-                'DeviceCommunications.checkIn': 1
+                'DeviceCommunications.checkIn': 1,
+                'LivePage.getMostRecentPackets': 1
             },
             'components': {
 
@@ -234,6 +235,10 @@ module.exports = {
             'ui/map/MapPage',
             'ui/result/ResultPage',
             // superuser pages:
+
+            'ui/map/MapPage',
+            'ui/result/ResultPage',
+
             'ui/admin/AdminPage'
         ]
     },

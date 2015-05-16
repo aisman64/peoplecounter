@@ -1,5 +1,4 @@
 <div class="fill container-page" ng-controller="liveCtrl">
-{{packets}}
 	<div class="panel panel-info">
 		<div class="panel-heading">
 			<div class="panel-title"><span>
@@ -17,11 +16,12 @@
 					<th class="col-xs-3">when</th>
 				</thead>
 				<tbody>
-					<tr ng-repeat="packet in recentPackets | orderBy: '-updatedAt'">
-						<td class="col-xs-3">TODO: Look up MAC</td>
-						<td class="col-xs-3">TODO: Look up SSID</td>
+					<tr ng-repeat="packet in PC.packets | orderBy: '-updatedAt'"
+						code="packetDate = util.moment(util.Math.round(packet.time * 1000))">
+						<td class="col-xs-3">{{ packet.MACAddress.macAddress }}</td>
+						<td class="col-xs-3">{{ packet.SSID.ssidName }}</td>
 						<td class="col-xs-3">{{packet.signalStrength}}</td>
-						<td class="col-xs-3">{{packet.time}}</td>
+						<td class="col-xs-3">{{packetDate.format('LLL')}}</td>
 					</tr>
 				</tbody>
 			</table>
