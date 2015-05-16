@@ -88,7 +88,8 @@ module.exports = {
         'enabled': 1,
         'blackList': {
             'functions': {
-                'DeviceCommunications.checkIn': 1
+                'DeviceCommunications.checkIn': 1,
+                'LivePage.getMostRecentPackets': 1
             },
             'components': {
 
