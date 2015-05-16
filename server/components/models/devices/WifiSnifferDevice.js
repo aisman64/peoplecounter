@@ -86,7 +86,9 @@ module.exports = NoGapDef.component({
                             }
                             else if (queryInput.isAssigned !== undefined) {
                                 // get first unassigned device
-                                return this.indices.isAssigned.get(queryInput.isAssigned)[0] || null;
+                                var devices = this.indices.isAssigned.get(queryInput.isAssigned);
+                                if (!devices || !devices.length) return null;
+                                return _.max(devices, 'resetTimeout');
                             }
                         },
 
@@ -100,21 +102,26 @@ module.exports = NoGapDef.component({
                         },
 
                         compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
+                            var hasDeviceId,
+                                hasUid;
+
                             if (!queryInput || 
                                 (queryInput.isAssigned === undefined && 
-                                    !queryInput.deviceId &&
-                                    !queryInput.uid)) {
+                                    !(hasDeviceId = queryInput.hasOwnProperty('deviceId')) &&
+                                    !(hasUid = queryInput.hasOwnProperty('uid')))) {
                                 return Promise.reject(makeError('error.invalid.request', queryInput));
                             }
 
                             var queryData = { where: {} };
                             if (queryInput.isAssigned !== undefined) {
                                 queryData.where.isAssigned = queryInput.isAssigned;
+                                queryData.order = 'resetTimeout DESC';
                             }
-                            if (queryInput.deviceId) {
+                            
+                            if (hasDeviceId) {
                                 queryData.where.deviceId = queryInput.deviceId;
                             }
-                            else if (queryInput.uid) {
+                            else if (hasUid) {
                                 queryData.where.uid = queryInput.uid;
                             }
                             return queryData;
@@ -125,6 +132,7 @@ module.exports = NoGapDef.component({
                             if (queryInput) {
                                 if (queryInput.isAssigned !== undefined) {
                                     queryData.where.isAssigned = queryInput.isAssigned;
+                                    queryData.order = 'resetTimeout DESC';
                                 }
                             }
                             return queryData;

@@ -33,6 +33,9 @@ var FileCookieStore = require('tough-cookie-filestore');
 function reinitializeConfigFromFile() {
 	var contentString = fs.readFileSync(ConfigFilePath).toString();
 	Config = JSON.parse(contentString);
+	if (GLOBAL.DEVICE) {
+		GLOBAL.DEVICE.Config = Config;
+	}
 }
 
 

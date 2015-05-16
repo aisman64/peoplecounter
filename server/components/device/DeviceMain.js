@@ -124,8 +124,7 @@ module.exports = NoGapDef.component({
 
                 // get device
                 return deviceCache.getObject({
-                    deviceId: deviceId,
-                    isAssigned: 1
+                    deviceId: deviceId
                 }, true, false, true)
                 .bind(this)
                 .then(function(device) {
