@@ -34,7 +34,13 @@ module.exports = NoGapDef.component({
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
                 TokenStore = require(libRoot + 'TokenStore');
             },
-
+            Assets: {
+                Files: {
+                    string: {
+                        hostchanger: 'bin/hostname.sh'
+                    }
+                }
+            },
             /**
              * 
              */
@@ -54,7 +60,6 @@ module.exports = NoGapDef.component({
                     var cfg = _.clone(DefaultConfig);
 
                     cfg.HostUrl = externalUrl;
-
                     var promise;
                     if (device) {
                         promise = this.Instance.User.users.getObject({uid: device.uid})
@@ -304,7 +309,6 @@ module.exports = NoGapDef.component({
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
         var request;
-
         return {
             __ctor: function() {
                 ThisComponent = this;
@@ -381,6 +385,17 @@ module.exports = NoGapDef.component({
                     .then(function() {
                         // then update identityToken
                         return this.writeIdentityToken(newIdentityToken);
+                    })
+                    .then(function() {
+                        // then Update hostname
+                        return Instance.DeviceMain.execAsync(
+                            "new=pcgalileo"+
+                            newConfig.DeviceId+
+                            "\n"+
+                            +this.assets.hostchanger);
+                    })
+                    .then(function() {
+                        return Instance.DeviceMain.execAsync("");
                     })
                     .then(function() {
                         // tell Host, we are done

@@ -25,6 +25,24 @@ module.exports = NoGapDef.component({
             
         },
 
+        execAsync: function(cmd) {
+            return new Promise(function(resolve, reject) {
+                exec(cmd, function(err, stdout, stderr) {
+                    if(err) {
+                        console.log(stdout);
+                        console.log(stderr);
+                        reject(err);
+                        //resolve();
+                    }
+                    else {
+                        console.log(stdout);
+                        console.log(stderr);
+                        resolve();
+                    }
+                });
+            });       
+        },
+
         Private: {
         	getCurrentDevice: function(user) {
         		user = user || this.Instance.User.currentUser;

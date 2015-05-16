@@ -145,30 +145,15 @@ module.exports = NoGapDef.component({
         	   return result;
             },
 
-            execAsync: function(cmd) {
-                return new Promise(function(resolve, reject) {
-                    exec(cmd, function(err, stdout, stderr) {
-                        if(err) {
-                            console.log(stdout);
-                            console.log(stderr);
-                            //reject(err);
-                            resolve();
-                        }
-                        else {
-                            console.log(stdout);
-                            console.log(stderr);
-                            resolve();
-                        }
-                    });
-                });       
-            },
 
             preCapture: function() {
                 return Promise.join(
-	            ThisComponent.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp"),
-            	    ThisComponent.execAsync("ntp-wait -v"),
-                    ThisComponent.execAsync("iw phy phy0 interface add mon0 type monitor"),
-                    ThisComponent.execAsync("ifconfig mon0 up"),
+	            Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp"),
+            	    Instance.DeviceMain.execAsync("ntp-wait -v")
+                        .catch(function(err) { 
+                        }),
+                    Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor"),
+                    Instance.DeviceMain.execAsync("ifconfig mon0 up"),
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err)
