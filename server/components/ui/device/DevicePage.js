@@ -259,7 +259,7 @@ module.exports = NoGapDef.component({
 
                 // register page
                 Instance.UIMgr.registerPage(this, 'Device', this.assets.template, {
-                    iconClasses: 'fa fa-cog'
+                    iconClasses: 'fa fa-cogs'
                 });
             },
 

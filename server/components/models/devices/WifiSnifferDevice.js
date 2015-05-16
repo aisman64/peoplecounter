@@ -1,5 +1,5 @@
 /**
- * Each device is deployed in a physical location and captures WifiPackets in bundles of WifiDataSets.
+ * Each device is deployed in a physical location and captures WifiSSIDPackets in bundles of WifiDataSets.
  */
 "use strict";
 

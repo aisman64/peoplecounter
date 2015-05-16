@@ -1,5 +1,5 @@
 /**
- * All stored data packets that have been received in devices (read via pcap)
+ * All unencrypted Wifi packets that have been captured by our devices
  */
 "use strict";
 
@@ -11,7 +11,7 @@ module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
     	return {
             Caches: {
-                wifiPackets: {
+                wifiActivityPackets: {
                     idProperty: 'packetId',
 
                     members: {
@@ -63,12 +63,11 @@ module.exports = NoGapDef.component({
                 /**
                  * 
                  */
-                return sequelize.define('WifiPacket', {
+                return sequelize.define('WifiActivityPacket', {
                     packetId: { type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true },
 
                     deviceId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
                     macId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
-                    ssidId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
                     datasetId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
 
                     signalStrength: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
@@ -87,18 +86,13 @@ module.exports = NoGapDef.component({
                     // updatedAt: false, // we can use `udpatedAt` for our live-stream
 
                     freezeTableName: true,
-                    tableName: 'WifiPacket',
+                    tableName: 'WifiActivityPacket',
                     classMethods: {
                         onBeforeSync: function(models) {
-                            // setup foreign key Association between user and group
-                            models.WifiPacket.belongsTo(models.SSID,
-                                 { foreignKey: 'ssidId', as: 'SSID', constraints: false });
-                             models.SSID.hasMany(models.WifiPacket,
-                                 { foreignKey: 'ssidId', as: 'packets', constraints: false });
-
-                            models.WifiPacket.belongsTo(models.MACAddress,
+                            // setup foreign key Association between packet and MACAddress
+                            models.WifiActivityPacket.belongsTo(models.MACAddress,
                                  { foreignKey: 'macId', as: 'MACAddress', constraints: false });
-                            models.MACAddress.hasMany(models.WifiPacket,
+                            models.MACAddress.hasMany(models.WifiActivityPacket,
                                  { foreignKey: 'macId', as: 'packets', constraints: false });
                         },
 
@@ -108,7 +102,6 @@ module.exports = NoGapDef.component({
                                 // create indices
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['deviceId']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['macId']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['ssidId']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['datasetId']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['time']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['signalStrength']),

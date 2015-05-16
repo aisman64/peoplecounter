@@ -84,7 +84,7 @@ module.exports = NoGapDef.component({
                                 }
                             };
                             console.log('hello');
-                            Instance.WifiPacket.wifiPackets.getObjects(queryData)
+                            Instance.WifiSSIDPacket.wifiSSIDPackets.getObjects(queryData)
                             .then(function(data) {
                                 console.log("then");
                                 console.log(data);
@@ -95,7 +95,7 @@ module.exports = NoGapDef.component({
                                 console.log(error);
 
                             });
-                            // console.log(Instance.WifiPacket);
+                            // console.log(Instance.WifiSSIDPacket);
 
                         }
 

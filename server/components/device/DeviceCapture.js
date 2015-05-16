@@ -61,12 +61,12 @@ module.exports = NoGapDef.component({
                 // add deviceId to packet
                 packet.deviceId = device.deviceId;
 
-                // TODO: run findOrCreate on SSID and MACAddress, and only store their ids in WifiPacket table
+                // TODO: run findOrCreate on SSID and MACAddress, and only store their ids in WifiSSIDPacket table
 
                 // insert packet into DB
-                // make sure, the fields of `packet` match the table definition in WifiPacket (sequelize.define)
+                // make sure, the fields of `packet` match the table definition in WifiSSIDPacket (sequelize.define)
                 // see: http://sequelize.readthedocs.org/en/latest/api/model/index.html#createvalues-options-promiseinstance
-                //return Shared.WifiPacket.Model.create(packet);
+                //return Shared.WifiSSIDPacket.Model.create(packet);
                 //});
 
                 // call stored procedure to take care of packet insertion

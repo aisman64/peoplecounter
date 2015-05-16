@@ -24,6 +24,6 @@ IF STRCMP(ssid, '') = 1 THEN
 ELSE
     SET idSSID = NULL;
 END IF;
-INSERT INTO WifiPacket (time, signalStrength, seqnum, macId, ssidId, updatedAt)
+INSERT INTO WifiSSIDPacket (time, signalStrength, seqnum, macId, ssidId, updatedAt)
     VALUES(tstamp, sigstr, seqn, idMac, idSSID, ct);
 END*/
