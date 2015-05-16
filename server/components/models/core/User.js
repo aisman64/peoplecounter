@@ -507,14 +507,15 @@ module.exports = NoGapDef.component({
                     if (!this._doesUserHavePasswordCredentials(user)) {
                         // never allow password-based authentication for an account without password
                         this.Tools.handleError('User without password tried to use password authentication');
-
                         return Promise.reject('error.login.auth');
                     }
 
-                    return this._bcryptHash(authData.sharedSecretV1, user.secretSalt || '')
+                    return this._bcryptHash(authData.sharedSecretV1, user.secretSalt)
+                    .bind(this)
                     .then(function(sharedSecret) {
                         if (user.sharedSecret !== sharedSecret) {
                             // invalid user credentials
+                            this.Tools.handleError('User password authentication failed: ' + [user.sharedSecret, sharedSecret].join(' vs. '));
                             return Promise.reject('error.login.auth');
                         }
                         else {
@@ -551,6 +552,7 @@ module.exports = NoGapDef.component({
                     }
                     else {
                         // invalid user credentials
+                        this.Tools.handleError('invalid authentication arguments');
                         return Promise.reject('error.login.auth');
                     }
 
@@ -596,6 +598,7 @@ module.exports = NoGapDef.component({
                                     }
                                     else {
                                         // invalid user credentials
+                                        this.Tools.handleError('invalid userName: ' + authData.userName);
                                         return Promise.reject('error.login.auth');
                                     }
                                 });
@@ -603,6 +606,7 @@ module.exports = NoGapDef.component({
                         }
                         else if (!user) {
                             // invalid user information
+                            this.Tools.handleError('missing userName during authentication');
                             return Promise.reject('error.login.auth');
                         }
                         else {
@@ -730,7 +734,10 @@ module.exports = NoGapDef.component({
                 /**
                  * This method is called upon bootstrap for user's with an established session.
                  */
-                resumeSession: function(filter) {
+                resumeSession: function(eventHandlers) {
+                    var preLogin = eventHandlers && eventHandlers.preLogin;
+                    var postLogin = eventHandlers && eventHandlers.postLogin;
+
                     // log into account of given uid
                     var sess = this.Context.session;
                     var uid = sess.uid;
@@ -743,16 +750,25 @@ module.exports = NoGapDef.component({
                         }
 
                         var promise = Promise.resolve(user);
-                        if (user && filter) {
-                        	// check if user is ok
-                        	promise = promise.then(filter);
+                        if (user && preLogin) {
+                        	// check if user is ok, and filter out if not
+                        	promise = promise.then(preLogin);
                         }
 
                         return promise
                         .bind(this)
                         .then(function(user) {
                         	this.setCurrentUser(user);
-                        	return user;
+
+                            return Promise.resolve()
+                            .bind(this)
+                            .then(function() {
+                                // post login event handler
+                                if (user && postLogin) {
+                                    return postLogin(user);
+                                }
+                            })
+                        	.return(user);
                     	});
                     }.bind(this);
 

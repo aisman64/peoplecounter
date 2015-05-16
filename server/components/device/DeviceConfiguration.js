@@ -266,7 +266,7 @@ module.exports = NoGapDef.component({
                             deviceUpdate.rootPassword = refreshData.newRootPassword;
                         }
 
-
+                        // update device and user entry in DB
                         promise = Promise.join(
                             this.Instance.WifiSnifferDevice.wifiSnifferDevices.updateObject(deviceUpdate, true),
 
@@ -365,7 +365,7 @@ module.exports = NoGapDef.component({
                             this.writeDeviceConfig(newConfig);
 
                             // then, read config (to make sure it worked!)
-                            GLOBAL.DEVICE.readDeviceConfig();
+                            GLOBAL.DEVICE.reinitializeConfigFromFile();
                         }
                     })
                     .then(function() {

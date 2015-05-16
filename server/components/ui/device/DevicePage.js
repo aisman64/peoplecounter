@@ -59,6 +59,7 @@ module.exports = NoGapDef.component({
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
                     // customize your $scope here:
+                    $scope.DeviceJobType = Instance.WifiSnifferDevice.DeviceJobType;
                     $scope.deviceCache = Instance.WifiSnifferDevice.wifiSnifferDevices;
                     $scope.datasetCache = Instance.WifiDataset.wifiDatasets;
 
@@ -146,6 +147,40 @@ module.exports = NoGapDef.component({
                         .catch($scope.handleError.bind($scope));
                     };
 
+                    $scope.setDataset = function(device, dataset) {
+                        $scope.updateDevice({
+                            deviceId: device.deviceId,
+                            currentDatasetId: dataset.datasetId
+                        });
+                    };
+
+                    $scope.setDeviceJobType = function(device, jobType) {
+                        $scope.updateDevice({
+                            deviceId: device.deviceId,
+                            currentJobType: jobType
+                        });
+                    };
+
+                    $scope.updateDevice = function(deviceUpdate) {
+                        ThisComponent.busy = true;
+
+                        var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
+
+                        return devices.updateObject(deviceUpdate)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function(deviceSettings) {
+                            // success!
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+
+                    };
+
+
+                    // #######################################################################################
+                    // Reset + Delete
 
                     $scope.tryResetDevice = function(device) {
                         $scope.errorMessage = null;
@@ -214,7 +249,7 @@ module.exports = NoGapDef.component({
 
 
                     // #########################################################################################################
-                    // Devices
+                    // Datasets
 
                     $scope.startNewDataset = function(datasetName) {
                         // TODO: Create new dataset, then assign name and devices to it.

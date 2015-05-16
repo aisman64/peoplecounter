@@ -207,3 +207,11 @@ INSERT INTO MAC_SSID_Relations (macId, ssidId) (
 #ALTER TABLE WifiPacket DROP COLUMN `prefix` UNSIGNED;
 
 #DELETE FROM ssid WHERE ssidName IS NULL;
+
+
+###################################################################################################
+# new stuff
+###################################################################################################
+
+ALTER TABLE WifiSnifferDevice ADD currentDatasetId INTEGER UNSIGNED;
+ALTER TABLE WifiSnifferDevice ADD currentJobType INTEGER UNSIGNED;
