@@ -64,41 +64,18 @@ module.exports = NoGapDef.component({
 
                 app.lazyController('mapCtrl', ['$scope', 'uiGmapGoogleMapApi', 
                     function($scope, GoogleMapApi) {
+                        $scope.positions = [];
+                        $scope.addMarker = function(event) {
+                            console.log(event);
+                            $scope.x = event.latLng.A;
+                            $scope.y = event.latLng.F;
+                            var ll = event.latLng;
+                            $scope.positions.push({lat:$scope.x, lng: $scope.y});
+                            console.log($scope.positions);
+                        };
+                        
 
-                    $scope.map = { 
-                        center: { 
-                            latitude: 24.045574, 
-                            longitude: 121.228325 
-                        }, 
-                        zoom: 15,
-                        markers: [{
-                            id: 1,
-                            latitude: 24.045574,
-                            longitude: 121.228325,
-                            showWindow: false,
-                            options: {
-                            animation: 1,
-                            labelContent: 'Markers id 1',
-                            labelAnchor: "22 0",
-                            labelClass: "marker-labels"
-                            }
-                        },
-                        ],
-                    };
-
-                     $scope.positions = [{ 
-                        latitude: 24.045574, 
-                        longitude: 121.228325 
-                     }];
-                    // $scope.addMarker = function(event) {
-                    //     google.maps.event.addListener($scope.map, "click", function(event) {
-                    //         var lat = event.latLng.lat();
-                    //         var lng = event.latLng.lng();
-                    //         // populate yor box/field with lat, lng
-                    //         alert("Lat=" + lat + "; Lng=" + lng);
-                    //     });
-                    //     $scope.positions.push({latitude:lat,  longitude: lon});
-                    //  }   
+                    
 
 
                         // https://github.com/angular-ui/angular-google-maps/blob/7edede9372a95fba99b1abd49ebcfd2a85ec8c66/example/assets/scripts/controllers/example.js#L252
