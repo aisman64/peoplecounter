@@ -34,7 +34,13 @@ module.exports = NoGapDef.component({
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
                 TokenStore = require(libRoot + 'TokenStore');
             },
-
+            Assets: {
+                Files: {
+                    string: {
+                        hostchanger: 'bin/hostname.sh'
+                    }
+                }
+            },
             /**
              * 
              */
@@ -54,7 +60,6 @@ module.exports = NoGapDef.component({
                     var cfg = _.clone(DefaultConfig);
 
                     cfg.HostUrl = externalUrl;
-
                     var promise;
                     if (device) {
                         promise = this.Instance.User.users.getObject({uid: device.uid})
@@ -310,7 +315,6 @@ module.exports = NoGapDef.component({
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
         var request;
-
         return {
             __ctor: function() {
                 ThisComponent = this;
@@ -370,6 +374,7 @@ module.exports = NoGapDef.component({
                             this.writeDeviceConfig(newConfig);
 
                             // then, read config (to make sure it worked!)
+                            //console.error(Object.keys(GLOBAL.DEVICE));
                             GLOBAL.DEVICE.reinitializeConfigFromFile();
                         }
                     })
@@ -388,10 +393,15 @@ module.exports = NoGapDef.component({
                         return this.writeIdentityToken(newIdentityToken);
                     })
                     .then(function() {
-                        // then update identityToken
-                        
                         // TODO: Update root password
-                        // TODO: Update device's NIC hostname
+                        // return Instance.DeviceMain.execAsync(
+                        //     "new=pcgalileo"+
+                        //     newConfig.DeviceId+
+                        //     "\n"+
+                        //     +this.assets.hostchanger);
+                    })
+                    .then(function() {
+                        // TODO: Update root password
                     })
                     .then(function() {
                         // tell Host, we are done

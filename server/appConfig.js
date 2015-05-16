@@ -232,8 +232,13 @@ module.exports = {
             'ui/live/LivePage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
-
+            'ui/map/MapPage',
+            'ui/result/ResultPage',
             // superuser pages:
+
+            'ui/map/MapPage',
+            'ui/result/ResultPage',
+
             'ui/admin/AdminPage'
         ]
     },
