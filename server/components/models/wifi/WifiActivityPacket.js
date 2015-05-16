@@ -93,7 +93,7 @@ module.exports = NoGapDef.component({
                             models.WifiActivityPacket.belongsTo(models.MACAddress,
                                  { foreignKey: 'macId', as: 'MACAddress', constraints: false });
                             models.MACAddress.hasMany(models.WifiActivityPacket,
-                                 { foreignKey: 'macId', as: 'packets', constraints: false });
+                                 { foreignKey: 'macId', as: 'activityPackets', constraints: false });
                         },
 
                         onAfterSync: function(models) {
