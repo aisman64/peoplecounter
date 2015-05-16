@@ -1,0 +1,30 @@
+<div class="fill container-page" ng-controller="liveCtrl">
+{{packets}}
+	<div class="panel panel-info">
+		<div class="panel-heading">
+			<div class="panel-title"><span>
+				live packets
+				<i class="fa fa-spinner fa-spin"
+					ng-if="PC.busy"></i>
+			</span></div>
+		</div>
+		<div class="panel-body">
+			<table class="table">
+				<thead>
+					<th class="col-xs-3">MAC</th>
+					<th class="col-xs-3">SSID</th>
+					<th class="col-xs-3">sigstr</th>
+					<th class="col-xs-3">when</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="packet in recentPackets | orderBy: '-updatedAt'">
+						<td class="col-xs-3">TODO: Look up MAC</td>
+						<td class="col-xs-3">TODO: Look up SSID</td>
+						<td class="col-xs-3">{{packet.signalStrength}}</td>
+						<td class="col-xs-3">{{packet.time}}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>

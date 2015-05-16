@@ -52,11 +52,10 @@ module.exports = NoGapDef.component({
     	return {
 	    	CommLayer: {
 	    		checkForceActivatePreviouslyBootstrappedInstance: function(connectionState, requestMetadata) {
-	    			// if version is the same, just keep going anyway
-	    			// TODO: Fix this!
+	    			// if version is the same, just use the existing version, else reload (i.e. kill the process and restart)
 	    			var version = Shared.AppConfig.getValue('currentAppVersion');
 
-                console.error('############### versions: ' + [version, requestMetadata['x-nogap-currentappversion']]);
+                	//console.error('############### versions: ' + [version, requestMetadata['x-nogap-currentappversion']]);
 	    			return requestMetadata['x-nogap-currentappversion'] === version.toString();
 	    		}
 	    	},
@@ -88,6 +87,7 @@ module.exports = NoGapDef.component({
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
         var process;
+        var lastConnectionErrorMessage;
 
         return {
         	CommLayer: {
@@ -128,9 +128,8 @@ module.exports = NoGapDef.component({
 								body: clientRequestData
 							},
 							function (error, response, body) {
-					            if (error) {
-					                // TODO: Better error handling
-					                return reject(error);
+					            if (error || !response) {
+					                return reject(error || 'connection failed');
 					            }
 
 			                    // return host-sent data to caller (will usually be eval'ed by NoGap communication layer)
@@ -139,12 +138,25 @@ module.exports = NoGapDef.component({
 				        );
 					}.bind(this))
 					.then(function(result) {
-						GLOBAL.DEVICE.LastConnectionAttemptSuccessful = true;		// 
+						if (!GLOBAL.DEVICE.IsConnectionGood) {
+							// we are good again
+							lastConnectionErrorMessage = null;
+	            			console.log('[STATUS] Re-established connection to server.');
+						}
+
+						GLOBAL.DEVICE.IsConnectionGood = true;		// we are "connected"
 						return result;
 					})
 					.catch(function(err) {
-						GLOBAL.DEVICE.LastConnectionAttemptSuccessful = false;		// 
-						return Promise.reject(err);			// keep propagating
+						// connection failed
+						GLOBAL.DEVICE.IsConnectionGood = false;		// we are currently unable to reach the server
+
+            			if (lastConnectionErrorMessage !== err.message) {
+	            			lastConnectionErrorMessage = err.message;
+	            			console.error('[ERROR] Lost connection to server: ' + (err.stack || err));
+	            		}
+
+						return Promise.reject(err);			// keep propagating error
 					});
 			    },
 
@@ -162,15 +174,16 @@ module.exports = NoGapDef.component({
 
             initClient: function() {
             	// ping server regularly
-            	var lastMessage;
             	var delay = Instance.AppConfig.getValue('deviceCheckInDelay') || 5 * 1000;
 
             	ThisComponent.pingTimer = setInterval(function() {
         			ThisComponent.host.checkIn()
+        			.then(function() {
+        				// we are good!
+        				lastMessage = null;
+        			})
             		.catch(function(err) {
-            			if (err && lastMessage === err.message) return;
-            			lastMessage = err.message;
-            			console.error('[ERROR] Could not reach server: ' + (err.stack || err));
+            			// don't do anything
             		});
             	}, delay);
             }

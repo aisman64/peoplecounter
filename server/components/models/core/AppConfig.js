@@ -31,6 +31,16 @@ module.exports = NoGapDef.component({
                 return this.config;
             },
 
+            updateTraceSettings: function(traceConfigName) {
+                var traceCfg = this.getValue(traceConfigName);
+                if (_.isObject(traceCfg)) {
+                    Shared.Libs.ComponentTools.TraceCfg = squishy.mergeWithoutOverride(traceCfg, Shared.Libs.ComponentTools.TraceCfg);
+                }
+                else {
+                    Shared.Libs.ComponentTools.TraceCfg.enabled = !!traceCfg;
+                }
+            },
+
             Caches: {
                 appConfig: {
                     idProperty: 'configId',
@@ -165,7 +175,7 @@ module.exports = NoGapDef.component({
                 this.config.minAccessRoleId = Shared.User.UserRole[this.config.minAccessRole] || Shared.User.UserRole.StandardUser;
 
                 // update tracing settings
-                Shared.Libs.ComponentTools.TraceCfg.enabled = this.getValue('traceHost');
+                this.updateTraceSettings('traceHost');
 
                 // some default config entries
                 this.config.externalUrl = app.externalUrl;
@@ -280,8 +290,7 @@ module.exports = NoGapDef.component({
                 this.config = config;
                 this.runtimeConfig = runtimeConfig;
 
-                Instance.Libs.ComponentTools.TraceCfg.enabled = config.traceClient;
-                //console.error('############### version: ' + config.currentAppVersion);
+                this.updateTraceSettings('traceClient');
             },
 
             initClient: function() {
