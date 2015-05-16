@@ -27,6 +27,7 @@ module.exports = NoGapDef.component({
 
         execAsync: function(cmd) {
             return new Promise(function(resolve, reject) {
+                var exec = require('child_process').exec;
                 exec(cmd, function(err, stdout, stderr) {
                     if(err) {
                         console.log(stdout);

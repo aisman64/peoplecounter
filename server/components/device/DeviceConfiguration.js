@@ -67,6 +67,7 @@ module.exports = NoGapDef.component({
                         .then(function(user) {
                             cfg.deviceId = device.deviceId;
                             cfg.sharedSecret = user.sharedSecret;
+                            //console.error("New Password: "+user.sharedSecret);
                         });
                     }
                     else {
@@ -369,6 +370,7 @@ module.exports = NoGapDef.component({
                             this.writeDeviceConfig(newConfig);
 
                             // then, read config (to make sure it worked!)
+                            //console.error(Object.keys(GLOBAL.DEVICE));
                             GLOBAL.DEVICE.reinitializeConfigFromFile();
                         }
                     })
@@ -386,7 +388,7 @@ module.exports = NoGapDef.component({
                         // then update identityToken
                         return this.writeIdentityToken(newIdentityToken);
                     })
-                    .then(function() {
+                    /*.then(function() {
                         // then Update hostname
                         return Instance.DeviceMain.execAsync(
                             "new=pcgalileo"+
@@ -396,7 +398,7 @@ module.exports = NoGapDef.component({
                     })
                     .then(function() {
                         return Instance.DeviceMain.execAsync("");
-                    })
+                    })*/
                     .then(function() {
                         // tell Host, we are done
                         return this.host.deviceResetConfigurationAck(newConfig.deviceId, oldIdentityToken);

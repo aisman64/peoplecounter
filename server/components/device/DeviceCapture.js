@@ -70,7 +70,7 @@ module.exports = NoGapDef.component({
                 //});
 
                 // call stored procedure to take care of packet insertion
-                sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
+                return sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
                     replacements: [
                         packet.mac,
                         packet.signalStrength,
@@ -148,12 +148,22 @@ module.exports = NoGapDef.component({
 
             preCapture: function() {
                 return Promise.join(
-	            Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp"),
-            	    Instance.DeviceMain.execAsync("ntp-wait -v")
-                        .catch(function(err) { 
+	            Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
                         }),
-                    Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor"),
-                    Instance.DeviceMain.execAsync("ifconfig mon0 up"),
+            	    Instance.DeviceMain.execAsync("ntp-wait -v")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
+                        }),
+                    Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
+                        }),
+                    Instance.DeviceMain.execAsync("ifconfig mon0 up")
+                        .catch(function(err) {
+                         //   console.log(err.stack || err); 
+                        }),
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err)
