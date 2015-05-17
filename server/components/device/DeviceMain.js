@@ -11,7 +11,8 @@ module.exports = NoGapDef.component({
         'DeviceConfiguration',
         'DeviceCommunications',
         'DeviceImage',
-        'DeviceCapture'
+        'DeviceCapture',
+        'DevicePatcher'
     ],
 
     /**

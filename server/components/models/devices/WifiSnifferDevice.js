@@ -20,13 +20,7 @@ module.exports = NoGapDef.component({
                  * Look for and store all unencrypted IEEE 802.11 packets in order to determine
                  * what surrounding devices are up to and what their relative signal strength is.
                  */
-                'ActivitySniffer': 2,
-
-                /**
-                 * Similar to `ActivitySniffer`, but is administered differently and dedicated to
-                 * real-time GUI interaction and "device selection".
-                 */
-                'ProximityScanner': 3
+                'ActivitySniffer': 2
             }),
 
             Caches: {
@@ -48,7 +42,8 @@ module.exports = NoGapDef.component({
                     InstanceProto: {
                         /**
                          * Get user from cache (or null, if not cached).
-                         * On Host, need to reach in context (since this is a globally shared object).
+                         * On Host, need to hand in context as argument
+                         *     (since the cached object is a globally shared object which cannot hold on to instance data).
                          */
                         getUserNow: function(Instance) {
                             return (Instance || Shared).User.users.getObjectNowById(this.uid);
