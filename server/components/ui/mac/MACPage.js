@@ -120,7 +120,8 @@ module.exports = NoGapDef.component({
 
                             jQuery(function(){
                               var springy = $canvas.springy({
-                                graph: graph
+                                graph: graph,
+                                damping: .1
                               });
                             });
                         })

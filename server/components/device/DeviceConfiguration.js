@@ -176,8 +176,11 @@ module.exports = NoGapDef.component({
                         // re-generate identityToken
                         var oldIdentityToken = device.identityToken;
                         var newIdentityToken = this.generateIdentityToken(device);
-                        var newRootPassword;
+                        var oldRootPassword,
+                            newRootPassword;
+
                         if (!device.rootPassword) {
+                            oldRootPassword = 'root';
                             newRootPassword = this.generateRootPassword(device);
                         }
 
@@ -198,7 +201,9 @@ module.exports = NoGapDef.component({
                         // we cannot generate a reliable promise chain here because we need all promises to be 
                         //      fulfilled before the client will actually call the next method.
                         this.Tools.log('Refreshing device identity for device #' + device.deviceId + '...');
-                        this.client.updateConfig(newIdentityToken, oldIdentityToken, newRootPassword, deviceWifiConnectionFile, cfg);
+                        this.client.updateConfig(oldIdentityToken, newIdentityToken, 
+                            oldRootPassword, newRootPassword,
+                            deviceWifiConnectionFile, cfg);
 
                         return this._configRefreshData.monitor;
                     });
@@ -377,7 +382,7 @@ module.exports = NoGapDef.component({
                 // TODO: Chris
             },
 
-            updateRootPassword: function(cfg, newRootPassword) {
+            updateRootPassword: function(cfg, oldRootPassword, newRootPassword) {
                 // TODO: Chris
                 return Instance.DeviceMain.execAsync('echo root:'+newRootPassword+' | chpasswd');
             },
@@ -391,7 +396,10 @@ module.exports = NoGapDef.component({
                  * Called by server to reset identityToken and (optionally) configuration.
                  * This is also called when a new device connects to the server for the first time, and is assigned a new configuration.
                  */
-                updateConfig: function(newIdentityToken, oldIdentityToken, newRootPassword, deviceWifiConnectionFile, newConfig) {
+                updateConfig: function(oldIdentityToken, newIdentityToken, 
+                        oldRootPassword, newRootPassword,
+                        deviceWifiConnectionFile, newConfig) {
+
                     console.warn('Resetting device configuration...');
 
                     request = require('request');   // HTTP client module
@@ -428,11 +436,15 @@ module.exports = NoGapDef.component({
                     })
                     .then(function() {
                         // write wifi file for wifi networks
-                        return this.writeDeviceWifiConnectionFile(newConfig, deviceWifiConnectionFile);
+                        if (deviceWifiConnectionFile) {
+                            return this.writeDeviceWifiConnectionFile(newConfig, deviceWifiConnectionFile);
+                        }
                     })
                     .then(function() {
-                        // update root password
-                        return this.updateRootPassword(newConfig, newRootPassword);
+                        if (newRootPassword) {
+                            // update root password
+                            return this.updateRootPassword(newConfig, oldRootPassword, newRootPassword);
+                        }
                     })
                     .then(function() {
                         // tell Host, we are done!
