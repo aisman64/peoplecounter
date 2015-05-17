@@ -1,5 +1,4 @@
-<div ng-if="macId"
-	class="panel panel-primary">
+<div class="panel panel-primary">
     <div class="panel-heading">
         <div class="panel-title">
             <span class="">MAC: {{macInfo.macAddress}}</span>
@@ -12,8 +11,7 @@
         </div>
     </div>
     <div class="panel-body no-padding">
-		<div id="macgraph" width="100%" height="500px">
-		</div>
+		<div id="macgraph" style="width:100%; height: 500px;"></div>
 
 		<div class="some-padding">
 			<b>Other SSIDs ({{otherSsids.length}}):</b> 

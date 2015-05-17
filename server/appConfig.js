@@ -229,8 +229,7 @@ module.exports = {
 
             // guest + unregistered pages:
             'ui/login/LoginPage',
-            'ui/mac/MACPage',
-            'ui/ssid/SSIDPage',
+            'ui/vis/VisPage',
 
             // user pages:
             'ui/home/HomePage',

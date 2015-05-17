@@ -312,11 +312,9 @@ jQuery.fn.springy = function(params) {
 
 			// fill background
 			if (selected !== null && selected.node !== null && selected.node.id === node.id) {
-				ctx.fillStyle = "#FFFFE0";
-			} else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id) {
-				ctx.fillStyle = "#EEEEEE";
+				ctx.fillStyle = node.data.selectedBackgroundColor || params.selectedBackgroundColor || "#FFFFE0";
 			} else {
-				ctx.fillStyle = "#FFFFFF";
+				ctx.fillStyle = node.data.backgroundColor || params.backgroundColor || "#FFFFFF";
 			}
 			ctx.fillRect(s.x - boxWidth/2, s.y - boxHeight/2, boxWidth, boxHeight);
 

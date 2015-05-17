@@ -7,7 +7,7 @@ var NoGapDef = require('nogap').Def;
 
 module.exports = NoGapDef.component({
     Includes: [
-        'MACInfoElement'
+        'MACSSIDGraphElement'
     ],
 
     /**
@@ -17,7 +17,7 @@ module.exports = NoGapDef.component({
         Assets: {
             Files: {
                 string: {
-                    template: 'MACPage.html'
+                    template: 'VisPage.html'
                 }
             },
             AutoIncludes: {
@@ -45,10 +45,16 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
+        var VisView;
 
         return {
             __ctor: function() {
                 ThisComponent = this;
+                VisView = this.VisView = { 
+                    open: {},
+                    busy: {},
+                    data: {}
+                };
             },
 
             /**
@@ -56,18 +62,28 @@ module.exports = NoGapDef.component({
              */
             setupUI: function(UIMgr, app) {
                 // create MAC controller
-                app.lazyController('macCtrl', function($scope) {
+                app.lazyController('visCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
+
+                    // customize your $scope here:
+                    $scope.VisView = VisView;
                     
-                    // customize your MACPage's $scope here:
                     $scope.visualizeMACAddress = function(macId) {
-                        Instance.UIMgr.gotoPage('MAC', macId);
+                        Instance.UIMgr.gotoPage('Vis', macId);
                     }
+
+                    $scope.toggle = function(what) {
+                        setTimeout(function() {
+                            if (VisView.open[what]) {
+                                ThisComponent.getVisData(what);
+                            }
+                        });
+                    };
                 });
 
                 // register page
-                Instance.UIMgr.registerPage(this, 'MAC', this.assets.template, {
-                    iconClasses: 'fa fa-mobile'
+                Instance.UIMgr.registerPage(this, 'Vis', this.assets.template, {
+                    iconClasses: 'fa fa-wifi'
                 });
             },
 
@@ -75,30 +91,33 @@ module.exports = NoGapDef.component({
                 return ThisComponent.currentMacId;
             },
 
-            onPageActivate: function(pageArgs) {
-                if (!Instance.User.isStandardUser()) return;
-
-                var promises = [];
-                promises.push(
-                    // Instance.CommonDBQueries.queries.MostOftenSeenMACs({ limit: 20 })
-                    // .then(function(mostOftenSeenMACs) {
-                    //     ThisComponent.mostOftenSeenMACs = mostOftenSeenMACs;
-                    // })
-                    Instance.CommonDBQueries.queries.MostConnectedMACs({ limit: 20 })
-                    .then(function(mostConnectedMACs) {
-                        ThisComponent.mostConnectedMACs = mostConnectedMACs;
-                    })
-                );
-
-                ThisComponent.currentMacId = parseInt(pageArgs);
-                ThisComponent.busy = true;
-
-                Promise.all(promises)
+            getVisData: function(what) {
+                VisView.busy[what] = true;
+                this.queryFunctions[what]()
                 .finally(function() {
-                    ThisComponent.busy = false;
+                    VisView.busy[what] = false;
+                })
+                .then(function(data) {
+                    VisView.data[what] = data;
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent.page));
+            },
+
+            queryFunctions: {
+                mostConnectedMacs: function() {
+                    return Instance.CommonDBQueries.queries.MostConnectedMACs({ limit: 20 });
+                },
+
+                mostOftenUsedSSIDs: function() {
+                    return Instance.CommonDBQueries.queries.MostOftenUsedSSIDs({ limit: 20 });
+                },
+            },
+
+            onPageActivate: function(pageArgs) {
+                if (!Instance.User.isStandardUser()) return;
+
+                ThisComponent.currentMacId = parseInt(pageArgs);
             }
         };
     })

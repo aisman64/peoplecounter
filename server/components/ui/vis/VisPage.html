@@ -1,0 +1,118 @@
+<div class="fill container-page" ng-controller="visCtrl">
+
+
+	<!-- <pre>{{PC.macGraphData}}</pre> -->
+	<mac-ssid-graph mac-id="PC.currentMacId" ng-if="PC.currentMacId">
+	</mac-ssid-graph>
+
+	<accordion>
+	    <!-- mostConnectedMACs -->
+	    <accordion-group is-open="VisView.open.mostConnectedMACs">
+	        <accordion-heading>
+	            <div style="display:block; cursor: pointer;"
+	            	ng-click="toggleMostConnectedMacs()">
+	                <span class="panel-title">
+	                	<span>
+							most connected MAC addresses
+	                	</span>
+	                    <span class="pull-right centered-y">
+							<i class="fa fa-spinner fa-spin"
+								ng-if="VisView.busy.mostConnectedMACs"></i>
+	                        <i class="glyphicon" style="font-size: .5em;"
+	                            ng-class="{'glyphicon-chevron-down': VisView.open.mostConnectedMACs, 'glyphicon-chevron-right': !VisView.open.mostConnectedMACs}">
+	                        </i>
+	                    </span>
+	                </span>
+	            </div>
+	        </accordion-heading>
+
+		<!-- Some "interesting" MAC addresses -->
+			<table class="table"
+				ng-if="VisView.data.mostConnectedMACs">
+				<thead>
+					<th class="col-xs-1">
+						
+					</th>
+					<th class="col-xs-3">
+						# networks
+					</th>
+					<th class="col-xs-5">
+						MAC
+					</th>
+					<th class="col-xs-3">
+					</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="macEntry in VisView.data.mostConnectedMACs"
+						ng-class="{'highlight-own': PC.currentMacId == macEntry.macId}">
+						<td class="col-xs-1">
+							{{$index + 1}}.
+						</td>
+						<td class="col-xs-3">
+							{{macEntry.count}}
+						</td>
+						<td class="col-xs-5">
+							{{macEntry.macAddress}}
+						</td>
+						<td class="col-xs-3">
+							<a ng-click="visualizeMACAddress(macEntry.macId)"
+								class="btn btn-large btn-default">
+								Show me <i class="fa fa-arrow-circle-o-right"></i>
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+        </accordion-group>
+
+
+	    <!-- mostOftenUsedSSIDs -->
+	    <accordion-group is-open="VisView.open.mostOftenUsedSSIDs">
+	        <accordion-heading>
+	            <div style="display:block; cursor: pointer;"
+	            	ng-click="toggleMostConnectedMacs()">
+	                <span class="panel-title">
+	                	<span>
+							most popular wi-fi networks
+	                	</span>
+	                    <span class="pull-right centered-y">
+							<i class="fa fa-spinner fa-spin"
+								ng-if="VisView.busy.mostOftenUsedSSIDs"></i>
+	                        <i class="glyphicon" style="font-size: .5em;"
+	                            ng-class="{'glyphicon-chevron-down': VisView.open.mostOftenUsedSSIDs, 'glyphicon-chevron-right': !VisView.open.mostOftenUsedSSIDs}">
+	                        </i>
+	                    </span>
+	                </span>
+	            </div>
+	        </accordion-heading>
+
+		<!-- Some "interesting" SSIDs -->
+			<table class="table">
+				<thead>
+					<th class="col-xs-1">
+						
+					</th>
+					<th class="col-xs-3">
+						unique MAC addresses
+					</th>
+					<th class="col-xs-8">
+						SSID
+					</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="ssidEntry in VisView.data.mostOftenUsedSSIDs">
+						<td class="col-xs-1">
+							{{$index + 1}}.
+						</td>
+						<td class="col-xs-3">
+							{{ssidEntry.count}}
+						</td>
+						<td class="col-xs-8">
+							{{ssidEntry.ssidName}}
+						</td>
+					</tr>
+				</tbody>
+			</table>
+        </accordion-group>
+    </accordion>
+</div>

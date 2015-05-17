@@ -133,11 +133,10 @@ module.exports = NoGapDef.component({
                     'SMTP'
                 ],
                 pageComponents: [
-                    'MACPage',
-                    'SSIDPage'
+                    'VisPage'
                 ],
                 mayActivate: function() {
-                    return true;
+                    return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.StandardUser;
                 } 
             },
 
@@ -157,10 +156,7 @@ module.exports = NoGapDef.component({
                     'MapPage',
                     'ResultPage',
                     'LivePage',
-                    'AccountPage',
-                    'MapPage',
-                    'ResultPage',
-                    'LivePage',
+                    'AccountPage'
                 ],
 
                 mayActivate: function() {
@@ -172,7 +168,7 @@ module.exports = NoGapDef.component({
             /**
              * Logged in and unregistered users get access to these components
              */     
-           {
+            {
                 otherComponents: [
                     'FacebookApi'
                 ],
@@ -182,24 +178,6 @@ module.exports = NoGapDef.component({
                 mayActivate: function() {
                     return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.Unregistered;
                 }
-            },
-
-            /**
-             * Everyone can access these components.
-             */
-            {
-                otherComponents: [
-                    'CommonDBQueries',
-                    'SMTP'
-                ],
-                pageComponents: [
-                    'MACPage',
-                    'SSIDPage',
-                    'MapPage'
-                ],
-                mayActivate: function() {
-                    return true;
-                } 
             },
 
             /**
