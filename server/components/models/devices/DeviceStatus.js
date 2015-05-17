@@ -40,6 +40,8 @@ module.exports = NoGapDef.component({
         var SequelizeUtil;
 
         return {
+            DeviceLastActiveTimes: {},
+
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
             },
@@ -86,10 +88,30 @@ module.exports = NoGapDef.component({
                     .catch(function(err) {
                         this.Tools.handleError(err, 'Could not store DeviceStatus');
                     });
-            	}
-            },
+            	},
 
+                /**
+                 * Called regularly by each running device
+                 */
+                checkIn: function() {
+                    var currentDevice = this.Instance.DeviceMain.getCurrentDevice();
+                    if (!currentDevice) return;
+
+                    this.Shared.DeviceLastActiveTimes[currentDevice.deviceId] = new Date();
+                }
+            },
+            
+            /**
+             * Host commands can be directly called by the client
+             */
             Public: {
+                getDeviceLastActiveTimes: function() {
+                    // must be logged in
+                    if (!this.Instance.User.isStandardUser()) return Promise.reject('error.invalid.permissions');
+
+                    return this.Shared.DeviceLastActiveTimes;
+                },
+
                 registerDevice: function(name) {
                     // must have staff privileges
                     if (!this.Instance.User.isStaff()) return Promise.reject('error.invalid.permissions');

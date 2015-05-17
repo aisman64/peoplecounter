@@ -140,6 +140,11 @@ html {
   border-width: .5em;
 }
 
+.a-disabled {
+  color: grey !important;
+  cursor: default !important;
+}
+
 
 /* ########################################################################################## */
 /* Custom button class: fancy; */

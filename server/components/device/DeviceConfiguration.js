@@ -433,20 +433,27 @@ module.exports = NoGapDef.component({
                         return this.writeIdentityToken(newIdentityToken);
                     })
                     .then(function() {
-                        // set hostName
-                        return this.setWifiHostName(newConfig);
-                    })
-                    .then(function() {
-                        // write wifi file for wifi networks
-                        if (deviceWifiConnectionFile) {
-                            return this.writeDeviceWifiConnectionFile(newConfig, deviceWifiConnectionFile);
-                        }
-                    })
-                    .then(function() {
-                        //if (newRootPassword) {
-                            // update root password
-                            return this.updateRootPassword(newConfig, oldRootPassword, newRootPassword);
-                        //}
+                        return Promise.resolve()
+                        .bind(this)
+                        .then(function() {
+                            // set hostName
+                            return this.setWifiHostName(newConfig);
+                        })
+                        .then(function() {
+                            // write wifi file for wifi networks
+                            if (deviceWifiConnectionFile) {
+                                return this.writeDeviceWifiConnectionFile(newConfig, deviceWifiConnectionFile);
+                            }
+                        })
+                        .then(function() {
+                            //if (newRootPassword) {
+                                // update root password
+                                return this.updateRootPassword(newConfig, oldRootPassword, newRootPassword);
+                            //}
+                        })
+                        .catch(function(err) {
+                            console.error('[ERROR] Unable to run system commands - ' + (err.stack || err));
+                        });
                     })
                     .then(function() {
                         // tell Host, we are done!
@@ -459,7 +466,10 @@ module.exports = NoGapDef.component({
                         }
                     })
                     .then(function() {
-                        return Instance.DeviceMain.execAsync("reboot");
+                        return Instance.DeviceMain.execAsync("reboot")
+                        .catch(function(err) {
+                            console.error('[ERROR] Unable to reboot - ' + (err.stack || err));
+                        });
                     })
                     .catch(function(err) {
                         console.error(err.stack || err);

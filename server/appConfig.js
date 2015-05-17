@@ -25,9 +25,19 @@ module.exports = {
 
     'deviceHostNamePrefix': 'dv_one_dev_',
 
+
+    // ########################################################################################################################
+    // Frontend options
+
+    /**
+     * How often to refetch data from server by default
+     */
+    'defaultPageRefreshDelay': 10000,
+
+
+
     // ########################################################################################################################
     // User feature locks
-
 
     /**
      * Whether new users may still register

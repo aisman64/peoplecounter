@@ -899,12 +899,8 @@ module.exports = NoGapDef.component({
                         passphrase: plainPassphrase
                     }, authData)
                     .bind(this)
-                    .then(function(authData) {
-                        // create the user
-                        return this.createNewUser(authData, false);
-                    })
                     .then(function(user) {
-                        // finally, send out registration email
+                        // first, send out registration email
                         var externalUrl = Shared.AppConfig.getValue('externalUrl');
                         return this.Instance.SMTP.sendMail({
                             to: email,
@@ -915,6 +911,10 @@ module.exports = NoGapDef.component({
                                 plainPassphrase
                             ].join('<br />')
                         });
+                    })
+                    .then(function(authData) {
+                        // then create the user!
+                        return this.createNewUser(authData, false);
                     });
                 },
 

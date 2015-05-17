@@ -85,14 +85,11 @@ module.exports = NoGapDef.component({
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
         var maxId;
-        var refreshDelay;
-        var refreshTimer;
 
         return {
             __ctor: function() {
                 ThisComponent = this;
                 maxId = null;
-                refreshDelay = 500; // .5 seconds
 
                 this.colorsPerMacId = {};
                 this.lastColorIndex = -1;
@@ -119,10 +116,6 @@ module.exports = NoGapDef.component({
             },
 
             onPageActivate: function() {
-                if (!refreshTimer) {
-                    refreshTimer = setInterval(ThisComponent.refetchPackets.bind(ThisComponent), refreshDelay);
-                }
-
                 var users = Instance.User.users;
                 var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
                 var datasets = Instance.WifiDataset.wifiDatasets;
@@ -133,18 +126,13 @@ module.exports = NoGapDef.component({
                     devices.readObjects(),
                     datasets.readObjects(),
 
-                    this.refetchPackets()
+                    this.refreshData()
                 );
             },
 
-            onPageDeactivate: function() {
-                if (refreshTimer) {
-                    clearInterval(refreshTimer);
-                    refreshTimer = null;
-                }
-            },
+            refreshDelay: 500,
 
-            refetchPackets: function() {
+            refreshData: function() {
                 this.busy = true;
 
                 this.host.getMostRecentPackets()

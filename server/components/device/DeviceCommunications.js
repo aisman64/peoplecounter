@@ -74,7 +74,7 @@ module.exports = NoGapDef.component({
 
 	        Public: {
 	        	checkIn: function() {
-
+	        		this.Instance.DeviceStatus.checkIn();
 	        	}
 	        }
 	    };
