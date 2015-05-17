@@ -450,10 +450,10 @@ module.exports = NoGapDef.component({
                                 // update root password
                                 return this.updateRootPassword(newConfig, oldRootPassword, newRootPassword);
                             //}
-                        })
-                        .catch(function(err) {
-                            console.error('[ERROR] Unable to run system commands - ' + (err.stack || err));
                         });
+                        // .catch(function(err) {
+                        //     console.error('[ERROR] Unable to run system commands - ' + (err.stack || err));
+                        // });
                     })
                     .then(function() {
                         // tell Host, we are done!
