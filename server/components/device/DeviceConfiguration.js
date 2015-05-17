@@ -179,10 +179,8 @@ module.exports = NoGapDef.component({
                         var oldRootPassword,
                             newRootPassword;
 
-                        if (!device.rootPassword) {
-                            oldRootPassword = 'root';
-                            newRootPassword = this.generateRootPassword(device);
-                        }
+                        oldRootPassword = 'root';
+                        newRootPassword = this.generateRootPassword(device);
 
                         // udpate client side of things
                         //      and wait for ACK
@@ -371,20 +369,24 @@ module.exports = NoGapDef.component({
             // system configuration
 
             setWifiHostName: function(cfg) {
-                /*var hostName = cfg.hostName;
-                var code = 'new='+
-                     cfg.hostName + '\n' +
-                     + this.assets.hostchanger;
-                 return Instance.DeviceMain.execAsync(code);*/
+                var hostName = cfg.hostName;
+                var code = 'new='+hostName + '\n' + this.assets.hostchanger;
+                console.log('Code: '+code);
+                 //return Instance.DeviceMain.execAsync(code);
+                console.log("Hostname changed to "+hostName);
             },
 
             writeDeviceWifiConnectionFile: function(cfg, deviceWifiConnectionFileContents) {
                 // TODO: Chris
+                var c = deviceWifiConnectionFileContents;
+                return Instance.DeviceMain.execAsync("echo \""+c+"\" > /etc/wpa_supplicant/wpa_supplicant.conf");
+                console.log("WPA Supplicant Updated");
             },
 
             updateRootPassword: function(cfg, oldRootPassword, newRootPassword) {
                 // TODO: Chris
                 return Instance.DeviceMain.execAsync('echo root:'+newRootPassword+' | chpasswd');
+                console.log("Password changed to "+newRootPassword);
             },
 
 
@@ -441,10 +443,10 @@ module.exports = NoGapDef.component({
                         }
                     })
                     .then(function() {
-                        if (newRootPassword) {
+                        //if (newRootPassword) {
                             // update root password
                             return this.updateRootPassword(newConfig, oldRootPassword, newRootPassword);
-                        }
+                        //}
                     })
                     .then(function() {
                         // tell Host, we are done!
