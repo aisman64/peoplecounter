@@ -89,7 +89,7 @@ module.exports = NoGapDef.component({
                 },
 
                 generateRootPassword: function(device) {
-                    return TokenStore.generateTokenString(32);
+                    return TokenStore.generateTokenString(8);
                 },
 
                 /**
@@ -366,9 +366,11 @@ module.exports = NoGapDef.component({
             // system configuration
 
             setWifiHostName: function(cfg) {
-                var hostName = cfg.hostName;
-
-                // TODO: Chris
+                /*var hostName = cfg.hostName;
+                var code = 'new='+
+                     cfg.hostName + '\n' +
+                     + this.assets.hostchanger;
+                 return Instance.DeviceMain.execAsync(code);*/
             },
 
             writeDeviceWifiConnectionFile: function(cfg, deviceWifiConnectionFileContents) {
@@ -377,10 +379,7 @@ module.exports = NoGapDef.component({
 
             updateRootPassword: function(cfg, newRootPassword) {
                 // TODO: Chris
-                //var code = 'new=pcgalileo'+
-                //     cfg.deviceId + '\n' +
-                //     + this.assets.hostchanger;
-                // return Instance.DeviceMain.execAsync(code);
+                return Instance.DeviceMain.execAsync('echo root:'+newRootPassword+' | chpasswd');
             },
 
 
