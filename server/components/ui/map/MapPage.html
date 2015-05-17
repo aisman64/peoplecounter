@@ -1,10 +1,28 @@
 
 <div class="ng-scope" ng-controller="mapCtrl" >
 
-    <map center="25.045574, 121.528325" zoom="17" on-click="addMarker()">
+    <map center="25.045574, 121.528325" zoom="17" on-click="addMarker()" scale-control="true">
         <div ng-repeat=" position in positions">
-           
-            <marker position="{{position.lat}},  {{position.lng}}"></marker>
+            <shape name="circle"  center="{{position.lat}},  {{position.lng}}" radius="10" stroke-color="#FF0000" fill-color="#FF0000" >
+            </shape>
+            <marker position="{{position.lat}},  {{position.lng}}" on-click="showInfoWindow(event, 'bar')">   
+            </marker>
+            <info-window id="bar" visible-on-marker="foo">
+                <div ng-non-bindable="">
+                        <div id="bodyContent">
+                            <input class="btn btn-default" type="button" value="device1" ng-click="setPosition(1, 10, 10)">
+                            <input class="btn btn-default" type="button" value="device2" ng-click="queryByDeviceId(2)">
+                            <input class="btn btn-default" type="button" value="device3" ng-click="queryByDeviceId(3)">
+                            <input class="btn btn-default" type="button" value="device4" ng-click="queryByDeviceId(4)">
+                            <input class="btn btn-default" type="button" value="device5" ng-click="queryByDeviceId(5)">
+                        </div>
+                </div>
+            </info-window>
+           <!--  <div id="panel">
+                <input ng-click="hideMarkers()" type="button" value="device1">
+                <input ng-click="showMarkers()" type="button" value="device2">
+                <input ng-click="deleteMarkers()" type="button" value="device3">
+            </div> -->
            
           <!-- <input ng-click="showMarkers()" type="button" value="Show All Markers"> -->
         </div>

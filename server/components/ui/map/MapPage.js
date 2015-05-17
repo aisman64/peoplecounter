@@ -60,41 +60,90 @@ module.exports = NoGapDef.component({
                             console.log(event);
                             $scope.x = event.latLng.A;
                             $scope.y = event.latLng.F;
+                            $scope.setPosition(1, $scope.x, $scope.y);
+                            alert($scope.x);
                             var ll = event.latLng;
                             $scope.positions.push({lat:$scope.x, lng: $scope.y});
-                            console.log($scope.positions);
                         };
                         
+                        $scope.device1 =function(){
+                            console.log("123123");
+                        };
+
+                        $scope.setPosition = function(deviceId, lat, lon) {
+                            $scope.updateDevice({
+                                deviceId: deviceId,
+                                lat: lat,
+                                lon: lon
+                            });
+                        };
+
+                        $scope.updateDevice = function(deviceUpdate) {
+                            ThisComponent.busy = true;
+
+                            var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
+
+                            return devices.updateObject(deviceUpdate)
+                            .finally(function() {
+                                ThisComponent.busy = false;
+                            })
+                            .then(function(deviceSettings) {
+                                // success!
+                                ThisComponent.page.invalidateView();
+                            })
+                            .catch($scope.handleError.bind($scope));
+                        };
+
+                        // $scope.queryByDeviceId = function(deviceId) {
+                        //     console.log(deviceId);
+                        //      console.log('王長宏');
+                        //     if (typeof deviceId !== 'undefined') {
+                        //         var queryData = {
+                        //             where: {
+                        //                 deviceId: deviceId
+                        //             }
+                        //         };
+                        //         console.log('hello');
+                        //         Instance.WifiPacket.wifiPackets.getObjects(queryData)
+                        //         .then(function(data) {
+                        //             console.log("then");
+                        //             console.log(data);
+
+                        //         })
+                        //         .catch(function(error){
+                        //             console.log("catch");
+                        //             console.log(error);
+
+                        //         });
+                        //         // console.log(Instance.WifiPacket);
+                        //     }
+                        // };
 
                     
 
-                     $scope.queryByMacId = function(macId) {
-                        if (typeof macId !== 'undefined') {
-                            var queryData = {
-                                where: {
-                                    macId: macId
-                                }
-                            };
-                            console.log('hello');
-                            Instance.WifiPacket.wifiPackets.getObjects(queryData)
-                            .then(function(data) {
-                                console.log("then");
-                                console.log(data);
+                        $scope.queryByMacId = function(macId) {
+                            if (typeof macId !== 'undefined') {
+                                var queryData = {
+                                    where: {
+                                        macId: macId
+                                    }
+                                };
+                                console.log('hello');
+                                Instance.MACAddress.macAddresses.getObjects(queryData)
+                                .then(function(data) {
+                                    console.log("then");
+                                    console.log(data);
 
-                            })
-                            .catch(function(error){
-                                console.log("catch");
-                                console.log(error);
+                                })
+                                .catch(function(error){
+                                    console.log("catch");
+                                    console.log(error);
 
-                            });
-                            // console.log(Instance.WifiPacket);
+                                });
+                                // console.log(Instance.WifiPacket);
 
+                            }
                         }
-
-
-
-
-                     }
                     // $scope.addMarker = function(event) {
                     //     google.maps.event.addListener($scope.map, "click", function(event) {
                     //         var lat = event.latLng.lat();

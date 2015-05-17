@@ -55,7 +55,7 @@ module.exports = NoGapDef.component({
                     'lib/angular/ng-map.min',
                     'lib/angular/ng-map.js',
                     'lib/angular/ng-map.debug.js',
-                    'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js',
+                    //'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js',
 
                     
 
