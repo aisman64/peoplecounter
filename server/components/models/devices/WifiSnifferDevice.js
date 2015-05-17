@@ -245,6 +245,15 @@ module.exports = NoGapDef.component({
                 });
             },
 
+            getHostName: function(device) {
+                if (device.hostName) return device.hostName;
+
+                // generate hostName
+                var hostNamePrefix = Shared.AppConfig.getValue('deviceHostNamePrefix');
+                console.assert(hostNamePrefix, 'Missing configuration option (in appConfig.js): `deviceHostNamePrefix`');
+                return hostNamePrefix + device.uid;
+            },
+
             Private: {
                 _resetDevice: function(device) {
                     var timeoutDelay = Shared.AppConfig.getValue('deviceDefaultResetTimeout') || (60 * 1000);
@@ -280,15 +289,14 @@ module.exports = NoGapDef.component({
                     .then(function(newUser) {
                         // then create the device
                         var timeoutDelay = Shared.AppConfig.getValue('deviceDefaultResetTimeout') || (60 * 1000);
-                        var hostNamePrefix = Shared.AppConfig.getValue('deviceHostNamePrefix');
-                        console.assert(hostNamePrefix, 'Missing configuration option (in appConfig.js): `deviceHostNamePrefix`');
 
                         var newDevice = {
                             uid: newUser.uid,
                             identityToken: this.Instance.DeviceConfiguration.generateIdentityToken(),
-                            rootPassword: this.Instance.DeviceConfiguration.generateRootPassword(),
-                            hostName: hostNamePrefix + newUser.uid
+                            rootPassword: this.Instance.DeviceConfiguration.generateRootPassword()
                         };
+                        newDevice.hostName = this.Shared.getHostName(newDevice);
+                        
                         this._resetDevice(newDevice);
                         return this.wifiSnifferDevices.createObject(newDevice);
                     });

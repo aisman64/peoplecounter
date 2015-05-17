@@ -69,8 +69,8 @@ module.exports = NoGapDef.component({
                             cfg.deviceId = device.deviceId;
                             cfg.sharedSecret = user.sharedSecret;
 
-                            // TODO: Fix hostName
-                            cfg.hostName = device.hostName;
+                            // assign default hostName, if it has none defined yet
+                            cfg.hostName = Shared.WifiSnifferDevice.getHostName(device);
                         });
                     }
                     else {

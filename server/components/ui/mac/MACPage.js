@@ -6,6 +6,10 @@
 var NoGapDef = require('nogap').Def;
 
 module.exports = NoGapDef.component({
+    Includes: [
+        'MACInfoElement'
+    ],
+
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
@@ -87,47 +91,6 @@ module.exports = NoGapDef.component({
                 );
 
                 ThisComponent.currentMacId = parseInt(pageArgs);
-                if (ThisComponent.currentMacId) {
-                    promises.push(
-                        Instance.CommonDBQueries.host.computeMACRelationGraphPublic(ThisComponent.currentMacId)
-                        .then(function(macGraphData) {
-                            ThisComponent.macGraphData = macGraphData;
-                            ThisComponent.page.invalidateView();        // make sure canvas exists
-
-                            // create and populate graph
-                            var NodeType = squishy.makeEnum(['MAC', 'SSID']);
-
-                            var graph = new Springy.Graph();
-                            var macNode = graph.newNode({
-                                label: macGraphData.macAddress,
-                                type: NodeType.MAC
-                            });
-
-                            for (var i = 0; i < macGraphData.ownSsids.length; ++i) {
-                                var ssid = macGraphData.ownSsids[i];
-                                var node = graph.newNode({
-                                    label: ssid,
-                                    type: NodeType.SSID
-                                });
-
-                                // connect them with an edge
-                                graph.newEdge(macNode, node);
-                            };
-
-
-                            var $canvas = jQuery('#macGraph');
-                            console.assert($canvas.length, 'could not find graph canvas');
-
-                            jQuery(function(){
-                              var springy = $canvas.springy({
-                                graph: graph,
-                                damping: .1
-                              });
-                            });
-                        })
-                    );
-                }
-
                 ThisComponent.busy = true;
 
                 Promise.all(promises)
