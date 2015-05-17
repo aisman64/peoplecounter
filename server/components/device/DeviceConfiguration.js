@@ -41,6 +41,7 @@ module.exports = NoGapDef.component({
                     }
                 }
             },
+
             /**
              * 
              */
@@ -68,6 +69,7 @@ module.exports = NoGapDef.component({
                             cfg.deviceId = device.deviceId;
                             cfg.sharedSecret = user.sharedSecret;
 
+                            // TODO: Fix hostName
                             cfg.hostName = device.hostName;
                         });
                     }
@@ -191,10 +193,12 @@ module.exports = NoGapDef.component({
                             monitor: new SharedTools.Monitor(timeout)
                         };
 
+                        var deviceWifiConnectionFile = Shared.AppConfig.getValue('deviceWifiConnectionFile');
+
                         // we cannot generate a reliable promise chain here because we need all promises to be 
                         //      fulfilled before the client will actually call the next method.
                         this.Tools.log('Refreshing device identity for device #' + device.deviceId + '...');
-                        this.client.updateConfig(newIdentityToken, oldIdentityToken, cfg);
+                        this.client.updateConfig(newIdentityToken, oldIdentityToken, newRootPassword, deviceWifiConnectionFile, cfg);
 
                         return this._configRefreshData.monitor;
                     });
@@ -326,6 +330,10 @@ module.exports = NoGapDef.component({
             initClient: function() {
             },
 
+
+            // ##############################################################################
+            // device configuration + credentials
+
             /**
              * This function is here (and not in the DeviceClient starter script) because
              * it is not needed during start-up.
@@ -353,15 +361,38 @@ module.exports = NoGapDef.component({
                 fs.writeFileSync(fpath, newIdentityToken);
             },
 
-            /**
-             * Client commands can be directly called by the host
-             */
+
+            // ##############################################################################
+            // system configuration
+
+            setWifiHostName: function(cfg) {
+                var hostName = cfg.hostName;
+
+                // TODO: Chris
+            },
+
+            writeDeviceWifiConnectionFile: function(cfg, deviceWifiConnectionFileContents) {
+                // TODO: Chris
+            },
+
+            updateRootPassword: function(cfg, newRootPassword) {
+                // TODO: Chris
+                //var code = 'new=pcgalileo'+
+                //     cfg.deviceId + '\n' +
+                //     + this.assets.hostchanger;
+                // return Instance.DeviceMain.execAsync(code);
+            },
+
+
+            // ##############################################################################
+            // handle server requests
+
             Public: {
                 /**
                  * Called by server to reset identityToken and (optionally) configuration.
                  * This is also called when a new device connects to the server for the first time, and is assigned a new configuration.
                  */
-                updateConfig: function(newIdentityToken, oldIdentityToken, newConfig) {
+                updateConfig: function(newIdentityToken, oldIdentityToken, newRootPassword, deviceWifiConnectionFile, newConfig) {
                     console.warn('Resetting device configuration...');
 
                     request = require('request');   // HTTP client module
@@ -393,18 +424,19 @@ module.exports = NoGapDef.component({
                         return this.writeIdentityToken(newIdentityToken);
                     })
                     .then(function() {
-                        // TODO: Update root password
-                        // return Instance.DeviceMain.execAsync(
-                        //     "new=pcgalileo"+
-                        //     newConfig.DeviceId+
-                        //     "\n"+
-                        //     +this.assets.hostchanger);
+                        // set hostName
+                        return this.setWifiHostName(newConfig);
                     })
                     .then(function() {
-                        // TODO: Update root password
+                        // write wifi file for wifi networks
+                        return this.writeDeviceWifiConnectionFile(newConfig, deviceWifiConnectionFile);
                     })
                     .then(function() {
-                        // tell Host, we are done
+                        // update root password
+                        return this.updateRootPassword(newConfig, newRootPassword);
+                    })
+                    .then(function() {
+                        // tell Host, we are done!
                         return this.host.deviceResetConfigurationAck(newConfig.deviceId, oldIdentityToken);
                     })
                     .then(function() {

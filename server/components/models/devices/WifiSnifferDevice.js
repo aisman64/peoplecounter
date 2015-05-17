@@ -136,6 +136,37 @@ module.exports = NoGapDef.component({
                                 }
                             }
                             return queryData;
+                        },
+
+                        compileUpdateObject: function(queryInput, ignoreAccessCheck) {
+                            if (!this.Instance.User.isStaff() && !ignoreAccessCheck) {
+                                return Promise.reject(makeError('error.invalid.permissions'));
+                            }
+                            if (!queryInput || isNaNOrNull(queryInput.deviceId)) {
+                                // invalid parameters
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            var values;
+                            var selector;
+                            if (_.isObject(queryInput.values)) {
+                                // allow specifying the exact `where`-abouts
+                                values = queryInput.values;
+                                selector = { where: queryInput.where || {} };
+                            }
+                            else {
+                                // default handling
+                                values = queryInput;
+                                selector = { where: {} };
+                            }
+
+                            // ALWAYS make sure, the `deviceId` is set!
+                            selector.where.deviceId = queryInput.deviceId;
+
+                            return {
+                                values: values,
+                                selector: selector
+                            };
                         }
                     }
                 }
@@ -254,11 +285,14 @@ module.exports = NoGapDef.component({
                     .then(function(newUser) {
                         // then create the device
                         var timeoutDelay = Shared.AppConfig.getValue('deviceDefaultResetTimeout') || (60 * 1000);
+                        var hostNamePrefix = Shared.AppConfig.getValue('deviceHostNamePrefix');
+                        console.assert(hostNamePrefix, 'Missing configuration option (in appConfig.js): `deviceHostNamePrefix`');
 
                         var newDevice = {
                             uid: newUser.uid,
                             identityToken: this.Instance.DeviceConfiguration.generateIdentityToken(),
-                            rootPassword: this.Instance.DeviceConfiguration.generateRootPassword()
+                            rootPassword: this.Instance.DeviceConfiguration.generateRootPassword(),
+                            hostName: hostNamePrefix + newUser.uid
                         };
                         this._resetDevice(newDevice);
                         return this.wifiSnifferDevices.createObject(newDevice);

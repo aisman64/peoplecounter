@@ -672,7 +672,7 @@ module.exports = NoGapDef.component({
                         Instance.User.currentUser && Instance.User.currentUser.gid;
 
                     // set config
-                    Instance.UIMgr.scope.config = Instance.AppConfig.getAll();
+                    Instance.UIMgr.scope.AppConfigData = Instance.AppConfig.getAll();
                 },
 
                 /**

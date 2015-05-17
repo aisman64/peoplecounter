@@ -110,6 +110,8 @@ module.exports = NoGapDef.component({
 
                 var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
                 devices.sendChangeToClient(device);
+
+                this.client.onCurrentDeviceChanged();
             },
 
            	onClientBootstrap: function() {
@@ -243,8 +245,57 @@ module.exports = NoGapDef.component({
             	// start capturing right away
                 this.DeviceClientInitialized = true;
 
-                console.log('[STATUS] Device client initialized.');
-            	Instance.DeviceCapture.startCapturing();
+                this._readCurrentDeviceEntryFromCache();
+
+                if (this.getCurrentDevice()) {
+                    // we are ready!
+                    this.onDeviceReady();
+                }
+            },
+
+            /**
+             * Read current device information from file
+             */
+            _readCurrentDeviceEntryFromCache: function() {
+                var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                var fpath = __dirname + '/' + GLOBAL.DEVICE.Config.DeviceEntryCacheFile;
+
+                try {
+                    if (!GLOBAL.DEVICE.Config.DeviceEntryCacheFile) {
+                        throw new Error('Invalid filename: ' + GLOBAL.DEVICE.Config.DeviceEntryCacheFile);
+                    }
+
+                    var entryStr =  fs.readFileSync(fpath);
+                    var currentDevice = JSON.parse(entryStr);
+
+                    // add current device entry to cache
+                    devices.applyChange(currentDevice);
+                }
+                catch (err) {
+                    console.error('[ERROR] Could not read current device entry - ' + err.message);
+                }
+            },
+
+            /**
+             * Write current device information to file
+             */
+            _cacheCurrentDeviceEntry: function() {
+                var currentDevice = ThisComponent.getCurrentDevice();
+                var fpath = __dirname + '/' + GLOBAL.DEVICE.Config.DeviceEntryCacheFile;
+
+                try {
+                    console.assert(currentDevice, 'Device entry not set');
+
+                    if (!GLOBAL.DEVICE.Config.DeviceEntryCacheFile) {
+                        throw new Error('Invalid filename: ' + GLOBAL.DEVICE.Config.DeviceEntryCacheFile);
+                    }
+
+                    var entryStr = JSON.stringify(currentDevice, null, '\t');
+                    fs.writeFileSync(fpath, entryStr);
+                }
+                catch (err) {
+                    console.error('[ERROR] Could not cache current device entry - ' + err.message);
+                }
             },
 
             tryLogin: function(iAttempt) {
@@ -261,6 +312,8 @@ module.exports = NoGapDef.component({
                     console.error('Could not read identityToken from file');
                 }
 
+                // reset if the config is not up to date, or we failed previously
+                // TODO: Do not reset shit, unless the server tells us to!
                 var tryResetting = iAttempt > 1;
 
                 var authData = tryResetting && {} || {
@@ -289,33 +342,49 @@ module.exports = NoGapDef.component({
                 });
             },
 
-            onLogin: function() {
-            	// we have logged in successfully, and now have Device privilege level
-                Instance.DeviceCapture.flushQueue();
-            },
-
             /**
              * Every device has a user account.
              * When that user changes (and initially), this function is called.
              */
             onCurrentUserChanged: function(privsChanged) {
                 var user = Instance.User.currentUser;
-                console.log('I am: ' + (user && user.userName || '<UNKNOWN>'));
-
                 if (user && privsChanged) {
-                    // logged in successfully
-                    this.onLogin();
+                    // logged in successfully (but we wait for the `onCurrentDeviceChanged` before doing the next thing)
                 }
                 else {
                     // not logged in yet
-                    this.tryLogin();
+                    ThisComponent.tryLogin();
                 }
+            },
+
+            onDeviceReady: function() {
+                // we have logged in successfully, we have Device privilege level, and we are ready to go!
+                var currentDevice = ThisComponent.getCurrentDevice();
+                console.assert(currentDevice, 'Device entry not present in `onDeviceReady`');
+
+                var user = Instance.User.currentUser;
+                console.log('I am: ' + (user && user.userName || '<UNKNOWN>'));
+
+                // write current device information to file
+                this._cacheCurrentDeviceEntry();
+
+                // send pending queue of captured packets to host
+                Instance.DeviceCapture.flushQueue();
+
+                // start capturing (if we have not started earlier)
+                Instance.DeviceCapture.startCapturing(this.getCurrentDevice());
             },
             
             /**
              * Client commands can be directly called by the host
              */
             Public: {
+                onCurrentDeviceChanged: function() {
+                    if (this._initializedDevice) return;
+                    this._initializedDevice = 1;
+
+                    this.onDeviceReady();
+                }
             }
         };
     })

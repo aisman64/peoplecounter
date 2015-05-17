@@ -259,8 +259,12 @@ module.exports = NoGapDef.component({
                 });*/
             },
 
-            startCapturing: function() {
+            startCapturing: function(device) {
                 if (!pcap) return;
+                if (this.isCapturing) return;   // don't do anything
+
+                this.isCapturing = true;
+                console.log('[STATUS] Starting capturing...');
 
                 ThisComponent.preCapture()
                 .then(function() {

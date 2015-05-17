@@ -10,6 +10,7 @@ module.exports = {
         'CookiesFile': './data/cookies.json',
         'HostIdentityTokenFile': './data/hostIdentityToken',
         'DeviceClientCacheFile': './data/deviceClientCache.min.js',
+        'DeviceEntryCacheFile': './data/deviceEntryCache.json',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
@@ -21,6 +22,8 @@ module.exports = {
         // absolute file path
         'filePath': __dirname + '/data/DeviceImage.img'
     },
+
+    'deviceHostNamePrefix': 'dv_one_dev_',
 
     // ########################################################################################################################
     // User feature locks
