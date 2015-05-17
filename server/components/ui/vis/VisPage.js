@@ -72,7 +72,7 @@ module.exports = NoGapDef.component({
                         Instance.UIMgr.gotoPage('Vis', macId);
                     }
 
-                    $scope.toggle = function(what) {
+                    $scope.fetchData = function(what) {
                         setTimeout(function() {
                             if (VisView.open[what]) {
                                 ThisComponent.getVisData(what);
@@ -105,7 +105,7 @@ module.exports = NoGapDef.component({
             },
 
             queryFunctions: {
-                mostConnectedMacs: function() {
+                mostConnectedMACs: function() {
                     return Instance.CommonDBQueries.queries.MostConnectedMACs({ limit: 20 });
                 },
 

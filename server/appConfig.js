@@ -107,7 +107,8 @@ module.exports = {
         'enabled': 1,
         'blackList': {
             'functions': {
-                'DeviceCommunications.host.checkIn': 1
+                'DeviceCommunications.host.checkIn': 1,
+                'LivePage.host.getMostRecentPackets': 1
             },
             'components': {
                 

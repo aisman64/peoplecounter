@@ -6,12 +6,21 @@
 var NoGapDef = require('nogap').Def;
 
 module.exports = NoGapDef.component({
+    Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
+        return {
+            maxPacketsOnClient: 100
+        };
+    }),
+
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) {
         var packetIncludes;
-        var packetStreamLimit = 10;
+        var packetStreamLimit = 50;
+
+        var componentsRoot = '../../';
+        var libRoot = componentsRoot + '../lib/';
 
         return {
             Assets: {
@@ -84,6 +93,9 @@ module.exports = NoGapDef.component({
                 ThisComponent = this;
                 maxId = null;
                 refreshDelay = 500; // .5 seconds
+
+                this.colorsPerMacId = {};
+                this.lastColorIndex = -1;
             },
 
             /**
@@ -94,7 +106,10 @@ module.exports = NoGapDef.component({
                 app.lazyController('liveCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
-                    // customize your LivePage's $scope here:
+                    // customize your $scope here:
+                    $scope.userCache = Instance.User.users;
+                    $scope.deviceCache = Instance.WifiSnifferDevice.wifiSnifferDevices;
+                    $scope.datasetCache = Instance.WifiDataset.wifiDatasets;
                 });
 
                 // register page
@@ -108,7 +123,18 @@ module.exports = NoGapDef.component({
                     refreshTimer = setInterval(ThisComponent.refetchPackets.bind(ThisComponent), refreshDelay);
                 }
 
-                this.refetchPackets();
+                var users = Instance.User.users;
+                var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
+                var datasets = Instance.WifiDataset.wifiDatasets;
+
+                // get all kinds of related data
+                Promise.join(
+                    users.readObjects(),
+                    devices.readObjects(),
+                    datasets.readObjects(),
+
+                    this.refetchPackets()
+                );
             },
 
             onPageDeactivate: function() {
@@ -127,6 +153,18 @@ module.exports = NoGapDef.component({
                 })
                 .then(function(packets) {
                     ThisComponent.packets = packets;
+                    for (var i = 0; i < packets.length; ++i) {
+                        var packet = packets[i];
+                        if (!ThisComponent.colorsPerMacId[packet.macId]) {
+                            if (this.lastColorIndex >= HtmlColors.array.length) {
+                                // reset
+                                this.lastColorIndex = -1;
+                            }
+                            var minIntensity = 144;
+                            var color = HtmlColors.getLightHex(++this.lastColorIndex, minIntensity);
+                            ThisComponent.colorsPerMacId[packet.macId] = color;
+                        }
+                    };
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent));

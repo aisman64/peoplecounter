@@ -47,7 +47,7 @@ module.exports = NoGapDef.component({
             RenderSettings: {
                 minFontSize: 10,
                 maxFontSize: 24,
-                maxSSIDPopularity: 100
+                maxSSIDPopularity: 40
             },
 
             __ctor: function() {
@@ -126,6 +126,8 @@ module.exports = NoGapDef.component({
                         // remove all existing elements
                         $container.empty();
 
+                        var macInfo = $scope.macInfo;
+
                         // create new canvas
                         var $canvas = $('<canvas></canvas>');
                         $container.append($canvas);
@@ -142,22 +144,24 @@ module.exports = NoGapDef.component({
                             selectedBackgroundColor: '#FFEEBB',
                             backgroundColor: '#FFFFAA',
                         });
+                        var RenderSettings = ThisComponent.RenderSettings;
 
                         for (var i = 0; i < macInfo.ownSsids.length; ++i) {
                             var ssidData = macInfo.ownSsids[i];
-                            var ssidPopularity = ssidData.macIds.length;
-                            if (ssidPopularity < 2) {
+                            if (ssidData.macIds.length < 2) {
                                 // no one else is on this SSID
                                 $scope.otherSsids.push(ssidData);
                                 continue;
                             }
 
+                            //var ssidNodeSize = ssidData.macIds.length;
+                            var ssidNodeSize = RenderSettings.maxSSIDPopularity - ssidData.macIds.length;
+
                             var ssidName = ssidData.name;
-                            var RenderSettings = ThisComponent.RenderSettings;
-                            var fontRatio = Math.min(1, ssidPopularity / RenderSettings.maxSSIDPopularity);
+                            var fontRatio = Math.max(Math.min(1, ssidNodeSize / RenderSettings.maxSSIDPopularity), 0);
                             var fontSize = RenderSettings.minFontSize + fontRatio * (RenderSettings.maxFontSize - RenderSettings.minFontSize);
                             var node = graph.newNode({
-                                label: ssidName + ' (' + ssidPopularity + ')',
+                                label: ssidName + ' (' + ssidData.macIds.length + ')',
                                 type: NodeType.SSID,
                                 font: fontSize + 'px Verdana, sans-serif',
                                 height: fontSize,

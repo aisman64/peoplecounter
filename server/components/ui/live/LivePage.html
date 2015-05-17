@@ -10,18 +10,26 @@
 		<div class="panel-body">
 			<table class="table">
 				<thead>
-					<th class="col-xs-3">MAC</th>
-					<th class="col-xs-3">SSID</th>
-					<th class="col-xs-3">sigstr</th>
+					<th class="col-xs-3">who</th>
+					<th class="col-xs-2">ssid</th>
+					<th class="col-xs-1">sigstr</th>
 					<th class="col-xs-3">when</th>
+					<th class="col-xs-3">source</th>
 				</thead>
 				<tbody>
-					<tr ng-repeat="packet in PC.packets | orderBy: '-updatedAt'"
+					<tr ng-repeat="packet in PC.packets | orderBy: '-time'"
+						ng-style="{'background-color': PC.colorsPerMacId[packet.macId]}"
 						code="packetDate = util.moment(util.Math.round(packet.time * 1000))">
 						<td class="col-xs-3">{{ packet.MACAddress.macAddress }}</td>
-						<td class="col-xs-3">{{ packet.SSID.ssidName }}</td>
-						<td class="col-xs-3">{{packet.signalStrength}}</td>
-						<td class="col-xs-3">{{packetDate.format('LLL')}}</td>
+						<td class="col-xs-2">{{ packet.SSID.ssidName }}</td>
+						<td class="col-xs-1">{{ packet.signalStrength }}</td>
+						<td class="col-xs-3">{{ packetDate.format('LLL') }}</td>
+						<td class="col-xs-3">
+							{{ datasetCache.byId[packet.datasetId].datasetName }} &nbsp;
+							<span class="info-text">
+								({{ deviceCache.byId[packet.deviceId].getUserNow().userName }})
+							</span>
+						</td>
 					</tr>
 				</tbody>
 			</table>

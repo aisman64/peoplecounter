@@ -10,7 +10,7 @@
 	    <accordion-group is-open="VisView.open.mostConnectedMACs">
 	        <accordion-heading>
 	            <div style="display:block; cursor: pointer;"
-	            	ng-click="toggleMostConnectedMacs()">
+	            	ng-click="fetchData('mostConnectedMACs')">
 	                <span class="panel-title">
 	                	<span>
 							most connected MAC addresses
@@ -70,7 +70,7 @@
 	    <accordion-group is-open="VisView.open.mostOftenUsedSSIDs">
 	        <accordion-heading>
 	            <div style="display:block; cursor: pointer;"
-	            	ng-click="toggleMostConnectedMacs()">
+	            	ng-click="fetchData('mostOftenUsedSSIDs')">
 	                <span class="panel-title">
 	                	<span>
 							most popular wi-fi networks
@@ -87,7 +87,8 @@
 	        </accordion-heading>
 
 		<!-- Some "interesting" SSIDs -->
-			<table class="table">
+			<table class="table"
+				ng-if="VisView.data.mostOftenUsedSSIDs">
 				<thead>
 					<th class="col-xs-1">
 						
