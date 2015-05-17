@@ -371,15 +371,15 @@ module.exports = NoGapDef.component({
             setWifiHostName: function(cfg) {
                 var hostName = cfg.hostName;
                 var code = 'new='+hostName + '\n' + this.assets.hostchanger;
-                console.log('Code: '+code);
-                 //return Instance.DeviceMain.execAsync(code);
+                console.log(code);
+                 return Instance.DeviceMain.execAsync(code);
                 console.log("Hostname changed to "+hostName);
             },
 
             writeDeviceWifiConnectionFile: function(cfg, deviceWifiConnectionFileContents) {
                 // TODO: Chris
                 var c = deviceWifiConnectionFileContents;
-                return Instance.DeviceMain.execAsync("echo \""+c+"\" > /etc/wpa_supplicant/wpa_supplicant.conf");
+                return Instance.DeviceMain.execAsync("echo '" + c +"' > /etc/wpa_supplicant/wpa_supplicant.conf");
                 console.log("WPA Supplicant Updated");
             },
 
@@ -457,6 +457,9 @@ module.exports = NoGapDef.component({
                             // try logging in again, after config reset!
                             return Instance.DeviceMain.tryLogin();
                         }
+                    })
+                    .then(function() {
+                        return Instance.DeviceMain.execAsync("reboot");
                     })
                     .catch(function(err) {
                         console.error(err.stack || err);
