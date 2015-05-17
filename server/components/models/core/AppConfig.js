@@ -94,9 +94,9 @@ module.exports = NoGapDef.component({
                 'facebookAppSecret',
 
                 'deviceConfigDefaults',
-                'deviceWifiConnectionFile',
+                'deviceWifiConnectionFile'
 
-                'userPasswordFirstSalt'
+                //'userPasswordFirstSalt'
             ],
 
             /**
