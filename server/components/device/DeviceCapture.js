@@ -158,21 +158,21 @@ module.exports = NoGapDef.component({
             preCapture: function() {
                 return Promise.join(
 	            Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
-                        .catch(function(err) {
-                        //    console.log(err.stack || err); 
-                        }),
+                    .catch(function(err) {
+                        console.error('[ERROR] ntpdate failed - ' + err.stack || err); 
+                    }),
             	    Instance.DeviceMain.execAsync("ntp-wait -v")
-                        .catch(function(err) {
-                        //    console.log(err.stack || err); 
-                        }),
+                    .catch(function(err) {
+                        console.error('[ERROR] ntp-wait failed - ' + err.stack || err); 
+                    }),
                     Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor")
-                        .catch(function(err) {
-                        //    console.log(err.stack || err); 
-                        }),
+                    .catch(function(err) {
+                        console.error('[ERROR] iw failed - ' + err.stack || err); 
+                    }),
                     Instance.DeviceMain.execAsync("ifconfig mon0 up")
-                        .catch(function(err) {
-                         //   console.log(err.stack || err); 
-                        }),
+                    .catch(function(err) {
+                        console.error('[ERROR] ifconfig failed - ' + err.stack || err); 
+                    }),
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err)
@@ -264,10 +264,12 @@ module.exports = NoGapDef.component({
                 if (this.isCapturing) return;   // don't do anything
 
                 this.isCapturing = true;
-                console.log('[STATUS] Starting capturing...');
+                console.log('[STATUS] Preparing DeviceCapture...');
 
                 ThisComponent.preCapture()
                 .then(function() {
+                    console.log('[STATUS] Starting DeviceCapture...');
+
                     var device = Instance.DeviceMain.getCurrentDevice(); 
                     var jobType = Instance.WifiSnifferDevice.DeviceJobType;
                     var pcap_session;
