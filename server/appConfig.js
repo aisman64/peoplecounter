@@ -23,7 +23,7 @@ module.exports = {
         'filePath': __dirname + '/data/DeviceImage.img'
     },
 
-    'deviceHostNamePrefix': 'dv_one_dev_',
+    'deviceHostNamePrefix': 'dv-one-dev-',
 
 
     // ########################################################################################################################
@@ -102,7 +102,8 @@ module.exports = {
         'blackList': {
             'functions': {
                 'DeviceCommunications.checkIn': 1,
-                'LivePage.getMostRecentPackets': 1
+                'LivePage.getMostRecentPackets': 1,
+                'DeviceCapture.storePacket': 1 
             },
             'components': {
 
