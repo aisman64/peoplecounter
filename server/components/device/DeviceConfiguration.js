@@ -126,7 +126,7 @@ module.exports = NoGapDef.component({
                         if (resetTimeout.getTime() < now.getTime()) {
                             // fail: reset time is already up!
                             newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
-                            return Promise.reject(makeError('device reset expired'));
+                            return Promise.reject(makeError('device reset expired for #' + device.deviceId));
                         }
 
                         // device is scheduled for reset
