@@ -144,7 +144,7 @@ module.exports = NoGapDef.component({
                     for (var i = 0; i < packets.length; ++i) {
                         var packet = packets[i];
                         if (!ThisComponent.colorsPerMacId[packet.macId]) {
-                            if (this.lastColorIndex >= HtmlColors.array.length) {
+                            if (this.lastColorIndex >= HtmlColors.array.length-1) {
                                 // reset
                                 this.lastColorIndex = -1;
                             }

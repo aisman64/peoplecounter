@@ -92,12 +92,12 @@ module.exports = NoGapDef.component({
                         onBeforeSync: function(models) {
                             // setup foreign key Association between packet and SSID and MACAddress
                             models.WifiSSIDPacket.belongsTo(models.SSID,
-                                 { foreignKey: 'ssidId', as: 'SSID', constraints: false });
+                                 { foreignKey: 'ssidId', as: 'SSID', foreignKeyConstraint: true });
                              models.SSID.hasMany(models.WifiSSIDPacket,
                                  { foreignKey: 'ssidId', as: 'SSIDPackets', constraints: false });
 
                             models.WifiSSIDPacket.belongsTo(models.MACAddress,
-                                 { foreignKey: 'macId', as: 'MACAddress', constraints: false });
+                                 { foreignKey: 'macId', as: 'MACAddress', foreignKeyConstraint: true });
                             models.MACAddress.hasMany(models.WifiSSIDPacket,
                                  { foreignKey: 'macId', as: 'SSIDPackets', constraints: false });
                         },
@@ -113,6 +113,7 @@ module.exports = NoGapDef.component({
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['time']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['signalStrength']),
 
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['updatedAt']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['macId', 'updatedAt'])
                             );
                         }
