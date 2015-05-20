@@ -20,6 +20,7 @@ module.exports = NoGapDef.component({
                     js: [
                         // jQuery
                         'lib/jquery/jquery-2.1.0.min.js',
+                        'lib/jquery-ui/jquery-ui.min.js',
 
                         // Angular JS
                         // 'lib/angular/angular.min.js',

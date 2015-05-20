@@ -74,19 +74,26 @@ module.exports = NoGapDef.component({
              */
             setupUI: function(UIMgr, app) {
                 // write element's link function
-                var linkFun = function($scope, $element, $attrs) {
+                var linkFun = function($scope, $element, $attrs, $ngModelCtrl) {
                     UIMgr.registerElementScope(ThisComponent, $scope);
                     
                     // customize your $scope here:
                     $scope.bindAttrExpression($attrs, 'macId', function(macId) {
                         $scope.prepGraph(macId);
-                        $scope.macId = macId;
                     });
+
+                    $scope._updateMACInfo = function(macInfo) {
+                        $scope.macInfo = macInfo;
+                        $ngModelCtrl.$setViewValue(macInfo);
+                        $ngModelCtrl.$render();
+                        //$scope.safeDigest();
+                    };
 
                     $scope.prepGraph = function(macId) {
                         if (!macId) return;
                         if (!Instance.User.isStandardUser()) return;
 
+                        $scope._updateMACInfo(null);
                         $scope.busy = true;
                         $scope.otherSsids = []; // all SSIDs that are not added to the graph
 
@@ -114,7 +121,7 @@ module.exports = NoGapDef.component({
                      * Generate the graph around the given MAC
                      */
                     $scope.genMACGraph = function($container, macInfo) {
-                        $scope.macInfo = macInfo;
+                        $scope._updateMACInfo(macInfo);
 
                         var nodes = [];
                         var edges = [];
@@ -190,7 +197,8 @@ module.exports = NoGapDef.component({
                         restrict: 'E',
                         link: linkFun,
                         replace: true,
-                        template: ThisComponent.assets.template
+                        template: ThisComponent.assets.template,
+                        require:'ngModel'
                     };
                 });
 

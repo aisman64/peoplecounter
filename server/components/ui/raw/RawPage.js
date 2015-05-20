@@ -122,7 +122,7 @@ module.exports = NoGapDef.component({
 
                 // register page
                 Instance.UIMgr.registerPage(this, 'Raw', this.assets.template, {
-                    iconClasses: 'fa fa-bar-chart'
+                    iconClasses: 'fa fa-server'
                 });
             },
 
@@ -196,6 +196,7 @@ module.exports = NoGapDef.component({
                 if (ThisComponent.refreshPaused) return;
 
                 ThisComponent.busy = true;
+                ThisComponent.page.invalidateView();
 
                 ThisComponent.host.getMostRecentPackets(ThisComponent.rawSettings)
                 .finally(function() {
