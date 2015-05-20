@@ -289,7 +289,7 @@ module.exports = NoGapDef.component({
                     if(device.currentJobType == jobType.ActivitySniffer) {
                         pcap_session = pcap.createSession("mon0", "wlan type mgt || wlan type data");
                         pcap_session.on('packet', function(raw_packet) {
-                            return Packet.resolve()
+                            return Promise.resolve()
                             .then(function() {
                                 var packet = pcap.decode.packet(raw_packet);
                                 return ThisComponent.basicProcessor(packet);
@@ -299,7 +299,7 @@ module.exports = NoGapDef.component({
                     else {
                         pcap_session = pcap.createSession("mon0", "wlan type mgt subtype probe-req");
                         pcap_session.on('packet', function(raw_packet) { 
-                            return Packet.resolve()
+                            return Promise.resolve()
                             .then(function() {
                                 var packet = pcap.decode.packet(raw_packet);
                                 return ThisComponent.processPacket(packet);

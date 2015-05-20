@@ -68,7 +68,7 @@ module.exports = NoGapDef.component({
 
                     deviceId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
                     macId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
-                    ssidId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
+                    ssidId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: true },
                     datasetId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
 
                     signalStrength: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },

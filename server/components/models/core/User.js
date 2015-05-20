@@ -912,7 +912,7 @@ module.exports = NoGapDef.component({
                             ].join('<br />')
                         });
                     })
-                    .then(function(authData) {
+                    .then(function() {
                         // then create the user!
                         return this.createNewUser(authData, false);
                     });

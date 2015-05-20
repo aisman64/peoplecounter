@@ -208,11 +208,10 @@ module.exports = NoGapDef.component({
                             };
                         });
 
-                        return {
-                            macId: macId,
-                            macAddress: macAddressEntry && macAddressEntry.macAddress,
-                            ownSsids: ownSsids
-                        };
+                        macAddressEntry = macAddressEntry || {};
+                        macAddressEntry.ownSsids = ownSsids;
+
+                        return macAddressEntry;
                     });
                 },
             },
