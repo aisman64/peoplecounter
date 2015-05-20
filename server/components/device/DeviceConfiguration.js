@@ -468,7 +468,7 @@ module.exports = NoGapDef.component({
                     .then(function() {
                         return Instance.DeviceMain.execAsync("reboot")
                         .catch(function(err) {
-                            console.error('[ERROR] Unable to reboot - ' + (err.stack || err));
+                            Instance.DeviceLog.logError('Unable to reboot - ' + (err.stack || err));
                         });
                     })
                     .catch(function(err) {

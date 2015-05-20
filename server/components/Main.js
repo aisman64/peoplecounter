@@ -8,6 +8,7 @@ var NoGapDef = require('nogap').Def;
 
 var componentsRoot = './';
 var libRoot = componentsRoot + '../lib/';
+var pubFolder = componentsRoot + '../pub/';
 
 module.exports = NoGapDef.component({
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { return {
@@ -20,7 +21,14 @@ module.exports = NoGapDef.component({
                      *
                      * @see https://github.com/dcodeIO/bcrypt.js
                      */
-                    bcrypt: __dirname + '/' + libRoot + 'bcrypt.js'
+                    bcrypt: __dirname + '/' + libRoot + 'bcrypt.js',
+
+                    /**
+                     * moment.js for working with time, dates and timespans
+                     *
+                     * @see http://momentjs.com/
+                     */
+                    moment: __dirname + '/' + pubFolder + 'lib/moment.js'
                 }
             }
         },
@@ -152,6 +160,10 @@ module.exports = NoGapDef.component({
             initClient: function() {
                 // bcrypt does some weird things... Need some fixing uppin` so it works the same on Node and in the browser
                 this.assets.bcrypt = this.assets.bcrypt || dcodeIO.bcrypt;
+
+                if (typeof(moment) === 'undefined') {
+                    squishy.getGlobalContext().moment = this.assets.moment;
+                }
             },
 
             

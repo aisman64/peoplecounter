@@ -1,5 +1,6 @@
 /**
- * Kicks off device code!
+ * Capture device packets, send them to server and store them.
+ * Queue and re-send them later if not connected.
  */
 "use strict";
 
@@ -108,7 +109,8 @@ module.exports = NoGapDef.component({
         var exec;
         var Queue;
         var queue;
-        var promisify = require("promisify-node");
+        var promisify;
+
         return {
             __ctor: function() {
                 ThisComponent = this;
@@ -121,24 +123,32 @@ module.exports = NoGapDef.component({
                 sys = require('sys');
                 exec = require('child_process').exec;
                 Queue = require('file-queue').Queue;
+                promisify = require("promisify-node");
             },
 
             /**
-             * This method is called by DeviceMain, once we are logged into the server!
+             * Send packet to server or put in queue, if we failed.
              */
-
             storePacket: function(packet) {
                 // send packet to server
                 return this.host.storePacket(packet)
                 .then(function() {
-                    console.log("Packet sent successfully");
+                    Instance.DeviceLog.logStatus("packet sent successfully!");
                     // DB successfully stored packet
                 })
                 .catch(function(err) {
-                    console.error(err.stack);
-                    queue.push(packet, function(err) { 
-                        if(err) throw err; 
-                        queue.length(function(err,len) { console.log(len); });
+                    Instance.DeviceLog.logError('storePacket on Host failed - ' + err.stack);
+
+                    // could not send packet to server -> Store in queue...
+                    return new Promise(function(resolve, reject) {
+                        queue.push(packet, function(err) {
+                            if(err) reject(err);
+                            else {
+                                // TODO: Why query length here?
+                                queue.length(function(err,len) { console.log(len); });
+                                resolve();
+                            }
+                        });  
                     });
                 });
             },
@@ -157,28 +167,26 @@ module.exports = NoGapDef.component({
 
             preCapture: function() {
                 return Promise.join(
-	            Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
-                    .catch(function(err) {
-                        console.error('[ERROR] ntpdate failed - ' + err.stack || err); 
-                    }),
+	                Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('ntpdate failed - ' + err.stack || err); 
+                        }),
             	    Instance.DeviceMain.execAsync("ntp-wait -v")
-                    .catch(function(err) {
-                        console.error('[ERROR] ntp-wait failed - ' + err.stack || err); 
-                    }),
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('ntp-wait failed - ' + err.stack || err); 
+                        }),
                     Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor")
-                    .catch(function(err) {
-                        console.error('[ERROR] iw failed - ' + err.stack || err); 
-                    }),
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('iw failed - ' + err.stack || err); 
+                        }),
                     Instance.DeviceMain.execAsync("ifconfig mon0 up")
-                    .catch(function(err) {
-                        console.error('[ERROR] ifconfig failed - ' + err.stack || err); 
-                    }),
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('ifconfig failed - ' + err.stack || err); 
+                        }),
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
-                            if(err)
-                                reject(err);
-                            else
-                                resolve();
+                            if(err) return reject(err);
+                            resolve();
                         });
                     })
                 );
@@ -191,7 +199,7 @@ module.exports = NoGapDef.component({
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.ssid = packet.payload.ieee802_11Frame.probe.tags[0].ssid;
-                ThisComponent.storePacket(result);
+                return ThisComponent.storePacket(result);
             },
 
             basicProcessor: function(packet) {
@@ -200,20 +208,23 @@ module.exports = NoGapDef.component({
                 result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
-                if(result.signalStrength >= -25)
-                    ThisComponent.storePacket2(result);
+                if(result.signalStrength >= -25) {
+                    return ThisComponent.storePacket2(result);
+                }
             },
 
 
             flushQueue: function() {
-                console.log("Flush Queue");
+                Instance.DeviceLog.logStatus('flushQueue');
                 var dummies = [];
                 exec("ls tmp/new/*.galileo | wc -l", function(error, stdout, stderr) {
                     var length = parseInt(stdout);
-                    for(var i=0; i<length; i++)
-                        {
+                    if (!length) return;
+                    
+                    for(var i=0; i<length; i++) {
                         dummies.push(0);
-                        }
+                    }
+
                     return Promise.map(dummies, function(dummy) {
                         return new Promise(function(resolve, reject) {
                             queue.tpop(function(err, packet, commit, rollback) {
@@ -228,7 +239,6 @@ module.exports = NoGapDef.component({
                                             reject(err);
                                         }
                                         else {
-                                            console.log("Stored Packet Uploaded");
                                             resolve();
                                         }
                                     });
@@ -236,15 +246,18 @@ module.exports = NoGapDef.component({
                                 .catch(function(err) {
                                     rollback(function(err2) {
                                         if (err2) {
-                                            console.error('[ERROR] Unable to rollback: ' + err2.stack);
+                                            Instance.DeviceLog.logError('Unable to rollback: ' + err2.stack);
                                         }
-                                        reject(err);
+                                        //reject(err);
                                     });
                                 });
                             });
                         });
                     }, {
                         concurrency: 5              // how many packets in-flight, at the same time
+                    })
+                    .then(function() {
+                        Instance.DeviceLog.logStatus('DeviceCapture file queue flushed successfully!');
                     });
                 });
 
@@ -264,11 +277,11 @@ module.exports = NoGapDef.component({
                 if (this.isCapturing) return;   // don't do anything
 
                 this.isCapturing = true;
-                console.log('[STATUS] Preparing DeviceCapture...');
+                Instance.DeviceLog.logStatus('Preparing DeviceCapture...');
 
                 ThisComponent.preCapture()
                 .then(function() {
-                    console.log('[STATUS] Starting DeviceCapture...');
+                    Instance.DeviceLog.logStatus('Starting DeviceCapture...');
 
                     var device = Instance.DeviceMain.getCurrentDevice(); 
                     var jobType = Instance.WifiSnifferDevice.DeviceJobType;
@@ -276,15 +289,24 @@ module.exports = NoGapDef.component({
                     if(device.currentJobType == jobType.ActivitySniffer) {
                         pcap_session = pcap.createSession("mon0", "wlan type mgt || wlan type data");
                         pcap_session.on('packet', function(raw_packet) {
-                            var packet = pcap.decode.packet(raw_packet);
-                            ThisComponent.basicProcessor(packet); 
-                        });   
+                            return Packet.resolve()
+                            .then(function() {
+                                var packet = pcap.decode.packet(raw_packet);
+                                return ThisComponent.basicProcessor(packet);
+                            });
+                        });
                     }
                     else {
                         pcap_session = pcap.createSession("mon0", "wlan type mgt subtype probe-req");
                         pcap_session.on('packet', function(raw_packet) { 
-                            var packet = pcap.decode.packet(raw_packet);
-                            ThisComponent.processPacket(packet);
+                            return Packet.resolve()
+                            .then(function() {
+                                var packet = pcap.decode.packet(raw_packet);
+                                return ThisComponent.processPacket(packet);
+                            })
+                            .catch(function(err) {
+                                Instance.DeviceLog.logError('DeviceCapture.processPacket failed  - ' + err.stack);
+                            });
                         });
                     }
                 });

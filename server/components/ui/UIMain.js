@@ -33,12 +33,6 @@ module.exports = NoGapDef.component({
                      * @see http://medialize.github.io/URI.js/
                      */
                     'lib/URI',
-
-                    /**
-                     * moment.js for working with time, dates and timespans
-                     * @see http://momentjs.com/
-                     */
-                    'lib/moment',
                     
                     // squishy for classes, enums and some other goodies
                     'js/squishy/squishy',
