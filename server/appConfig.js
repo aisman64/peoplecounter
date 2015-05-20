@@ -103,7 +103,7 @@ module.exports = {
             'functions': {
                 'DeviceCommunications.checkIn': 1,
                 'LivePage.getMostRecentPackets': 1,
-                'DeviceCapture.storePacket': 1 
+                'DeviceCapture.storePacket': 1, 
                 'DeviceStatus.getDeviceLastActiveTimes': 1
             },
             'components': {
