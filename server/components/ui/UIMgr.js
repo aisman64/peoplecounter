@@ -963,7 +963,10 @@ module.exports = NoGapDef.component({
                         console.error('refreshDelay too fast for page: ' + page.name);
                         delay = minRefreshDelay;
                     }
-                    component._refreshTimer = setInterval(component.refreshData.bind(component), delay);
+                    component._refreshTimer = setInterval(function() {
+                        if (component.refreshPaused) return;
+                        component.refreshData();
+                    }, delay);
                 }
 
                 // call `onPageActivate`

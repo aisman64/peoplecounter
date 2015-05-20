@@ -5,6 +5,22 @@
 				live packets
 				<i class="fa fa-spinner fa-spin"
 					ng-if="PC.busy"></i>
+				&nbsp;
+				&nbsp;
+				<a class="btn"
+					ng-class="{ 'btn-danger': !PC.refreshPaused, 'btn-success': PC.refreshPaused }"
+					ng-click="PC.refreshPaused = !PC.refreshPaused">
+					<span ng-if="PC.refreshPaused">
+						Start!
+					</span>
+					<span ng-if="!PC.refreshPaused">
+						Stop!
+					</span>
+				</a>
+				&nbsp;
+				&nbsp;
+				<i class="fa fa-spinner fa-spin"
+					ng-if="PC.busy"></i>
 			</span></div>
 		</div>
 		<div class="panel-body">
@@ -13,17 +29,19 @@
 					<th class="col-xs-3">who</th>
 					<th class="col-xs-2">ssid</th>
 					<th class="col-xs-1">sigstr</th>
-					<th class="col-xs-3">when</th>
+					<th class="col-xs-1">seqnum</th>
+					<th class="col-xs-2">when</th>
 					<th class="col-xs-3">source</th>
 				</thead>
 				<tbody>
 					<tr ng-repeat="packet in PC.packets | orderBy: '-time'"
 						ng-style="{'background-color': PC.colorsPerMacId[packet.macId]}"
 						code="packetDate = util.moment(util.Math.round(packet.time * 1000))">
-						<td class="col-xs-3">{{ packet.MACAddress.macAddress }}</td>
+						<td class="col-xs-3">{{ packet.MACAddress.macAddress }} ({{ packet.macId }})</td>
 						<td class="col-xs-2">{{ packet.SSID.ssidName }}</td>
 						<td class="col-xs-1">{{ packet.signalStrength }}</td>
-						<td class="col-xs-3">{{ packetDate.format('LLL') }}</td>
+						<td class="col-xs-1">{{ packet.seqnum }}</td>
+						<td class="col-xs-2">{{ packetDate.format('LLL') }}</td>
 						<td class="col-xs-3">
 							{{ datasetCache.byId[packet.datasetId].datasetName }} &nbsp;
 							<span class="info-text">
