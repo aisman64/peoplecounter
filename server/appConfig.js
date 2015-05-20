@@ -212,13 +212,13 @@ module.exports = {
             // all kinds of model components
             'models/wifi/MACAddress',
             'models/wifi/SSID',
-            'models/wifi/WifiSSIDPacket',
-            'models/wifi/WifiActivityPacket',
             'models/wifi/MAC_SSID_Relation',
             'models/devices/WifiSnifferDevice',
             'models/devices/WifiDataset',
             'models/devices/WifiDatasetSnifferRelation',
             'models/devices/DeviceStatus',
+            'models/wifi/WifiSSIDPacket',
+            'models/wifi/WifiActivityPacket',
             'models/CommonDBQueries',
 
             // misc utilities

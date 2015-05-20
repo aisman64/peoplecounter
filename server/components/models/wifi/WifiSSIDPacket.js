@@ -92,14 +92,27 @@ module.exports = NoGapDef.component({
                         onBeforeSync: function(models) {
                             // setup foreign key Association between packet and SSID and MACAddress
                             models.WifiSSIDPacket.belongsTo(models.SSID,
-                                 { foreignKey: 'ssidId', as: 'SSID', foreignKeyConstraint: true });
+                                 { foreignKey: 'ssidId', as: 'SSID', foreignKeyConstraint: true, onDelete: 'cascade', onUpdate: 'cascade' });
                              models.SSID.hasMany(models.WifiSSIDPacket,
                                  { foreignKey: 'ssidId', as: 'SSIDPackets', constraints: false });
 
                             models.WifiSSIDPacket.belongsTo(models.MACAddress,
-                                 { foreignKey: 'macId', as: 'MACAddress', foreignKeyConstraint: true });
+                                 { foreignKey: 'macId', as: 'MACAddress', foreignKeyConstraint: true, onDelete: 'cascade', onUpdate: 'cascade' });
                             models.MACAddress.hasMany(models.WifiSSIDPacket,
                                  { foreignKey: 'macId', as: 'SSIDPackets', constraints: false });
+
+
+                            models.WifiSSIDPacket.belongsTo(models.WifiDataset,
+                                 { foreignKey: 'datasetId', as: 'dataset', foreignKeyConstraint: true, onDelete: 'cascade', onUpdate: 'cascade' });
+                            models.MACAddress.hasMany(models.WifiSSIDPacket,
+                                 { foreignKey: 'datasetId', as: 'datasetPackets', constraints: false });
+
+
+                            models.WifiSSIDPacket.belongsTo(models.WifiSnifferDevice,
+                                 { foreignKey: 'deviceId', as: 'device', foreignKeyConstraint: true, onDelete: 'cascade', onUpdate: 'cascade' });
+                            models.MACAddress.hasMany(models.WifiSSIDPacket,
+                                 { foreignKey: 'deviceId', as: 'devicePackets', constraints: false });
+
                         },
 
                         onAfterSync: function(models) {
