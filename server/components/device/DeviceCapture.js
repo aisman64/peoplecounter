@@ -137,7 +137,7 @@ module.exports = NoGapDef.component({
                     // DB successfully stored packet
                 })
                 .catch(function(err) {
-                    Instance.DeviceLog.logError('storePacket on Host failed - ' + err.stack);
+                    Instance.DeviceLog.logError('storePacket on Host failed - ' + err.stack, true);
 
                     // could not send packet to server -> Store in queue...
                     return new Promise(function(resolve, reject) {
@@ -169,19 +169,19 @@ module.exports = NoGapDef.component({
                 return Promise.join(
 	                Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
                         .catch(function(err) {
-                            Instance.DeviceLog.logError('ntpdate failed - ' + err.stack || err); 
+                            Instance.DeviceLog.logError('ntpdate failed - ' + err.stack || err, true); 
                         }),
             	    Instance.DeviceMain.execAsync("ntp-wait -v")
                         .catch(function(err) {
-                            Instance.DeviceLog.logError('ntp-wait failed - ' + err.stack || err); 
+                            Instance.DeviceLog.logError('ntp-wait failed - ' + err.stack || err, true); 
                         }),
                     Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor")
                         .catch(function(err) {
-                            Instance.DeviceLog.logError('iw failed - ' + err.stack || err); 
+                            Instance.DeviceLog.logError('iw failed - ' + err.stack || err, true); 
                         }),
                     Instance.DeviceMain.execAsync("ifconfig mon0 up")
                         .catch(function(err) {
-                            Instance.DeviceLog.logError('ifconfig failed - ' + err.stack || err); 
+                            Instance.DeviceLog.logError('ifconfig failed - ' + err.stack || err, true); 
                         }),
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
@@ -215,7 +215,7 @@ module.exports = NoGapDef.component({
 
 
             flushQueue: function() {
-                Instance.DeviceLog.logStatus('flushQueue');
+                Instance.DeviceLog.logStatus('flushQueue', true);
                 var dummies = [];
                 exec("ls tmp/new/*.galileo | wc -l", function(error, stdout, stderr) {
                     var length = parseInt(stdout);
@@ -246,9 +246,10 @@ module.exports = NoGapDef.component({
                                 .catch(function(err) {
                                     rollback(function(err2) {
                                         if (err2) {
-                                            Instance.DeviceLog.logError('Unable to rollback: ' + err2.stack);
+                                            Instance.DeviceLog.logError('Unable to rollback: ' + err2.stack, true);
                                         }
                                         //reject(err);
+                                        resolve();
                                     });
                                 });
                             });
@@ -257,7 +258,7 @@ module.exports = NoGapDef.component({
                         concurrency: 5              // how many packets in-flight, at the same time
                     })
                     .then(function() {
-                        Instance.DeviceLog.logStatus('DeviceCapture file queue flushed successfully!');
+                        Instance.DeviceLog.logStatus('DeviceCapture file queue flushed!', true);
                     });
                 });
 
@@ -277,11 +278,11 @@ module.exports = NoGapDef.component({
                 if (this.isCapturing) return;   // don't do anything
 
                 this.isCapturing = true;
-                Instance.DeviceLog.logStatus('Preparing DeviceCapture...');
+                Instance.DeviceLog.logStatus('Preparing DeviceCapture...', true);
 
                 ThisComponent.preCapture()
                 .then(function() {
-                    Instance.DeviceLog.logStatus('Starting DeviceCapture...');
+                    Instance.DeviceLog.logStatus('Starting DeviceCapture...', true);
 
                     var device = Instance.DeviceMain.getCurrentDevice(); 
                     var jobType = Instance.WifiSnifferDevice.DeviceJobType;
@@ -305,7 +306,7 @@ module.exports = NoGapDef.component({
                                 return ThisComponent.processPacket(packet);
                             })
                             .catch(function(err) {
-                                Instance.DeviceLog.logError('DeviceCapture.processPacket failed  - ' + err.stack);
+                                Instance.DeviceLog.logError('DeviceCapture.processPacket failed  - ' + err.stack, true);
                             });
                         });
                     }
