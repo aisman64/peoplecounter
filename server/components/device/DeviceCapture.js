@@ -195,7 +195,7 @@ module.exports = NoGapDef.component({
             processPacket: function(packet) {
                 var result = {};
                 result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
-                result.signalStrength = packet.payload.sigstr;
+                result.signalStrength = packet.payload.signalStrength;
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.ssid = packet.payload.ieee802_11Frame.probe.tags[0].ssid;
@@ -204,7 +204,7 @@ module.exports = NoGapDef.component({
 
             basicProcessor: function(packet) {
                 var result = {};
-                result.signalStrength = packet.payload.sigstr;
+                result.signalStrength = packet.payload.signalStrength;
                 result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
