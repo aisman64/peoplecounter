@@ -120,11 +120,22 @@ module.exports = NoGapDef.component({
                     return Promise.resolve()
                     .bind(this)
                     .then(function() {
-                    	var resetTimeout = new Date(device.resetTimeout);
+
+                        if (!device.resetTimeout) {
+                            return Promise.reject(makeError('device has no resetTimeout: #' + device.deviceId));
+                        }
+                        var resetTimeout = _.isString(device.resetTimeout) && new Date(device.resetTimeout) || device.resetTimeout;
+                    	//var resetTimeout = new Date(device.resetTimeout);
                         var now = new Date();
+
+
+
+
 
                         if (resetTimeout.getTime() < now.getTime()) {
                             // fail: reset time is already up!
+                            console.log("[ERROR] Timeup " + resetTimeout + " vs. " + now);
+                            console.log("[ERROR] " + device);
                             newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
                             return Promise.reject(makeError('device reset expired for #' + device.deviceId));
                         }
