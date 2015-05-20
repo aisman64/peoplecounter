@@ -246,6 +246,7 @@ module.exports = {
             // user pages:
             'ui/home/HomePage',
             'ui/live/LivePage',
+            'ui/raw/RawPage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
             'ui/map/MapPage',
