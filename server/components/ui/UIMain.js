@@ -152,10 +152,11 @@ module.exports = NoGapDef.component({
 
                 pageComponents: [
                     //'HomePage',
+                    'LivePage',
+                    'RawPage',
                     'DevicePage',
                     'MapPage',
                     'ResultPage',
-                    'LivePage',
                     'AccountPage'
                 ],
 

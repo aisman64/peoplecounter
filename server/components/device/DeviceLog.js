@@ -28,48 +28,42 @@ module.exports = NoGapDef.component({
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { 
         return {
             __ctor: function() {
+                this.deviceErrors = {};
             },
+
             initHost: function() {
             },
 
-        Private: {
-            onClientBootstrap: function() {
-            }
-        },
-        
-        /**
-         * Host commands can be directly called by the client
-         */
-        Public: {
-            logDeviceErrors: function(errors) {
-            	var user = this.Instance.User.currentUser;
-                if (!this.Instance.User.isDevice()) return Promise.reject('error.invalid.permissions');
-
-                var device = this.Instance.DeviceMain.getCurrentDevice();
-                if (!device) {
-                	// internal error: something went wrong in our authentication process
-                	throw new Error('Device was logged in with its user account, but device entry was not ready: ' +
-                		user.userName);
+            Private: {
+                onClientBootstrap: function() {
                 }
-                packet.deviceId = device.deviceId;
-                // call stored procedure to take care of packet insertion
-                return sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
-                    replacements: [
-                        packet.mac,
-                        packet.signalStrength,
-                        packet.time,
-                        packet.seqnum,
-                        packet.ssid,
-                        packet.deviceId
-                    ],
-                    type: sequelize.QueryTypes.RAW
-                });
-                // .spread(function() {
-
-                // });
             },
-        },
-    }}),
+            
+            /**
+             * Host commands can be directly called by the client
+             */
+            Public: {
+                logDeviceErrors: function(errors) {
+                	var user = this.Instance.User.currentUser;
+                    if (!this.Instance.User.isDevice()) return Promise.reject('error.invalid.permissions');
+
+                    var device = this.Instance.DeviceMain.getCurrentDevice();
+                    if (!device) {
+                    	// internal error: something went wrong in our authentication process
+                    	throw new Error('Device was logged in with its user account, but device entry was not ready: ' +
+                    		user.userName);
+                    }
+
+                    //var allErrors = this.deviceErrors[device.deviceId] = this.deviceErrors[device.deviceId] || [];
+                    for (var i = 0; i < errors.length; i++) {
+                        var err = errors[i];
+                        var msg = err.message;
+                        this.Tools.handleError('[CLIENT] ' + msg);
+                    };
+                },
+            },
+        };
+    }),
     
     
     /**
@@ -87,11 +81,10 @@ module.exports = NoGapDef.component({
             },
 
             _makeError: function(message) {
-                // return {
-                //     createdAt: new Date(),
-                //     message: message
-                // };
-                return message;
+                return {
+                    createdAt: new Date(),
+                    message: message
+                };
             },
 
             _sendQueue: function() {
@@ -105,15 +98,13 @@ module.exports = NoGapDef.component({
             logStatus: function(message) {
                 var timeStr = moment().format('YYYY-MMMM-D hh:mm:ss');
                 var prefix = '[STATUS - ' + timeStr + '] ';
-                message = prefix + message;
-                console.log(message);
+                console.log(prefix + message);
             },
 
             logError: function(message, dontSendToServer) {
                 var timeStr = moment().format('YYYY-MMMM-D hh:mm:ss');
                 var prefix = '[ERROR - ' + timeStr + '] ';
-                message = prefix + message;
-                console.error(message);
+                console.error(prefix + message);
 
                 if (dontSendToServer) return;
 
