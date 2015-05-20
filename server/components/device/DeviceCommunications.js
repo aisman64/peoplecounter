@@ -141,11 +141,18 @@ module.exports = NoGapDef.component({
 						if (!GLOBAL.DEVICE.IsConnectionGood) {
 							// we are good again
 							lastConnectionErrorMessage = null;
-	            			console.log('[STATUS] Re-established connection to server.');
+	            			Instance.DeviceLog.logStatus('Re-established connection to server.');
 						}
 
-						GLOBAL.DEVICE.IsConnectionGood = true;		// we are "connected"
-						return result;
+						GLOBAL.DEVICE.IsConnectionGood = true;		// we are "connected" (again)
+
+						// notify everyone, then return result
+						return ThisComponent.events.reconnect.fire()
+						.catch(function(err) {
+							// prevent infinite error loops
+							Instance.DeviceLog.logError('reconnect event failed - ' + err.stack, true);
+						})
+						.return(result);
 					})
 					.catch(function(err) {
 						// connection failed
@@ -153,7 +160,7 @@ module.exports = NoGapDef.component({
 
             			if (lastConnectionErrorMessage !== err.message) {
 	            			lastConnectionErrorMessage = err.message;
-	            			console.error('[ERROR] Lost connection to server: ' + (err.stack || err));
+	            			Instance.DeviceLog.logError('lost connection to server - ' + (err.stack || err), 1);
 	            		}
 
 						return Promise.reject(err);			// keep propagating error
@@ -162,7 +169,7 @@ module.exports = NoGapDef.component({
 
 				refresh: function() {
 					// Refresh was requested. Client is probably running an older version than server...
-					console.error('Client is out of sync. Restarting...');
+					Instance.DeviceLog.logError('Client is out of sync. Restarting...', true);
 					process.exit(0);
 				}
 			},
@@ -170,6 +177,10 @@ module.exports = NoGapDef.component({
             __ctor: function() {
                 ThisComponent = this;
                 process = require('process');
+
+                this.events = {
+                	reconnect: squishy.createEvent()
+                };
             },
 
             initClient: function() {
@@ -178,12 +189,9 @@ module.exports = NoGapDef.component({
 
             	ThisComponent.pingTimer = setInterval(function() {
         			ThisComponent.host.checkIn()
-        			.then(function() {
-        				// we are good!
-        				lastMessage = null;
-        			})
             		.catch(function(err) {
             			// don't do anything
+            			Instance.DeviceLog.logError('Unable to `checkIn` with Host - ' + (err.stack || err), true);
             		});
             	}, delay);
             }

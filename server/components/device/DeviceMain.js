@@ -12,6 +12,7 @@ module.exports = NoGapDef.component({
         'DeviceCommunications',
         'DeviceImage',
         'DeviceCapture',
+        'DeviceLog',
         'DevicePatcher'
     ],
 
@@ -30,15 +31,15 @@ module.exports = NoGapDef.component({
             return new Promise(function(resolve, reject) {
                 var exec = require('child_process').exec;
                 exec(cmd, function(err, stdout, stderr) {
-                    if(err) {
+                    if (err) {
                         console.log(stdout);
-                        console.log(stderr);
+                        console.error(stderr);
                         reject(err);
                         //resolve();
                     }
                     else {
                         console.log(stdout);
-                        console.log(stderr);
+                        console.error(stderr);
                         resolve();
                     }
                 });
@@ -282,7 +283,7 @@ module.exports = NoGapDef.component({
                     devices.applyChange(currentDevice);
                 }
                 catch (err) {
-                    console.error('[ERROR] Could not read current device entry - ' + err.message);
+                    Instance.DeviceLog.logError('Could not read current device entry - ' + err.message, true);
                 }
             },
 
@@ -304,7 +305,7 @@ module.exports = NoGapDef.component({
                     fs.writeFileSync(fpath, entryStr);
                 }
                 catch (err) {
-                    console.error('[ERROR] Could not cache current device entry - ' + err.message);
+                    Instance.DeviceLog.logError('Could not cache current device entry - ' + err.message);
                 }
             },
 
@@ -373,7 +374,7 @@ module.exports = NoGapDef.component({
                 console.assert(currentDevice, 'Device entry not present in `onDeviceReady`');
 
                 var user = Instance.User.currentUser;
-                console.log('I am: ' + (user && user.userName || '<UNKNOWN>'));
+                Instance.DeviceLog.logStatus('Device ready: ' + (user && user.userName || '<UNKNOWN>'));
 
                 // write current device information to file
                 this._cacheCurrentDeviceEntry();
