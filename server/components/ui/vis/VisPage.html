@@ -2,8 +2,26 @@
 
 
 	<!-- <pre>{{PC.macGraphData}}</pre> -->
-	<mac-ssid-graph mac-id="PC.currentMacId" ng-if="PC.currentMacId">
-	</mac-ssid-graph>
+	<div class="panel panel-primary">
+	    <div class="panel-heading">
+	        <div class="panel-title">
+	            <span class="">Device: {{ PC.currentMacInfo.macAnnotation || PC.currentMacInfo.macAddress }}</span>
+
+	            <span class="pull-right" 
+	                style="vertical-align: middle"
+	                ng-style="{visibility: (PC.busy || (PC.currentMacId && !PC.currentMacInfo)) && 'visible' || 'hidden'}">
+	                    <i class="fa fa-spinner fa-spin"></i>
+	            </span>
+	        </div>
+	    </div>
+	    <div class="panel-body no-padding">
+			<mac-ssid-graph
+				ng-if="PC.currentMacId"
+				ng-model="PC.currentMacInfo"
+				mac-id="PC.currentMacId">
+			</mac-ssid-graph>
+		</div>
+	</div>
 
 	<accordion>
 	    <!-- mostConnectedMACs -->
@@ -59,7 +77,7 @@
 						<td class="col-xs-3">
 							<a ng-click="visualizeMACAddress(macEntry.macId)"
 								class="btn btn-large btn-default">
-								Show me <i class="fa fa-arrow-circle-o-right"></i>
+								<i class="fa fa-search"></i>
 							</a>
 						</td>
 					</tr>

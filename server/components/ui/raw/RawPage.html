@@ -23,10 +23,10 @@
 					style="width: 10em;"
 					ng-click="PC.annotatingMacs = !PC.annotatingMacs; PC.refreshPaused = PC.annotatingMacs;">
 					<span ng-if="!PC.annotatingMacs">
-						Annotate
+						More options...
 					</span>
 					<span ng-if="PC.annotatingMacs">
-						Stop annotating
+						Done
                     	<i class="fa fa-check"></i>
 					</span>
 				</a>
@@ -46,7 +46,7 @@
 
 				<a class="btn btn-warning"
 					style="width: 10em;"
-					ng-if="PC.nLiveSettingsFilters"
+					ng-if="PC.nRawSettingsFilters"
 					ng-click="PC.clearFilter()">
 					Clear filter
                     <i class="fa fa-times red"></i>
@@ -87,6 +87,10 @@
 									ng-if="PC.inspecting && !PC.rawSettings.where.macId"
 									ng-click="PC.setPacketFilter('macId', packet.macId)">
 									<i class="fa fa-search"></i>
+								</a>
+								<a class="btn btn-info"
+									ng-click="gotoPage('Vis', packet.macId)">
+									<i class="fa fa-wifi"></i>
 								</a>
 							</span>
 						</td>

@@ -120,7 +120,10 @@ module.exports = NoGapDef.component({
                     return Promise.resolve()
                     .bind(this)
                     .then(function() {
-                    	var resetTimeout = new Date(device.resetTimeout);
+                        if (!device.resetTimeout) {
+                            return Promise.reject(makeError('device has no resetTimeout: #' + device.deviceId));
+                        }
+                    	var resetTimeout = _.isString(device.resetTimeout) && new Date(device.resetTimeout) || device.resetTimeout;
                         var now = new Date();
 
                         if (resetTimeout.getTime() < now.getTime()) {

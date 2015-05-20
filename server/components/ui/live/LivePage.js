@@ -46,43 +46,7 @@ module.exports = NoGapDef.component({
              * Host commands can be directly called by the client
              */
             Public: {
-                getMostRecentPackets: function(settings, lastId) {
-                    packetIncludes = [{
-                        model: Shared.SSID.Model,
-                        as: 'SSID',
-                        attributes: ['ssidName']
-                    },{
-                        model: Shared.MACAddress.Model,
-                        as: 'MACAddress',
-                        attributes: ['macAddress', 'macAnnotation']
-                    }];
-
-                    var where = settings && settings.where || {};
-                    var queryData = {
-                        where: where,
-                        include: packetIncludes,
-                        order: 'time DESC'
-                    };
-
-                    if (lastId) {
-                        where.packetId = {gt: lastId}
-                    }
-                    else {
-                        // first query, just contains the latest few packets
-                        queryData.limit = packetStreamLimit;
-                    }
-
-                    return this.Instance.WifiSSIDPacket.wifiSSIDPackets.findObjects(queryData);
-                },
-
-                // updateMACAnnotation: function(macId, macAnnotation) {
-                //     if (!this.Instance.User.isStaff()) {
-                //         return Promise.reject('error.invalid.permissions');
-                //     }
-
-                //     return 
-                // }
-            },
+            }
         };
     }),
     
@@ -92,24 +56,40 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
-        var maxId;
 
         return {
             __ctor: function() {
                 ThisComponent = this;
-                maxId = null;
+            },
 
-                this.colorsPerMacId = {};
-                this.lastColorIndex = -1;
+            _registerDirectives: function(app) {
+                // seven-seg directive
+                // see: http://brandonlwhite.github.io/sevenSeg.js/
+                app.lazyDirective('sevenSeg', function() {
+                    var linkFun = function($scope, $element, $attrs) {
+                        AngularUtil.decorateScope($scope);
 
-                ThisComponent.nLiveSettingsFilters = 0;
-                ThisComponent.liveSettings = { where: {} };
+                        $scope.bindAttrExpression($attrs, 'settings', function(settings) {
+                            settings = settings || {};
+                            $element.sevenSeg(settings);
+                        });
+                    };
+
+                    return {
+                        restrict: 'E',
+                        link: linkFun,
+                        replace: true,
+                        template: '<div></div>'
+                    };
+                });
             },
 
             /**
              * Prepares the live page controller.
              */
             setupUI: function(UIMgr, app) {
+                this._registerDirectives(app);
+
                 // create Live controller
                 app.lazyController('liveCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
@@ -145,76 +125,30 @@ module.exports = NoGapDef.component({
             // ################################################################################################
             // Annotations
 
-            onMACAnnotationUpdated: function(macId, macAnnotation) {
-                ThisComponent.busy = true;
-
-                //ThisComponent.host.updateMACAnnotation(macId, macAnnotation)
-                Instance.MACAddress.macAddresses.updateObject({
-                    macId: macId,
-                    macAnnotation: macAnnotation
-                })
-                .finally(function() {
-                    ThisComponent.busy = false;
-                })
-                .then(function() {
-                    ThisComponent.page.invalidateView();
-                })
-                .catch(ThisComponent.page.handleError.bind(ThisComponent));
-            },
-
 
             // ################################################################################################
             // Filtering
-
-            setCurrentMacId: function(macId) {
-                this.setPacketFilter('macId', macId);
-            },
-
-            setPacketFilter: function(filterName, value) {
-                if (value) {
-                    ++ThisComponent.nLiveSettingsFilters;
-                    ThisComponent.liveSettings.where[filterName] = value;
-                }
-                else {
-                    --ThisComponent.nLiveSettingsFilters;
-                    delete ThisComponent.liveSettings.where[filterName];
-                }
-            },
-
-            clearFilter: function() {
-                ThisComponent.liveSettings.where = {};
-                ThisComponent.nLiveSettingsFilters = 0;
-            },
 
 
             // ################################################################################################
             // Refreshing + real-time updates
 
-            refreshDelay: 500,
+            refreshDelay: 1000,
 
             refreshData: function() {
                 if (ThisComponent.refreshPaused) return;
 
                 ThisComponent.busy = true;
+                ThisComponent.page.invalidateView();
 
-                ThisComponent.host.getMostRecentPackets(ThisComponent.liveSettings)
+                return Instance.CommonDBQueries.queries.PeopleCount({
+
+                })
                 .finally(function() {
                     ThisComponent.busy = false;
                 })
-                .then(function(packets) {
-                    ThisComponent.packets = packets;
-                    for (var i = 0; i < packets.length; ++i) {
-                        var packet = packets[i];
-                        if (!ThisComponent.colorsPerMacId[packet.macId]) {
-                            if (ThisComponent.lastColorIndex >= HtmlColors.array.length-1) {
-                                // reset
-                                ThisComponent.lastColorIndex = -1;
-                            }
-                            var minIntensity = 144;
-                            var color = HtmlColors.getLightHex(++ThisComponent.lastColorIndex, minIntensity);
-                            ThisComponent.colorsPerMacId[packet.macId] = color;
-                        }
-                    };
+                .then(function(deviceCounts) {
+                    ThisComponent.deviceCounts = deviceCounts;
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent));
