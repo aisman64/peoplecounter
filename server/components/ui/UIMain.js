@@ -49,7 +49,10 @@ module.exports = NoGapDef.component({
 
                     // graph drawing
                     'lib/springy/springy',
-                    'lib/springy/springyui'
+                    'lib/springy/springyui',
+
+                    // seven-segment display
+                    'lib/sevenSeg'
                 ],
                 css: [
                     // bootstrap & font-awesome make things look pretty

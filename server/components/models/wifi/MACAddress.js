@@ -87,7 +87,8 @@ module.exports = NoGapDef.component({
                      * TODO: OUI?
                      */
                     macId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-                    macAddress: Sequelize.STRING(16)
+                    macAddress: Sequelize.STRING(16),
+                    macAnnotation: Sequelize.TEXT,
                 }, {
                     freezeTableName: true,
                     tableName: 'MACAddress',
