@@ -52,7 +52,9 @@
 							{{macEntry.count}}
 						</td>
 						<td class="col-xs-5">
-							{{macEntry.macAddress}}
+							{{ macEntry.macAnnotation && 
+								macEntry.macAnnotation || 
+								macEntry.macAddress }}
 						</td>
 						<td class="col-xs-3">
 							<a ng-click="visualizeMACAddress(macEntry.macId)"

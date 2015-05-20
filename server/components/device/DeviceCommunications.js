@@ -150,7 +150,7 @@ module.exports = NoGapDef.component({
 						return ThisComponent.events.reconnect.fire()
 						.catch(function(err) {
 							// prevent infinite error loops
-							Instance.DeviceLog.logError('reconnect event failed - ' + err.stack, true);
+							Instance.DeviceLog.logError('Reconnect event failed - ' + err.stack, true);
 						})
 						.return(result);
 					})
@@ -160,7 +160,7 @@ module.exports = NoGapDef.component({
 
             			if (lastConnectionErrorMessage !== err.message) {
 	            			lastConnectionErrorMessage = err.message;
-	            			Instance.DeviceLog.logError('lost connection to server - ' + (err.stack || err), 1);
+	            			Instance.DeviceLog.logError('Lost connection to server - ' + (err.stack || err), 1);
 	            		}
 
 						return Promise.reject(err);			// keep propagating error
@@ -191,7 +191,7 @@ module.exports = NoGapDef.component({
         			ThisComponent.host.checkIn()
             		.catch(function(err) {
             			// don't do anything
-            			Instance.DeviceLog.logError('Unable to `checkIn` with Host - ' + (err.stack || err), true);
+            			//Instance.DeviceLog.logError('Unable to `checkIn` with Host - ' + (err.message || err), true);
             		});
             	}, delay);
             }

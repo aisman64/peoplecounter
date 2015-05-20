@@ -46,7 +46,7 @@ module.exports = NoGapDef.component({
              * Host commands can be directly called by the client
              */
             Public: {
-                getMostRecentPackets: function(lastId) {
+                getMostRecentPackets: function(settings, lastId) {
                     packetIncludes = [{
                         model: Shared.SSID.Model,
                         as: 'SSID',
@@ -54,10 +54,10 @@ module.exports = NoGapDef.component({
                     },{
                         model: Shared.MACAddress.Model,
                         as: 'MACAddress',
-                        attributes: ['macAddress']
+                        attributes: ['macAddress', 'macAnnotation']
                     }];
 
-                    var where = {};
+                    var where = settings && settings.where || {};
                     var queryData = {
                         where: where,
                         include: packetIncludes,
@@ -73,7 +73,15 @@ module.exports = NoGapDef.component({
                     }
 
                     return this.Instance.WifiSSIDPacket.wifiSSIDPackets.findObjects(queryData);
-                }
+                },
+
+                // updateMACAnnotation: function(macId, macAnnotation) {
+                //     if (!this.Instance.User.isStaff()) {
+                //         return Promise.reject('error.invalid.permissions');
+                //     }
+
+                //     return 
+                // }
             },
         };
     }),
@@ -93,6 +101,9 @@ module.exports = NoGapDef.component({
 
                 this.colorsPerMacId = {};
                 this.lastColorIndex = -1;
+
+                ThisComponent.nLiveSettingsFilters = 0;
+                ThisComponent.liveSettings = { where: {} };
             },
 
             /**
@@ -130,26 +141,77 @@ module.exports = NoGapDef.component({
                 );
             },
 
+
+            // ################################################################################################
+            // Annotations
+
+            onMACAnnotationUpdated: function(macId, macAnnotation) {
+                ThisComponent.busy = true;
+
+                //ThisComponent.host.updateMACAnnotation(macId, macAnnotation)
+                Instance.MACAddress.macAddresses.updateObject({
+                    macId: macId,
+                    macAnnotation: macAnnotation
+                })
+                .finally(function() {
+                    ThisComponent.busy = false;
+                })
+                .then(function() {
+                    ThisComponent.page.invalidateView();
+                })
+                .catch(ThisComponent.page.handleError.bind(ThisComponent));
+            },
+
+
+            // ################################################################################################
+            // Filtering
+
+            setCurrentMacId: function(macId) {
+                this.setPacketFilter('macId', macId);
+            },
+
+            setPacketFilter: function(filterName, value) {
+                if (value) {
+                    ++ThisComponent.nLiveSettingsFilters;
+                    ThisComponent.liveSettings.where[filterName] = value;
+                }
+                else {
+                    --ThisComponent.nLiveSettingsFilters;
+                    delete ThisComponent.liveSettings.where[filterName];
+                }
+            },
+
+            clearFilter: function() {
+                ThisComponent.liveSettings.where = {};
+                ThisComponent.nLiveSettingsFilters = 0;
+            },
+
+
+            // ################################################################################################
+            // Refreshing + real-time updates
+
             refreshDelay: 500,
 
             refreshData: function() {
-                this.busy = true;
+                if (ThisComponent.refreshPaused) return;
 
-                this.host.getMostRecentPackets()
+                ThisComponent.busy = true;
+
+                ThisComponent.host.getMostRecentPackets(ThisComponent.liveSettings)
                 .finally(function() {
-                    this.busy = false;
+                    ThisComponent.busy = false;
                 })
                 .then(function(packets) {
                     ThisComponent.packets = packets;
                     for (var i = 0; i < packets.length; ++i) {
                         var packet = packets[i];
                         if (!ThisComponent.colorsPerMacId[packet.macId]) {
-                            if (this.lastColorIndex >= HtmlColors.array.length-1) {
+                            if (ThisComponent.lastColorIndex >= HtmlColors.array.length-1) {
                                 // reset
-                                this.lastColorIndex = -1;
+                                ThisComponent.lastColorIndex = -1;
                             }
                             var minIntensity = 144;
-                            var color = HtmlColors.getLightHex(++this.lastColorIndex, minIntensity);
+                            var color = HtmlColors.getLightHex(++ThisComponent.lastColorIndex, minIntensity);
                             ThisComponent.colorsPerMacId[packet.macId] = color;
                         }
                     };

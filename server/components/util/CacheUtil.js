@@ -1589,8 +1589,8 @@ module.exports = NoGapDef.component({
                                 // update memory sets
                                 if (id) {
                                     this._cacheDescriptor.idSetter(objValues, id);   // make sure, id is set (if it was not in values, but only in selector)
-                                    var origObj = this.byId[id];
-                                    if (origObj) {
+                                    // var origObj = this.byId[id];
+                                    // if (origObj) {
                                         // we might not actually have updated anything
                                         // match where against origObj
                                         // TODO: This only works for trivial where statements...
@@ -1603,7 +1603,7 @@ module.exports = NoGapDef.component({
                                         //         return;
                                         //     }
                                         // }
-                                    }
+                                    // }
 
                                     if (affectedRows) {
                                         this.applyChange(objValues, queryInput, dontSendToClient);

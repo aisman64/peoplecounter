@@ -1,13 +1,14 @@
 <div class="fill container-page" ng-controller="liveCtrl">
-	<div class="panel panel-info">
+	<div class="panel panel-primary">
 		<div class="panel-heading">
 			<div class="panel-title"><span>
 				live packets
-				<i class="fa fa-spinner fa-spin"
-					ng-if="PC.busy"></i>
 				&nbsp;
 				&nbsp;
+				
 				<a class="btn"
+					style="width: 10em;"
+					ng-style="{ visibility: PC.annotatingMacs && 'hidden' || '' }"
 					ng-class="{ 'btn-danger': !PC.refreshPaused, 'btn-success': PC.refreshPaused }"
 					ng-click="PC.refreshPaused = !PC.refreshPaused">
 					<span ng-if="PC.refreshPaused">
@@ -17,10 +18,43 @@
 						Stop!
 					</span>
 				</a>
-				&nbsp;
-				&nbsp;
-				<i class="fa fa-spinner fa-spin"
-					ng-if="PC.busy"></i>
+
+				<a class="btn btn-info"
+					style="width: 10em;"
+					ng-click="PC.annotatingMacs = !PC.annotatingMacs; PC.refreshPaused = PC.annotatingMacs;">
+					<span ng-if="!PC.annotatingMacs">
+						Annotate
+					</span>
+					<span ng-if="PC.annotatingMacs">
+						Stop annotating
+                    	<i class="fa fa-check"></i>
+					</span>
+				</a>
+
+				<a class="btn btn-info"
+					style="width: 12em;"
+					ng-click="PC.inspecting = !PC.inspecting;">
+					<span ng-if="!PC.inspecting">
+						Edit filters
+                    	<i class="fa fa-search"></i>
+					</span>
+					<span ng-if="PC.inspecting">
+						Done editing filters
+                    	<i class="fa fa-check"></i>
+					</span>
+				</a>
+
+				<a class="btn btn-warning"
+					style="width: 10em;"
+					ng-if="PC.nLiveSettingsFilters"
+					ng-click="PC.clearFilter()">
+					Clear filter
+                    <i class="fa fa-times red"></i>
+				</a>
+
+                <span class="pull-right" ng-show="PC.busy">
+                    <i class="fa fa-spinner fa-spin"></i>
+                </span>
 			</span></div>
 		</div>
 		<div class="panel-body">
@@ -37,12 +71,48 @@
 					<tr ng-repeat="packet in PC.packets | orderBy: '-time'"
 						ng-style="{'background-color': PC.colorsPerMacId[packet.macId]}"
 						code="packetDate = util.moment(util.Math.round(packet.time * 1000))">
-						<td class="col-xs-3">{{ packet.MACAddress.macAddress }} ({{ packet.macId }})</td>
-						<td class="col-xs-2">{{ packet.SSID.ssidName }}</td>
-						<td class="col-xs-1">{{ packet.signalStrength }}</td>
-						<td class="col-xs-1">{{ packet.seqnum }}</td>
-						<td class="col-xs-2">{{ packetDate.format('LLL') }}</td>
-						<td class="col-xs-3">
+						<td class="col-xs-3" style="vertical-align: middle">
+							<span style="vertical-align: middle">
+								{{ packet.MACAddress.macAnnotation && 
+										packet.MACAddress.macAnnotation || 
+									packet.MACAddress.macAddress }}
+								<span ng-if="PC.annotatingMacs">
+									<br />
+									<input type="text" ng-model="packet.MACAddress.macAnnotation" 
+										ng-change="PC.onMACAnnotationUpdated(packet.macId, packet.MACAddress.macAnnotation)" />
+								</span>
+							</span>
+							<span class="pull-right" style="vertical-align: middle">
+								<a class="btn btn-info"
+									ng-if="PC.inspecting && !PC.liveSettings.where.macId"
+									ng-click="PC.setPacketFilter('macId', packet.macId)">
+									<i class="fa fa-search"></i>
+								</a>
+							</span>
+						</td>
+						<td class="col-xs-2" style="vertical-align: middle">
+							{{ packet.SSID.ssidName }}
+						</td>
+						<td class="col-xs-1" style="vertical-align: middle">
+							{{ packet.signalStrength }}
+						</td>
+						<td class="col-xs-1" style="vertical-align: middle">
+							{{ packet.seqnum }}
+
+							<span class="pull-right">
+								<a class="btn btn-info"
+									ng-if="PC.inspecting && !PC.liveSettings.where.seqnum"
+									ng-click="
+										PC.setPacketFilter('macId', packet.macId);
+										PC.setPacketFilter('seqnum', packet.seqnum);">
+									<i class="fa fa-search"></i>
+								</a>
+							</span>
+						</td>
+						<td class="col-xs-2" style="vertical-align: middle">
+							{{ packetDate.format('LLL') }}
+						</td>
+						<td class="col-xs-3" style="vertical-align: middle">
 							{{ datasetCache.byId[packet.datasetId].datasetName }} &nbsp;
 							<span class="info-text">
 								({{ deviceCache.byId[packet.deviceId].getUserNow().userName }})

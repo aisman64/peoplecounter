@@ -218,3 +218,6 @@ INSERT INTO MAC_SSID_Relations (macId, ssidId) (
 
 ALTER TABLE WifiSnifferDevice ADD currentDatasetId INTEGER UNSIGNED;
 ALTER TABLE WifiSnifferDevice ADD currentJobType INTEGER UNSIGNED;
+
+
+ALTER TABLE MACAddress ADD `macAnnotation` TEXT;
