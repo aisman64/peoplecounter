@@ -2,7 +2,7 @@
 	<div class="vertical-space"></div>
 
 	<seven-seg 
-		settings="{ digits: 5, value: _.sum(PC.deviceCounts, 'count') }">
+		settings="{ digits: 5, value: _.result(_.find(PC.deviceCounts, {'deviceId': 0}), 'count') || 0 }">
 	</seven-seg>
 
 	<div class="vertical-space"></div>
@@ -32,12 +32,13 @@
 			</span></div>
 		</div>
 		<div class="panel-body">
-			<div ng-repeat="devicePeopleCount in PC.deviceCounts">
+			<div ng-repeat="devicePeopleCount in PC.deviceCounts"
+				ng-if="devicePeopleCount.deviceId">
 				<span>
 					{{ deviceCache.byId[devicePeopleCount.deviceId].getUserNow().userName }}
 				</span>
 				<seven-seg 
-					settings="{ digits: 5, value: devicePeopleCount.count}"
+					settings="{ digits: 5, value: devicePeopleCount.count || 0}"
 					style="display: inline-block; height: 20px; width: 70px;">
 				</seven-seg>
 			</div>

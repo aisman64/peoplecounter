@@ -8,11 +8,11 @@ var NoGapDef = require('nogap').Def;
 module.exports = NoGapDef.component({
     Includes: [
         // add all device-only components here
+        'DeviceLog',
         'DeviceConfiguration',
         'DeviceCommunications',
         'DeviceImage',
         'DeviceCapture',
-        'DeviceLog',
         'DevicePatcher'
     ],
 
@@ -283,7 +283,7 @@ module.exports = NoGapDef.component({
                     devices.applyChange(currentDevice);
                 }
                 catch (err) {
-                    Instance.DeviceLog.logError('Could not read current device entry - ' + err.message, true);
+                    Instance.DeviceLog.logError('Could not read current device entry - ' + err.message);
                 }
             },
 
@@ -374,7 +374,7 @@ module.exports = NoGapDef.component({
                 console.assert(currentDevice, 'Device entry not present in `onDeviceReady`');
 
                 var user = Instance.User.currentUser;
-                Instance.DeviceLog.logStatus('Device ready: ' + (user && user.userName || '<UNKNOWN>'));
+                Instance.DeviceLog.logStatus('Device ready: ' + (user && user.userName || '<UNKNOWN>'), true);
 
                 // write current device information to file
                 this._cacheCurrentDeviceEntry();

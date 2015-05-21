@@ -105,7 +105,8 @@ module.exports = {
                 'LivePage.getMostRecentPackets': 1,
                 'DeviceCapture.storePacket': 1, 
                 'DeviceStatus.getDeviceLastActiveTimes': 1,
-                'CommonDBQueries.executeQuery': 1
+                'CommonDBQueries.executeQuery': 1,
+                'DeviceLog.logDeviceErrors': 1
             },
             'components': {
 
@@ -125,7 +126,8 @@ module.exports = {
                 'DeviceCapture.storePacket': 1,
                 'RawPage.host.getMostRecentPackets': 1,
                 'DeviceStatus.host.getDeviceLastActiveTimes': 1,
-                'CommonDBQueries.host.executeQuery': 1
+                'CommonDBQueries.host.executeQuery': 1,
+                'DeviceLog.host.logDeviceErrors': 1
             },
             'components': {
                 

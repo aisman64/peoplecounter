@@ -92,6 +92,19 @@ module.exports = NoGapDef.component({
                 }, {
                     freezeTableName: true,
                     tableName: 'MACAddress',
+                    classMethods: {
+                        onBeforeSync: function(models) {
+                        },
+
+                        onAfterSync: function(models) {
+                            var tableName = this.getTableName();
+                            return Promise.join(
+                                // create indices
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['macAddress'], { indexOptions: 'UNIQUE'})
+                                //SequelizeUtil.createIndexIfNotExists(tableName, ['macAnnotation'], { indexOptions: 'UNIQUE'})
+                            );
+                        }
+                    }
                 });
             }
         };
