@@ -141,7 +141,7 @@ module.exports = NoGapDef.component({
 						if (!GLOBAL.DEVICE.IsConnectionGood) {
 							// we are good again
 							lastConnectionErrorMessage = null;
-	            			Instance.DeviceLog.logStatus('Re-established connection to server.');
+	            			Instance.DeviceLog.logStatus('Re-established connection to server.', true);
 						}
 
 						GLOBAL.DEVICE.IsConnectionGood = true;		// we are "connected" (again)
@@ -149,7 +149,7 @@ module.exports = NoGapDef.component({
 						// notify everyone, then return result
 						return ThisComponent.events.reconnect.fire()
 						.catch(function(err) {
-							// prevent infinite error loops
+							// prevent infinite error loops (don't send to server)
 							Instance.DeviceLog.logError('Reconnect event failed - ' + err.stack, true);
 						})
 						.return(result);
@@ -160,7 +160,7 @@ module.exports = NoGapDef.component({
 
             			if (lastConnectionErrorMessage !== err.message) {
 	            			lastConnectionErrorMessage = err.message;
-	            			Instance.DeviceLog.logError('Lost connection to server - ' + (err.stack || err), 1);
+	            			Instance.DeviceLog.logError('Lost connection to server - ' + (err.stack || err));
 	            		}
 
 						return Promise.reject(err);			// keep propagating error
@@ -169,7 +169,7 @@ module.exports = NoGapDef.component({
 
 				refresh: function() {
 					// Refresh was requested. Client is probably running an older version than server...
-					Instance.DeviceLog.logError('Client is out of sync. Restarting...', true);
+					Instance.DeviceLog.logError('Client is out of sync. Restarting...');
 					process.exit(0);
 				}
 			},

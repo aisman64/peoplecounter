@@ -142,7 +142,8 @@ module.exports = NoGapDef.component({
                 ThisComponent.page.invalidateView();
 
                 return Instance.CommonDBQueries.queries.PeopleCount({
-
+                    //timeFrameSeconds: 30000000
+                    timeFrameSeconds: 300
                 })
                 .finally(function() {
                     ThisComponent.busy = false;
