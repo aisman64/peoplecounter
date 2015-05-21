@@ -494,7 +494,7 @@ module.exports = NoGapDef.component({
                         var newDatasetName = 'new dataset';
                         var datasets = Instance.WifiDataset.wifiDatasets;
 
-                        return devices.createObject({
+                        return datasets.createObject({
                             datasetName: newDatasetName
                         })
                         .finally(function() {

@@ -51,6 +51,14 @@ module.exports = NoGapDef.component({
                     'lib/springy/springy',
                     'lib/springy/springyui',
 
+                    // nvd3
+                    'lib/nvd3/angular-nvd3.min.js',
+                    'lib/nvd3/d3.min.js',
+                    'lib/nvd3/nv.d3.min.js',
+
+
+
+
                     // seven-segment display
                     'lib/sevenSeg'
                 ],
@@ -66,6 +74,7 @@ module.exports = NoGapDef.component({
                      * @see http://necolas.github.io/normalize.css/
                      */
                     'lib/normalize.css',
+                    'lib/nvd3/nv.d3.min.css',
 
                     // our custom styles
                     'css/styles.css'
@@ -511,7 +520,8 @@ module.exports = NoGapDef.component({
                     'ui.bootstrap',
                     'timespanPicker',
                     'uiGmapgoogle-maps',
-                    'ngMap'
+                    'ngMap',
+                    'nvd3'
                 ];
                 var angularApp = angular.module('app', includeModules);
                 angularApp.config(function(uiGmapGoogleMapApiProvider) {
