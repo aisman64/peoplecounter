@@ -5,7 +5,14 @@
 	<div class="panel panel-primary">
 	    <div class="panel-heading">
 	        <div class="panel-title">
-	            <span class="">Device: {{ PC.currentMacInfo.macAnnotation || PC.currentMacInfo.macAddress }}</span>
+	            <span class="">Device:
+					{{ PC.currentMacInfo.macAnnotation && 
+							PC.currentMacInfo.macAnnotation || 
+						PC.currentMacInfo.macAddress }}
+					<span
+						ng-if="PC.currentMacInfo.OUI"
+						>({{PC.currentMacInfo.OUI.model}})</span>
+	            </span>
 
 	            <span class="pull-right" 
 	                style="vertical-align: middle"
@@ -71,8 +78,11 @@
 						</td>
 						<td class="col-xs-5">
 							{{ macEntry.macAnnotation && 
-								macEntry.macAnnotation || 
+									macEntry.macAnnotation || 
 								macEntry.macAddress }}
+							<span class="mac-oui"
+								ng-if="macEntry.model"
+								>({{macEntry.model}})</span>
 						</td>
 						<td class="col-xs-3">
 							<a ng-click="visualizeMACAddress(macEntry.macId)"

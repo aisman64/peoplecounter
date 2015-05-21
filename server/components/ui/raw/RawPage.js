@@ -54,7 +54,11 @@ module.exports = NoGapDef.component({
                     },{
                         model: Shared.MACAddress.Model,
                         as: 'MACAddress',
-                        attributes: ['macAddress', 'macAnnotation']
+                        attributes: ['macAddress', 'macAnnotation'],
+                        include: [{
+                            model: Shared.OUI.Model,
+                            as: 'OUI'
+                        }]
                     }];
 
                     var where = settings && settings.where || {};
