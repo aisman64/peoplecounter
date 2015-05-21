@@ -63,7 +63,7 @@ module.exports = NoGapDef.component({
                         queryData.limit = packetStreamLimit;
                     }
 
-                    return this.Instance.WifiPacket.wifiPackets.findObjects(queryData);
+                    return this.Instance.WifiSSIDPacket.wifiSSIDPackets.findObjects(queryData);
                 }
             },
         };

@@ -5,6 +5,8 @@
         </span>
     </div>
 
+    {{PC.onPageActivate || 0}}
+
 
 <!-- ######################################################################################################################## -->
 <!-- Device list -->
@@ -27,10 +29,10 @@
                 <li class="list-group-item no-padding">
                     <div class="table some-padding">
                         <div class="row text-bold">
-                            <div class="col-xs-4">
+                            <div class="col-xs-3">
                                 <span>name</span>
                             </div>
-                            <div class="col-xs-4">
+                            <div class="col-xs-5">
                                 <span>current dataset</span>
                             </div>
                             <div class="col-xs-4">
@@ -50,10 +52,10 @@
                     <div class="table some-padding"
                         ng-click="PC.deviceSelection.toggleSelection(device); onChange(); PC.showDeviceConfig = false;">
                         <div class="row">
-                            <div class="col-xs-4">
+                            <div class="col-xs-3">
                                 <span>{{ user.userName }}</span>
                             </div>
-                            <div class="col-xs-4">
+                            <div class="col-xs-5">
                                 <span ng-if="!!dataset"
                                     class="alert-info">
                                     {{ dataset.datasetName }}
@@ -96,13 +98,13 @@
                 <!-- Device Editor -->
                     <form ng-if="PC.deviceSelection.isSelected(device)">
                         <div class="row some-padding">
-                            <div class="col-xs-4">
+                            <div class="col-xs-3">
                                 <!-- Name -->
                                 <input type="text" ng-model="user.userName"
                                     ng-change="onChange()">
                             </div>
                             
-                            <div class="col-xs-4">
+                            <div class="col-xs-5">
                                 <!-- Dataset selection -->
                                 <div class="btn-group" dropdown>
                                     <button type="button" class="btn btn-lg btn-fancy dropdown-toggle" ng-disabled="PC.busy">
@@ -114,7 +116,7 @@
 
                                     <ul class="dropdown-menu" role="menu">
                                         <li ng-repeat="dataset in datasetCache.list">
-                                            <a href="" ng-click="setDataset(device, dataset);">
+                                            <a href="" ng-click="setDeviceDataset(device, dataset);">
                                                 <span>{{ dataset.datasetName }}</span>
                                             </a>
                                         </li>
@@ -225,7 +227,8 @@
             </div>
 
             <!-- Device buttons -->
-            <div style="position:relative; height: 4em;">
+            <div style="position:relative; height: 4em;"
+                ng-if="currentUserIsStaff">
                 <div class="container-centered-flexbox"
                     ng-if="!PC.deviceSelection.hasSelection()">
                     <div style="margin:auto; position:relative;">
@@ -234,6 +237,16 @@
                             ng-disabled="PC.busy"
                             ng-click="registerNewDevice('new device')">
                             <i class="fa fa-plus"></i>&nbsp; Add Device!
+
+                            <span ng-style="{visibility: PC.busy && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+                        </a>
+
+                        <a class="btn btn-default" href=""
+                            ng-if="currentUserIsStaff"
+                            ng-disabled="PC.busy"
+                            ng-click="startWritingDeviceWifiConfigFile()"
+                            ng-class="{active: PC.writingDeviceWifiConfigFile}">
+                            <i class="fa fa-edit"></i>&nbsp; Edit Wi-fi configuration file
 
                             <span ng-style="{visibility: PC.busy && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
                         </a>
@@ -259,8 +272,29 @@
                     </div>
                 </div>
             </div>
+
+            <div ng-if="PC.writingDeviceWifiConfigFile">
+                <textarea style="width:100%" rows="10" ng-model="AppConfigData.deviceWifiConnectionFile"
+                    ng-disabled="PC.busy">
+                </textarea>
+
+                <div style="position:relative; height: 4em;">
+                    <div class="container-centered-flexbox">
+                        <div style="margin:auto; position:relative;">
+                            <a class="btn btn-default" href=""
+                                ng-disabled="PC.busy"
+                                ng-click="updateDeviceWifiConfigFile()">
+                                <i class="fa fa-check green"></i>&nbsp; Save
+
+                                <span ng-style="{visibility: PC.busy && 'visible' || 'hidden'}"><i class="fa fa-spinner fa-spin"></i></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>  <!-- panel-body -->
     </div>     <!-- Devices panel -->
+
 
 <!-- ######################################################################################################################## -->
 <!-- Dataset list -->
@@ -269,7 +303,7 @@
             <div class="panel-title">
                 <span class="">Datasets<span style="color:#DDDDDD"> ({{datasetCache.list.length || 0}}) </span></span>
 
-                <span class="pull-right" 
+                <span class="pull-right"
                     style="vertical-align: middle"
                     ng-style="{visibility: PC.busy && 'visible' || 'hidden'}">
                         <i class="fa fa-spinner fa-spin"></i>
@@ -283,8 +317,11 @@
                     <div class="table table-striped some-padding"
                         ng-click="PC.datasetSelection.toggleSelection(dataset); onChange();">
                         <div class="row text-bold">
-                            <div class="col-xs-8">
+                            <div class="col-xs-3">
                                 <span>name</span>
+                            </div>
+                            <div class="col-xs-5">
+                                <span>devices</span>
                             </div>
                             <div class="col-xs-4">
                                 <span>created</span>
@@ -302,14 +339,49 @@
                     <div class="table table-striped some-padding"
                         ng-click="PC.datasetSelection.toggleSelection(dataset); onChange();">
                         <div class="row">
-                            <div class="col-xs-8">
+                            <div class="col-xs-3">
                                 <span>{{dataset.datasetName}}</span>
+                            </div>
+                            <div class="col-xs-5">
+                                <span ng-repeat="deviceRelation in dataset.deviceRelations">
+                                    <span code="device = deviceCache.byId[deviceRelation.deviceId];
+                                            user = device.getUserNow();"
+                                        style="background-color: lightgrey">
+                                        {{ user.userName }}
+                                    </span>&nbsp;
+                                </span>
                             </div>
                             <div class="col-xs-4">
                                 <span>{{ dataset.createdAt && util.moment(dataset.createdAt).calendar() || '&lt;unknown>' }}</span>
                             </div>
                         </div>
                     </div>
+
+                    <form ng-if="PC.datasetSelection.isSelected(dataset) && currentUserIsStaff">
+                        <div class="row some-padding">
+                            <div class="col-xs-3">
+                                <!-- Name -->
+                                <input type="text" ng-model="dataset.datasetName"
+                                    ng-change="onDatasetNameChanged(dataset)">
+                            </div>
+
+                            <div class="col-xs-5">
+                                <span ng-repeat="deviceRelation in dataset.deviceRelations">
+                                    <a class="btn btn-default"
+                                        code="device = deviceCache.byId[deviceRelation.deviceId];
+                                            user = device.getUserNow();"
+                                        style="background-color: lightgrey"
+                                        ng-click="removeDeviceFromDataset(device, dataset)">
+                                        {{ user.userName }}
+                                        <i class="fa fa-times red"></i>
+                                    </a>&nbsp;
+                                </span>
+                            </div>
+
+                            <div class="col-xs-4">
+                            </div>
+                        </div>
+                    </form>
                 </li>
             </ul>
 
@@ -317,7 +389,7 @@
             <!-- Dataset buttons -->
             <div style="position:relative; height: 4em;">
                 <div class="container-centered-flexbox"
-                    ng-if="!PC.deviceSelection.hasSelection()">
+                    ng-if="!PC.datasetSelection.hasSelection()">
                     <div style="margin:auto; position:relative;">
                         <a class="btn btn-default" href=""
                             ng-if="currentUserIsStaff"

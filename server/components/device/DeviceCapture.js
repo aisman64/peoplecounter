@@ -61,16 +61,16 @@ module.exports = NoGapDef.component({
                 // add deviceId to packet
                 packet.deviceId = device.deviceId;
 
-                // TODO: run findOrCreate on SSID and MACAddress, and only store their ids in WifiPacket table
+                // TODO: run findOrCreate on SSID and MACAddress, and only store their ids in WifiSSIDPacket table
 
                 // insert packet into DB
-                // make sure, the fields of `packet` match the table definition in WifiPacket (sequelize.define)
+                // make sure, the fields of `packet` match the table definition in WifiSSIDPacket (sequelize.define)
                 // see: http://sequelize.readthedocs.org/en/latest/api/model/index.html#createvalues-options-promiseinstance
-                //return Shared.WifiPacket.Model.create(packet);
+                //return Shared.WifiSSIDPacket.Model.create(packet);
                 //});
 
                 // call stored procedure to take care of packet insertion
-                sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
+                return sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
                     replacements: [
                         packet.mac,
                         packet.signalStrength,
@@ -79,7 +79,7 @@ module.exports = NoGapDef.component({
                         packet.ssid,
                         packet.deviceId
                     ],
-                    type: sequelize.QueryTypes.SELECT
+                    type: sequelize.QueryTypes.RAW
                 });
                 // .spread(function() {
 
@@ -99,6 +99,7 @@ module.exports = NoGapDef.component({
         var exec;
         var Queue;
         var queue;
+        var promisify = require("promisify-node");
         return {
             __ctor: function() {
                 ThisComponent = this;
@@ -144,30 +145,25 @@ module.exports = NoGapDef.component({
         	   return result;
             },
 
-            execAsync: function(cmd) {
-                return new Promise(function(resolve, reject) {
-                    exec(cmd, function(err, stdout, stderr) {
-                        if(err) {
-                            console.log(stdout);
-                            console.log(stderr);
-                            //reject(err);
-                            resolve();
-                        }
-                        else {
-                            console.log(stdout);
-                            console.log(stderr);
-                            resolve();
-                        }
-                    });
-                });       
-            },
 
             preCapture: function() {
                 return Promise.join(
-	            ThisComponent.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp"),
-            	    ThisComponent.execAsync("ntp-wait -v"),
-                    ThisComponent.execAsync("iw phy phy0 interface add mon0 type monitor"),
-                    ThisComponent.execAsync("ifconfig mon0 up"),
+	            Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
+                        }),
+            	    Instance.DeviceMain.execAsync("ntp-wait -v")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
+                        }),
+                    Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor")
+                        .catch(function(err) {
+                        //    console.log(err.stack || err); 
+                        }),
+                    Instance.DeviceMain.execAsync("ifconfig mon0 up")
+                        .catch(function(err) {
+                         //   console.log(err.stack || err); 
+                        }),
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err)
@@ -189,16 +185,97 @@ module.exports = NoGapDef.component({
                 ThisComponent.storePacket(result);
             },
 
-            startCapturing: function() {
+            basicProcessor: function(packet) {
+                var result = {};
+                result.signalStrength = packet.payload.signalStrength;
+                result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
+                result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
+                result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
+                if(result.signalStrength >= -15)
+                    console.log(result.mac);
+                    //ThisComponent.storePacket(result);
+            },
+
+
+            flushQueue: function() {
+                console.log("Flush Queue");
+                var dummies = [];
+                exec("ls tmp/new/*.galileo | wc -l", function(error, stdout, stderr) {
+                    var length = parseInt(stdout);
+                    for(var i=0; i<length; i++)
+                        {
+                        dummies.push(0);
+                        }
+                    return Promise.map(dummies, function(dummy) {
+                        return new Promise(function(resolve, reject) {
+                            queue.tpop(function(err, packet, commit, rollback) {
+                                if (err)
+                                    {
+                                    reject(err);
+                                    }
+                                ThisComponent.host.storePacket(packet)
+                                .then(function() {
+                                    commit(function(err) {
+                                        if (err) {
+                                            reject(err);
+                                        }
+                                        else {
+                                            console.log("Stored Packet Uploaded");
+                                            resolve();
+                                        }
+                                    });
+                                })
+                                .catch(function(err) {
+                                    rollback(function(err2) {
+                                        if (err2) {
+                                            console.error('[ERROR] Unable to rollback: ' + err2.stack);
+                                        }
+                                        reject(err);
+                                    });
+                                });
+                            });
+                        });
+                    }, {
+                        concurrency: 5              // how many packets in-flight, at the same time
+                    });
+                });
+
+                /*queue.length(function(err, length) {
+                    for(var i=0; i<5; i++) {
+                        queue.tpop(function(err, packet, commit, rollback) {
+                            ThisComponent.host.storePacket(packet)
+                                .then(function() { commit(function(err) { if(err) throw err; console.log("Stored Packet uploaded");})})
+                                .catch(function() { rollback(function(err) { if (err) throw err; console.log("Stored Packet Problem");})});
+                        }); 
+                    }
+                });*/
+            },
+
+            startCapturing: function(device) {
                 if (!pcap) return;
+                if (this.isCapturing) return;   // don't do anything
+
+                this.isCapturing = true;
+                console.log('[STATUS] Starting capturing...');
 
                 ThisComponent.preCapture()
                 .then(function() {
-                    var pcap_session = pcap.createSession("mon0", "wlan type mgt subtype probe-req");
-                    pcap_session.on('packet', function(raw_packet) { 
-                        var packet = pcap.decode.packet(raw_packet);
-                        ThisComponent.processPacket(packet);
-                    });
+                    var jobType = Instance.WifiSnifferDevice.DeviceJobType;
+                    var pcap_session;
+                    if(device.currentJobType == jobType.ActivitySniffer) {
+                        pcap_session = pcap.createSession("mon0", "wlan type mgt || wlan type data");
+                        pcap_session.on('packet', function(raw_packet) {
+                            var packet = pcap.decode.packet(raw_packet);
+                            ThisComponent.basicProcessor(packet); 
+                        });   
+                    }
+                    else {
+                        pcap_session = pcap.createSession("mon0", "wlan type mgt subtype probe-req");
+                        pcap_session.on('packet', function(raw_packet) { 
+                            var packet = pcap.decode.packet(raw_packet);
+                            ThisComponent.processPacket(packet);
+                        });
+                    }
                 });
             },
 

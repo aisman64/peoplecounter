@@ -57,8 +57,7 @@ module.exports = NoGapDef.component({
                     'lib/angular/ng-map.debug.js',
                     //'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js',
 
-                    
-
+                   
                     // graph drawing
                     'lib/springy/springy',
                     'lib/springy/springyui'
@@ -681,7 +680,7 @@ module.exports = NoGapDef.component({
                         Instance.User.currentUser && Instance.User.currentUser.gid;
 
                     // set config
-                    Instance.UIMgr.scope.config = Instance.AppConfig.getAll();
+                    Instance.UIMgr.scope.AppConfigData = Instance.AppConfig.getAll();
                 },
 
                 /**

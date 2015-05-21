@@ -52,7 +52,7 @@ HAVING c > 3;
 
 # Hone in on echos (same packet received many times)
 SELECT macId, seqnum, deviceId, COUNT(*) c
-FROM WifiPacket
+FROM WifiSSIDPacket
 GROUP BY macId, seqnum, deviceId
 HAVING c > 1
 ORDER BY c DESC

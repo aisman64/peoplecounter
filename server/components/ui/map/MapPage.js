@@ -17,6 +17,14 @@ module.exports = NoGapDef.component({
                 }
             },
             AutoIncludes: {
+                js: [
+                    'http://maps.googleapis.com/maps/api/js?key=&sensor=false&extension=.js',
+                    'lib/angular/angular-google-maps.min',
+                    'lib/angular/ng-map.min',
+                    //'lib/angular/ng-map.js',
+                    'lib/angular/ng-map.debug.js'
+                    //'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js',
+                ]
             }
         },
                 
@@ -55,35 +63,137 @@ module.exports = NoGapDef.component({
 
                 app.lazyController('mapCtrl', ['$scope', 'uiGmapGoogleMapApi', 
                     function($scope, GoogleMapApi) {
+                        // $scope.items = [{
+                        //     id: 1,
+                        //     img: 'pub/img/HuaShan.jpg',
+                        // }
+                        // ];
                         $scope.positions = [];
-                        $scope.addMarker = function(event) {
+                       
+                        $scope.dragendPos = function(event) {
+                            //var markerId = infoWindow.visibleOnMarker;
+                            console.log('王長宏');
                             console.log(event);
-                            $scope.x = event.latLng.A;
-                            $scope.y = event.latLng.F;
-                            $scope.setPosition(1, $scope.x, $scope.y);
-                            alert($scope.x);
-                            var ll = event.latLng;
-                            $scope.positions.push({lat:$scope.x, lng: $scope.y});
+                            console.log(getMarker());
+                                $scope.updateDevice({
+                                    datasetSnifferRelationId: $scope.datasetSnifferRelationIdLast,
+                                    deviceId: $scope.datasetIdLast,
+                                    lat: event.latLng.A,
+                                    lng: event.latLng.F
+                            });
+                           
+                        }
+                        // $scope.addReport = function() {
+                        //   //  console.log('王長宏');
+                        //   //$scope.showForm = !$scope.showForm; ---> if declaration is here, scope is updated and the form is shown
+                        //     var newMarkerListener = google.maps.event.addListener($scope.map, 'click', function(event) {
+                        //             placeMarker(event.latLng); // create the actual marker
+
+                        //             //update the new report object
+                        //             $scope.newReport.lat = event.latLng.lat();
+                        //             console.log($scope.newReport.lat);
+                        //             $scope.newReport.lng = event.latLng.lng();
+                        //             $scope.$apply(function () { 
+                        //                 $scope.showForm = !$scope.showForm; 
+                        //             });
+                        //             console.log($scope.showForm) // logs true
+                        //             google.maps.event.addListener($scope.tempMarker,'dragend',function(event) {
+                        //                 $scope.newReport.lat = event.latLng.lat();
+                        //                 $scope.newReport.lng = event.latLng.lng();
+                        //             });
+
+                        //             google.maps.event.removeListener(newMarkerListener);
+                        //     });
+                        // }
+                       
+                        $scope.addMarker = function(event) {
+                            
+                            //for (i = 0; i < 1; i++){    
+                                ThisComponent.busy = true;
+                                // var queryData = {
+                                //         where: {
+                                //             datasetSnifferRelationId: 1
+                                //         }
+                                //     };
+                                //var OldInfo = Instance.WifiDatasetSnifferRelation.datasetSnifferRelation.getObjects(queryData);
+
+                                // Instance.WifiDatasetSnifferRelation.datasetSnifferRelation.getObjects()
+                                //     .then(function(data) {
+                                        
+                                //         // console.log("then");
+                                //         // console.log(data);
+                                //         //console.log(data);
+                                //         for (var i = 0; i < data.length; i++) {
+                                //             $scope.x = data[i].lat;
+                                //             $scope.y = data[i].lng;
+                                //             $scope.positions.push({
+                                //                 lat:$scope.x, lng: $scope.y
+                                //             });                                                
+                                //         };
+                                        
+                                       
+                                //         //$scope.map.markers[0].position.A = data[0].lat;
+                                //         //$scope.map.markers[0].position.F = data[0].lng;
+
+                                //     })
+                                //     .catch(function(error){
+                                //         console.log("catch");
+                                //         console.log(error);
+                                //     });
+
+                                //console.log('王長宏');
+                                //console.log($scope.map.markers);
+                                //$scope.x = event.latLng.A;
+                                //$scope.y = event.latLng.F;
+                               // $scope.setPosition(1, $scope.x, $scope.y);
+                                //alert($scope.x);
+                                //var ll = event.latLng;
+                                //$scope.positions.push({lat:$scope.x, lng: $scope.y});
+
+                                Instance.WifiSnifferDevice.wifiSnifferDevices.getObjects()
+                                    .then(function(data) {
+                                    // console.log(data);
+                                    $scope.devieceNum = data.length;
+                                    $scope.devieceData = data;
+                                        //console.log('王長宏');   
+                                        //console.log(data[0].deviceId);                                         
+
+                                    })
+                                    .catch(function(error){
+                                        console.log("catch");
+                                        console.log(error);
+                                    });
+                                   
+                                for(var i = 0; i < $scope.devieceNum; i++){                                        
+                                    $scope.positions.push({deviceID: $scope.devieceData[i].deviceId, lat: 25.045574 , lng: 121.528325});
+                                }    
+
+                            //}    
                         };
                         
-                        $scope.device1 =function(){
-                            console.log("123123");
-                        };
+                       
 
-                        $scope.setPosition = function(deviceId, lat, lon) {
+
+                        $scope.setPosition = function(datasetSnifferRelationId, deviceId, lat, lng) {
                             $scope.updateDevice({
+                                datasetSnifferRelationId: datasetSnifferRelationId,
                                 deviceId: deviceId,
                                 lat: lat,
-                                lon: lon
+                                lng: lng
                             });
                         };
+                    
+                        
+                   
 
                         $scope.updateDevice = function(deviceUpdate) {
                             ThisComponent.busy = true;
 
-                            var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
+                            //var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
+                            var datasetDeviceRelations = Instance.WifiDatasetSnifferRelation.datasetSnifferRelation;
+                            //var datasetDeviceRelations = Instance.WifiDatasetSnifferRelation.datasetSnifferRelation;
 
-                            return devices.updateObject(deviceUpdate)
+                            return datasetDeviceRelations.updateObject(deviceUpdate)
                             .finally(function() {
                                 ThisComponent.busy = false;
                             })
@@ -94,30 +204,7 @@ module.exports = NoGapDef.component({
                             .catch($scope.handleError.bind($scope));
                         };
 
-                        // $scope.queryByDeviceId = function(deviceId) {
-                        //     console.log(deviceId);
-                        //      console.log('王長宏');
-                        //     if (typeof deviceId !== 'undefined') {
-                        //         var queryData = {
-                        //             where: {
-                        //                 deviceId: deviceId
-                        //             }
-                        //         };
-                        //         console.log('hello');
-                        //         Instance.WifiPacket.wifiPackets.getObjects(queryData)
-                        //         .then(function(data) {
-                        //             console.log("then");
-                        //             console.log(data);
-
-                        //         })
-                        //         .catch(function(error){
-                        //             console.log("catch");
-                        //             console.log(error);
-
-                        //         });
-                        //         // console.log(Instance.WifiPacket);
-                        //     }
-                        // };
+                        
 
                     
 
@@ -163,7 +250,7 @@ module.exports = NoGapDef.component({
 
                 // register page
                 Instance.UIMgr.registerPage(this, 'Map', this.assets.template, {
-                    iconClasses: 'fa fa-cogs'
+                    iconClasses: 'fa fa-map-marker'
                 });
             },
             
