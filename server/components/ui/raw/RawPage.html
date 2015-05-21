@@ -5,6 +5,17 @@
 				raw packets
 				&nbsp;
 				&nbsp;
+
+				<a class="btn btn-warning"
+					style="width: 10em;"
+					ng-click="PC.rawSettings.scanner = !PC.rawSettings.scanner">
+					<span ng-if="PC.rawSettings.scanner">
+						Scanner
+					</span>
+					<span ng-if="!PC.rawSettings.scanner">
+						SSIDs
+					</span>
+				</a>
 				
 				<a class="btn"
 					style="width: 10em;"

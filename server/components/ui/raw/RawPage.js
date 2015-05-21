@@ -47,24 +47,13 @@ module.exports = NoGapDef.component({
              */
             Public: {
                 getMostRecentPackets: function(settings, lastId) {
-                    packetIncludes = [{
-                        model: Shared.SSID.Model,
-                        as: 'SSID',
-                        attributes: ['ssidName']
-                    },{
-                        model: Shared.MACAddress.Model,
-                        as: 'MACAddress',
-                        attributes: ['macAddress', 'macAnnotation'],
-                        include: [{
-                            model: Shared.OUI.Model,
-                            as: 'OUI'
-                        }]
-                    }];
+                    if (!settings) {
+                        return Promise.reject(makeError('error.invalid.request'));
+                    }
 
-                    var where = settings && settings.where || {};
+                    var where = settings.where || {};
                     var queryData = {
                         where: where,
-                        include: packetIncludes,
                         order: 'time DESC'
                     };
 
@@ -76,7 +65,39 @@ module.exports = NoGapDef.component({
                         queryData.limit = packetStreamLimit;
                     }
 
-                    return this.Instance.WifiSSIDPacket.wifiSSIDPackets.findObjects(queryData);
+                    var cache;
+                    if (settings.scanner) {
+                        cache = this.Instance.WifiActivityPacket.wifiActivityPackets;
+
+                        queryData.include = packetIncludes = [{
+                            model: Shared.MACAddress.Model,
+                            as: 'MACAddress',
+                            attributes: ['macAddress', 'macAnnotation'],
+                            include: [{
+                                model: Shared.OUI.Model,
+                                as: 'OUI'
+                            }]
+                        }];
+                    }
+                    else {
+                        cache = this.Instance.WifiSSIDPacket.wifiSSIDPackets;
+
+                        queryData.include = packetIncludes = [{
+                            model: Shared.SSID.Model,
+                            as: 'SSID',
+                            attributes: ['ssidName']
+                        },{
+                            model: Shared.MACAddress.Model,
+                            as: 'MACAddress',
+                            attributes: ['macAddress', 'macAnnotation'],
+                            include: [{
+                                model: Shared.OUI.Model,
+                                as: 'OUI'
+                            }]
+                        }];
+                    }
+
+                    return cache.findObjects(queryData);
                 },
 
                 // updateMACAnnotation: function(macId, macAnnotation) {

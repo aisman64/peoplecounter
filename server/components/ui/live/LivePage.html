@@ -1,9 +1,49 @@
 <div class="fill container-page" ng-controller="liveCtrl">
 	<div class="vertical-space"></div>
 
-	<seven-seg 
-		settings="{ digits: 5, value: _.result(_.find(PC.deviceCounts, {'deviceId': 0}), 'count') || 0 }">
-	</seven-seg>
+
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<div class="panel-title" style="vertical-align: middle"><span style="vertical-align: middle">
+				people count
+				&nbsp;
+				&nbsp;
+
+				<span ng-repeat="timeFrame in PC.PeopleCounterTimeFrames">
+					<a class="btn btn-info"
+						ng-class="{ active: timeFrame.asMilliseconds() == PC.currentTimeFrame.asMilliseconds()}"
+						ng-click="PC.currentTimeFrame = timeFrame">
+						{{timeFrame.humanize()}}
+					</a>
+					&nbsp;
+				</span>
+
+                <span class="pull-right" style="vertical-align: middle">
+					<a class="btn"
+						ng-style="{ visibility: PC.annotatingMacs && 'hidden' || '' }"
+						ng-class="{ 'btn-danger': !PC.refreshPaused, 'btn-success': PC.refreshPaused }"
+						ng-click="PC.refreshPaused = !PC.refreshPaused">
+						<span ng-if="PC.refreshPaused">
+							Start!
+						</span>
+						<span ng-if="!PC.refreshPaused">
+							Stop!
+						</span>
+					</a>
+
+                    <i class="fa fa-spinner fa-spin"
+                    	ng-style="{visibility: PC.busy && 'visible' || 'hidden'}"></i>
+                </span>
+			</span></div>
+		</div>
+		<div class="panel-body">
+			<div>
+				<seven-seg 
+					settings="{ digits: 5, value: _.result(_.find(PC.deviceCounts, {'deviceId': 0}), 'count') || 0 }">
+				</seven-seg>
+			</div>
+		</div>
+	</div>
 
 	<div class="vertical-space"></div>
 
@@ -16,18 +56,6 @@
 
                 <span class="pull-right" style="vertical-align: middle">
                     <i class="fa fa-spinner fa-spin" ng-show="PC.busy"></i>
-					
-					<a class="btn"
-						ng-style="{ visibility: PC.annotatingMacs && 'hidden' || '' }"
-						ng-class="{ 'btn-danger': !PC.refreshPaused, 'btn-success': PC.refreshPaused }"
-						ng-click="PC.refreshPaused = !PC.refreshPaused">
-						<span ng-if="PC.refreshPaused">
-							Start!
-						</span>
-						<span ng-if="!PC.refreshPaused">
-							Stop!
-						</span>
-					</a>
                 </span>
 			</span></div>
 		</div>
