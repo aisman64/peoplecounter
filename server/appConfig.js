@@ -10,6 +10,7 @@ module.exports = {
         'CookiesFile': './data/cookies.json',
         'HostIdentityTokenFile': './data/hostIdentityToken',
         'DeviceClientCacheFile': './data/deviceClientCache.min.js',
+        'DeviceEntryCacheFile': './data/deviceEntryCache.json',
         'ReconnectDelay': '5000'           // a few seconds
     },
 
@@ -22,9 +23,21 @@ module.exports = {
         'filePath': __dirname + '/data/DeviceImage.img'
     },
 
+    'deviceHostNamePrefix': 'dv_one_dev_',
+
+
+    // ########################################################################################################################
+    // Frontend options
+
+    /**
+     * How often to refetch data from server by default
+     */
+    'defaultPageRefreshDelay': 10000,
+
+
+
     // ########################################################################################################################
     // User feature locks
-
 
     /**
      * Whether new users may still register
@@ -89,7 +102,10 @@ module.exports = {
         'blackList': {
             'functions': {
                 'DeviceCommunications.checkIn': 1,
-                'LivePage.getMostRecentPackets': 1
+                'RawPage.getMostRecentPackets': 1,
+                'DeviceStatus.getDeviceLastActiveTimes': 1,
+                'CommonDBQueries.executeQuery': 1,
+                'DeviceLog.logDeviceErrors': 1
             },
             'components': {
 
@@ -104,7 +120,11 @@ module.exports = {
         'enabled': 1,
         'blackList': {
             'functions': {
-                'DeviceCommunications.host.checkIn': 1
+                'DeviceCommunications.host.checkIn': 1,
+                'RawPage.host.getMostRecentPackets': 1,
+                'DeviceStatus.host.getDeviceLastActiveTimes': 1,
+                'CommonDBQueries.host.executeQuery': 1,
+                'DeviceLog.host.logDeviceErrors': 1
             },
             'components': {
                 
@@ -133,7 +153,7 @@ module.exports = {
     'db' : {
         'host'     : 'localhost',
         'user'     : 'root',
-        'password' : '123',
+        'password' : 'r00t',
         'port'     : '3306',
         'database' : 'peoplecounter',
         'reconnectDelay':   '5'
@@ -195,10 +215,12 @@ module.exports = {
             // all kinds of model components
             'models/wifi/MACAddress',
             'models/wifi/SSID',
-            'models/wifi/WifiDataset',
-            'models/wifi/WifiPacket',
+            'models/wifi/WifiSSIDPacket',
+            'models/wifi/WifiActivityPacket',
             'models/wifi/MAC_SSID_Relation',
             'models/devices/WifiSnifferDevice',
+            'models/devices/WifiDataset',
+            'models/devices/WifiDatasetSnifferRelation',
             'models/devices/DeviceStatus',
             'models/CommonDBQueries',
 
@@ -224,14 +246,17 @@ module.exports = {
 
             // guest + unregistered pages:
             'ui/login/LoginPage',
-            'ui/mac/MACPage',
-            'ui/ssid/SSIDPage',
+            'ui/vis/VisPage',
 
             // user pages:
             'ui/home/HomePage',
             'ui/live/LivePage',
+            'ui/raw/RawPage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
+            'ui/map/MapPage',
+            'ui/result/ResultPage',
+            // superuser pages:
 
             'ui/map/MapPage',
             'ui/result/ResultPage',

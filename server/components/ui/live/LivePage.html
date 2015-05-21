@@ -1,30 +1,47 @@
 <div class="fill container-page" ng-controller="liveCtrl">
-	<div class="panel panel-info">
+	<div class="vertical-space"></div>
+
+	<seven-seg 
+		settings="{ digits: 5, value: _.result(_.find(PC.deviceCounts, {'deviceId': 0}), 'count') || 0 }">
+	</seven-seg>
+
+	<div class="vertical-space"></div>
+
+	<div class="panel panel-primary">
 		<div class="panel-heading">
-			<div class="panel-title"><span>
-				live packets
-				<i class="fa fa-spinner fa-spin"
-					ng-if="PC.busy"></i>
+			<div class="panel-title" style="vertical-align: middle"><span style="vertical-align: middle">
+				people count per device
+				&nbsp;
+				&nbsp;
+
+                <span class="pull-right" style="vertical-align: middle">
+                    <i class="fa fa-spinner fa-spin" ng-show="PC.busy"></i>
+					
+					<a class="btn"
+						ng-style="{ visibility: PC.annotatingMacs && 'hidden' || '' }"
+						ng-class="{ 'btn-danger': !PC.refreshPaused, 'btn-success': PC.refreshPaused }"
+						ng-click="PC.refreshPaused = !PC.refreshPaused">
+						<span ng-if="PC.refreshPaused">
+							Start!
+						</span>
+						<span ng-if="!PC.refreshPaused">
+							Stop!
+						</span>
+					</a>
+                </span>
 			</span></div>
 		</div>
 		<div class="panel-body">
-			<table class="table">
-				<thead>
-					<th class="col-xs-3">MAC</th>
-					<th class="col-xs-3">SSID</th>
-					<th class="col-xs-3">sigstr</th>
-					<th class="col-xs-3">when</th>
-				</thead>
-				<tbody>
-					<tr ng-repeat="packet in PC.packets | orderBy: '-updatedAt'"
-						code="packetDate = util.moment(util.Math.round(packet.time * 1000))">
-						<td class="col-xs-3">{{ packet.MACAddress.macAddress }}</td>
-						<td class="col-xs-3">{{ packet.SSID.ssidName }}</td>
-						<td class="col-xs-3">{{packet.signalStrength}}</td>
-						<td class="col-xs-3">{{packetDate.format('LLL')}}</td>
-					</tr>
-				</tbody>
-			</table>
+			<div ng-repeat="devicePeopleCount in PC.deviceCounts"
+				ng-if="devicePeopleCount.deviceId">
+				<span>
+					{{ deviceCache.byId[devicePeopleCount.deviceId].getUserNow().userName }}
+				</span>
+				<seven-seg 
+					settings="{ digits: 5, value: devicePeopleCount.count || 0}"
+					style="display: inline-block; height: 20px; width: 70px;">
+				</seven-seg>
+			</div>
 		</div>
 	</div>
 </div>

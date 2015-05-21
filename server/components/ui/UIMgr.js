@@ -20,6 +20,7 @@ module.exports = NoGapDef.component({
                     js: [
                         // jQuery
                         'lib/jquery/jquery-2.1.0.min.js',
+                        'lib/jquery-ui/jquery-ui.min.js',
 
                         // Angular JS
                         // 'lib/angular/angular.min.js',
@@ -869,6 +870,12 @@ module.exports = NoGapDef.component({
             },
 
             _onPageDeactivate: function(page, newPage) {
+                // disable running timer(s)
+                if (page.component._refreshTimer) {
+                    clearInterval(page.component._refreshTimer);
+                    page.component._refreshTimer = null;
+                }
+
                 // fire event
                 this._callOnPageDeactivateOnComponent(page.component, newPage);
 
@@ -939,18 +946,36 @@ module.exports = NoGapDef.component({
                     parentPage.navButton.active = true;
                     activeButton = parentPage.navButton;
                 }
+
+                var component = page.component;
                 
                 // re-compute arguments
-                pageArgs = pageArgs || page.component.getPageArgs();
+                pageArgs = pageArgs || component.getPageArgs();
 
                 // this creates the page scope
                 invalidateView();
-                
-                return this._callOnPageActivateOnComponent(page.component, pageArgs)
+
+                // start timer to call `refreshData`
+                if (component.refreshData) {
+                    var minRefreshDelay = 300;
+                    var delay = component.refreshDelay || Instance.AppConfig.getValue('defaultPageRefreshDelay');
+                    if (isNaN(delay) || delay < minRefreshDelay) {
+                        // sanity check
+                        console.error('refreshDelay too fast for page: ' + page.name);
+                        delay = minRefreshDelay;
+                    }
+                    component._refreshTimer = setInterval(function() {
+                        if (component.refreshPaused) return;
+                        component.refreshData();
+                    }, delay);
+                }
+
+                // call `onPageActivate`
+                return this._callOnPageActivateOnComponent(component, pageArgs)
                 .bind(this)
                 .then(function() {
                     // add history entry
-                    Instance.UIMgr.updateAddressBar(page.component, true);
+                    Instance.UIMgr.updateAddressBar(component, true);
                 });
             },
                     

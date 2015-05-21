@@ -1,5 +1,5 @@
 /**
- * Each device is deployed in a physical location and captures WifiPackets in bundles of WifiDataSets.
+ * Each device is deployed in a physical location and captures WifiSSIDPackets in bundles of WifiDataSets.
  */
 "use strict";
 
@@ -20,13 +20,7 @@ module.exports = NoGapDef.component({
                  * Look for and store all unencrypted IEEE 802.11 packets in order to determine
                  * what surrounding devices are up to and what their relative signal strength is.
                  */
-                'ActivitySniffer': 2,
-
-                /**
-                 * Similar to `ActivitySniffer`, but is administered differently and dedicated to
-                 * real-time GUI interaction and "device selection".
-                 */
-                'ProximityScanner': 3
+                'ActivitySniffer': 2
             }),
 
             Caches: {
@@ -48,7 +42,8 @@ module.exports = NoGapDef.component({
                     InstanceProto: {
                         /**
                          * Get user from cache (or null, if not cached).
-                         * On Host, need to reach in context (since this is a globally shared object).
+                         * On Host, need to hand in context as argument
+                         *     (since the cached object is a globally shared object which cannot hold on to instance data).
                          */
                         getUserNow: function(Instance) {
                             return (Instance || Shared).User.users.getObjectNowById(this.uid);
@@ -86,7 +81,9 @@ module.exports = NoGapDef.component({
                             }
                             else if (queryInput.isAssigned !== undefined) {
                                 // get first unassigned device
-                                return this.indices.isAssigned.get(queryInput.isAssigned)[0] || null;
+                                var devices = this.indices.isAssigned.get(queryInput.isAssigned);
+                                if (!devices || !devices.length) return null;
+                                return _.max(devices, 'resetTimeout');
                             }
                         },
 
@@ -100,21 +97,26 @@ module.exports = NoGapDef.component({
                         },
 
                         compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
+                            var hasDeviceId,
+                                hasUid;
+
                             if (!queryInput || 
                                 (queryInput.isAssigned === undefined && 
-                                    !queryInput.deviceId &&
-                                    !queryInput.uid)) {
+                                    !(hasDeviceId = queryInput.hasOwnProperty('deviceId')) &&
+                                    !(hasUid = queryInput.hasOwnProperty('uid')))) {
                                 return Promise.reject(makeError('error.invalid.request', queryInput));
                             }
 
                             var queryData = { where: {} };
                             if (queryInput.isAssigned !== undefined) {
                                 queryData.where.isAssigned = queryInput.isAssigned;
+                                queryData.order = 'resetTimeout DESC';
                             }
-                            if (queryInput.deviceId) {
+                            
+                            if (hasDeviceId) {
                                 queryData.where.deviceId = queryInput.deviceId;
                             }
-                            else if (queryInput.uid) {
+                            else if (hasUid) {
                                 queryData.where.uid = queryInput.uid;
                             }
                             return queryData;
@@ -125,9 +127,41 @@ module.exports = NoGapDef.component({
                             if (queryInput) {
                                 if (queryInput.isAssigned !== undefined) {
                                     queryData.where.isAssigned = queryInput.isAssigned;
+                                    queryData.order = 'resetTimeout DESC';
                                 }
                             }
                             return queryData;
+                        },
+
+                        compileUpdateObject: function(queryInput, ignoreAccessCheck) {
+                            if (!this.Instance.User.isStaff() && !ignoreAccessCheck) {
+                                return Promise.reject(makeError('error.invalid.permissions'));
+                            }
+                            if (!queryInput || isNaNOrNull(queryInput.deviceId)) {
+                                // invalid parameters
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            var values;
+                            var selector;
+                            if (_.isObject(queryInput.values)) {
+                                // allow specifying the exact `where`-abouts
+                                values = queryInput.values;
+                                selector = { where: queryInput.where || {} };
+                            }
+                            else {
+                                // default handling
+                                values = queryInput;
+                                selector = { where: {} };
+                            }
+
+                            // ALWAYS make sure, the `deviceId` is set!
+                            selector.where.deviceId = queryInput.deviceId;
+
+                            return {
+                                values: values,
+                                selector: selector
+                            };
                         }
                     }
                 }
@@ -202,13 +236,22 @@ module.exports = NoGapDef.component({
                             var tableName = this.getTableName();
                             return Promise.join(
                                 // create indices
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['uid']),
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['uid'], { indexOptions: 'UNIQUE'}),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['isAssigned']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['resetTimeout'])
                             );
                         }
                     }
                 });
+            },
+
+            getHostName: function(device) {
+                if (device.hostName) return device.hostName;
+
+                // generate hostName
+                var hostNamePrefix = Shared.AppConfig.getValue('deviceHostNamePrefix');
+                console.assert(hostNamePrefix, 'Missing configuration option (in appConfig.js): `deviceHostNamePrefix`');
+                return hostNamePrefix + device.uid;
             },
 
             Private: {
@@ -252,6 +295,8 @@ module.exports = NoGapDef.component({
                             identityToken: this.Instance.DeviceConfiguration.generateIdentityToken(),
                             rootPassword: this.Instance.DeviceConfiguration.generateRootPassword()
                         };
+                        newDevice.hostName = this.Shared.getHostName(newDevice);
+                        
                         this._resetDevice(newDevice);
                         return this.wifiSnifferDevices.createObject(newDevice);
                     });

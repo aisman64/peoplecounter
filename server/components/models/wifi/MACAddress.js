@@ -87,10 +87,24 @@ module.exports = NoGapDef.component({
                      * TODO: OUI?
                      */
                     macId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
-                    macAddress: Sequelize.STRING(16)
+                    macAddress: Sequelize.STRING(16),
+                    macAnnotation: Sequelize.TEXT,
                 }, {
                     freezeTableName: true,
                     tableName: 'MACAddress',
+                    classMethods: {
+                        onBeforeSync: function(models) {
+                        },
+
+                        onAfterSync: function(models) {
+                            var tableName = this.getTableName();
+                            return Promise.join(
+                                // create indices
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['macAddress'], { indexOptions: 'UNIQUE'})
+                                //SequelizeUtil.createIndexIfNotExists(tableName, ['macAnnotation'], { indexOptions: 'UNIQUE'})
+                            );
+                        }
+                    }
                 });
             }
         };

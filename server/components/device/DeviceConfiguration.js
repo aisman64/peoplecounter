@@ -34,6 +34,13 @@ module.exports = NoGapDef.component({
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
                 TokenStore = require(libRoot + 'TokenStore');
             },
+            Assets: {
+                Files: {
+                    string: {
+                        hostchanger: 'bin/hostname.sh'
+                    }
+                }
+            },
 
             /**
              * 
@@ -54,7 +61,6 @@ module.exports = NoGapDef.component({
                     var cfg = _.clone(DefaultConfig);
 
                     cfg.HostUrl = externalUrl;
-
                     var promise;
                     if (device) {
                         promise = this.Instance.User.users.getObject({uid: device.uid})
@@ -62,6 +68,9 @@ module.exports = NoGapDef.component({
                         .then(function(user) {
                             cfg.deviceId = device.deviceId;
                             cfg.sharedSecret = user.sharedSecret;
+
+                            // assign default hostName, if it has none defined yet
+                            cfg.hostName = Shared.WifiSnifferDevice.getHostName(device);
                         });
                     }
                     else {
@@ -80,7 +89,7 @@ module.exports = NoGapDef.component({
                 },
 
                 generateRootPassword: function(device) {
-                    return TokenStore.generateTokenString(32);
+                    return TokenStore.generateTokenString(8);
                 },
 
                 /**
@@ -91,7 +100,7 @@ module.exports = NoGapDef.component({
                 tryResetDevice: function(device, newDeviceStatus) {
                     var DeviceStatusId = Shared.DeviceStatus.DeviceStatusId;
 
-                    // this can fail in more than once place
+                    // this can fail in more than once place -> Log it!
                     var failed = false;
                     var onFail = function(err) {
                         if (failed) return;
@@ -111,13 +120,22 @@ module.exports = NoGapDef.component({
                     return Promise.resolve()
                     .bind(this)
                     .then(function() {
-                    	var resetTimeout = new Date(device.resetTimeout);
+                        if (!device.resetTimeout) {
+                            return Promise.reject(makeError('device has no resetTimeout: #' + device.deviceId));
+                        }
+                    	var resetTimeout = _.isString(device.resetTimeout) && new Date(device.resetTimeout) || device.resetTimeout;
                         var now = new Date();
+
+
+
+
 
                         if (resetTimeout.getTime() < now.getTime()) {
                             // fail: reset time is already up!
+                            console.log("[ERROR] Timeup " + resetTimeout + " vs. " + now);
+                            console.log("[ERROR] " + device);
                             newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
-                            return Promise.reject('device reset expired');
+                            return Promise.reject(makeError('device reset expired for #' + device.deviceId));
                         }
 
                         // device is scheduled for reset
@@ -136,7 +154,11 @@ module.exports = NoGapDef.component({
                     .then(function(monitor) {
                         monitor.wait.catch(onFail);
                     })
-                    .catch(onFail);
+                    .catch(function(err) {
+                        onFail(err);
+
+                        return Promise.reject(err);
+                    });
                 },
 
                 /**
@@ -163,10 +185,11 @@ module.exports = NoGapDef.component({
                         // re-generate identityToken
                         var oldIdentityToken = device.identityToken;
                         var newIdentityToken = this.generateIdentityToken(device);
-                        var newRootPassword;
-                        if (!device.rootPassword) {
-                            newRootPassword = this.generateRootPassword(device);
-                        }
+                        var oldRootPassword,
+                            newRootPassword;
+
+                        oldRootPassword = 'root';
+                        newRootPassword = this.generateRootPassword(device);
 
                         // udpate client side of things
                         //      and wait for ACK
@@ -180,10 +203,14 @@ module.exports = NoGapDef.component({
                             monitor: new SharedTools.Monitor(timeout)
                         };
 
+                        var deviceWifiConnectionFile = Shared.AppConfig.getValue('deviceWifiConnectionFile');
+
                         // we cannot generate a reliable promise chain here because we need all promises to be 
                         //      fulfilled before the client will actually call the next method.
                         this.Tools.log('Refreshing device identity for device #' + device.deviceId + '...');
-                        this.client.updateConfig(newIdentityToken, oldIdentityToken, cfg);
+                        this.client.updateConfig(oldIdentityToken, newIdentityToken, 
+                            oldRootPassword, newRootPassword,
+                            deviceWifiConnectionFile, cfg);
 
                         return this._configRefreshData.monitor;
                     });
@@ -304,7 +331,6 @@ module.exports = NoGapDef.component({
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
         var request;
-
         return {
             __ctor: function() {
                 ThisComponent = this;
@@ -315,6 +341,10 @@ module.exports = NoGapDef.component({
              */
             initClient: function() {
             },
+
+
+            // ##############################################################################
+            // device configuration + credentials
 
             /**
              * This function is here (and not in the DeviceClient starter script) because
@@ -343,16 +373,44 @@ module.exports = NoGapDef.component({
                 fs.writeFileSync(fpath, newIdentityToken);
             },
 
-            /**
-             * Client commands can be directly called by the host
-             */
+
+            // ##############################################################################
+            // system configuration
+
+            setWifiHostName: function(cfg) {
+                var hostName = cfg.hostName;
+                var code = 'new='+hostName + '\n' + this.assets.hostchanger;
+                console.log(code);
+                 return Instance.DeviceMain.execAsync(code);
+                console.log("Hostname changed to "+hostName);
+            },
+
+            writeDeviceWifiConnectionFile: function(cfg, deviceWifiConnectionFileContents) {
+                // TODO: Chris
+                var c = deviceWifiConnectionFileContents;
+                return Instance.DeviceMain.execAsync("echo '" + c +"' > /etc/wpa_supplicant/wpa_supplicant.conf");
+                console.log("WPA Supplicant Updated");
+            },
+
+            updateRootPassword: function(cfg, oldRootPassword, newRootPassword) {
+                // TODO: Chris
+                return Instance.DeviceMain.execAsync('echo root:'+newRootPassword+' | chpasswd');
+                console.log("Password changed to "+newRootPassword);
+            },
+
+
+            // ##############################################################################
+            // handle server requests
+
             Public: {
                 /**
                  * Called by server to reset identityToken and (optionally) configuration.
                  * This is also called when a new device connects to the server for the first time, and is assigned a new configuration.
                  */
-                updateConfig: function(newIdentityToken, oldIdentityToken, newConfig) {
-                    // TODO: Update root password
+                updateConfig: function(oldIdentityToken, newIdentityToken, 
+                        oldRootPassword, newRootPassword,
+                        deviceWifiConnectionFile, newConfig) {
+
                     console.warn('Resetting device configuration...');
 
                     request = require('request');   // HTTP client module
@@ -365,6 +423,7 @@ module.exports = NoGapDef.component({
                             this.writeDeviceConfig(newConfig);
 
                             // then, read config (to make sure it worked!)
+                            //console.error(Object.keys(GLOBAL.DEVICE));
                             GLOBAL.DEVICE.reinitializeConfigFromFile();
                         }
                     })
@@ -383,7 +442,30 @@ module.exports = NoGapDef.component({
                         return this.writeIdentityToken(newIdentityToken);
                     })
                     .then(function() {
-                        // tell Host, we are done
+                        return Promise.resolve()
+                        .bind(this)
+                        .then(function() {
+                            // set hostName
+                            return this.setWifiHostName(newConfig);
+                        })
+                        .then(function() {
+                            // write wifi file for wifi networks
+                            if (deviceWifiConnectionFile) {
+                                return this.writeDeviceWifiConnectionFile(newConfig, deviceWifiConnectionFile);
+                            }
+                        })
+                        .then(function() {
+                            //if (newRootPassword) {
+                                // update root password
+                                return this.updateRootPassword(newConfig, oldRootPassword, newRootPassword);
+                            //}
+                        });
+                        // .catch(function(err) {
+                        //     console.error('[ERROR] Unable to run system commands - ' + (err.stack || err));
+                        // });
+                    })
+                    .then(function() {
+                        // tell Host, we are done!
                         return this.host.deviceResetConfigurationAck(newConfig.deviceId, oldIdentityToken);
                     })
                     .then(function() {
@@ -391,6 +473,12 @@ module.exports = NoGapDef.component({
                             // try logging in again, after config reset!
                             return Instance.DeviceMain.tryLogin();
                         }
+                    })
+                    .then(function() {
+                        return Instance.DeviceMain.execAsync("reboot")
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('Unable to reboot - ' + (err.stack || err), true);
+                        });
                     })
                     .catch(function(err) {
                         console.error(err.stack || err);

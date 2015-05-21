@@ -1,0 +1,12 @@
+<div>
+	<div id="macgraph" style="width:100%; height: 500px;"></div>
+
+	<div class="some-padding">
+		<b>Other SSIDs ({{otherSsids.length}}):</b> 
+		<span ng-repeat="ssidData in otherSsids | orderBy: 'name'">
+			<span style="background-color: #EEEEEE">
+				{{ssidData.name}} ({{ssidData.macIds.length}})
+			</span> &nbsp;
+		</span>
+	</div>
+</div>

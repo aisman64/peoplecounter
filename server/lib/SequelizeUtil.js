@@ -210,7 +210,7 @@ var SequelizeUtil = {
 	        values = [];
 	        for (var i = 0; i < rows.length; ++i) {
                 // recurse
-                values[i] = this.getValuesFromRows(rows[i], associations);
+                values[i] = SequelizeUtil.getValuesFromRows(rows[i], associations);
 	        }
 	    }
 	    else if (rows) {
@@ -224,7 +224,7 @@ var SequelizeUtil = {
                     var propName = association.as;
 
                     // recurse
-                    values[propName] = this.getValuesFromRows(values[propName], association.include);
+                    values[propName] = SequelizeUtil.getValuesFromRows(values[propName], association.include);
                 };
             }
 	    }

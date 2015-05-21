@@ -6,12 +6,21 @@
 var NoGapDef = require('nogap').Def;
 
 module.exports = NoGapDef.component({
+    Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
+        return {
+            maxPacketsOnClient: 100
+        };
+    }),
+
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) {
         var packetIncludes;
-        var packetStreamLimit = 10;
+        var packetStreamLimit = 50;
+
+        var componentsRoot = '../../';
+        var libRoot = componentsRoot + '../lib/';
 
         return {
             Assets: {
@@ -37,35 +46,7 @@ module.exports = NoGapDef.component({
              * Host commands can be directly called by the client
              */
             Public: {
-                getMostRecentPackets: function(lastId) {
-                    packetIncludes = [{
-                        model: Shared.SSID.Model,
-                        as: 'SSID',
-                        attributes: ['ssidName']
-                    },{
-                        model: Shared.MACAddress.Model,
-                        as: 'MACAddress',
-                        attributes: ['macAddress']
-                    }];
-
-                    var where = {};
-                    var queryData = {
-                        where: where,
-                        include: packetIncludes,
-                        order: 'time DESC'
-                    };
-
-                    if (lastId) {
-                        where.packetId = {gt: lastId}
-                    }
-                    else {
-                        // first query, just contains the latest few packets
-                        queryData.limit = packetStreamLimit;
-                    }
-
-                    return this.Instance.WifiPacket.wifiPackets.findObjects(queryData);
-                }
-            },
+            }
         };
     }),
     
@@ -75,26 +56,48 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
-        var maxId;
-        var refreshDelay;
-        var refreshTimer;
 
         return {
             __ctor: function() {
                 ThisComponent = this;
-                maxId = null;
-                refreshDelay = 500; // .5 seconds
+            },
+
+            _registerDirectives: function(app) {
+                // seven-seg directive
+                // see: http://brandonlwhite.github.io/sevenSeg.js/
+                app.lazyDirective('sevenSeg', function() {
+                    var linkFun = function($scope, $element, $attrs) {
+                        AngularUtil.decorateScope($scope);
+
+                        $scope.bindAttrExpression($attrs, 'settings', function(settings) {
+                            settings = settings || {};
+                            $element.sevenSeg(settings);
+                        });
+                    };
+
+                    return {
+                        restrict: 'E',
+                        link: linkFun,
+                        replace: true,
+                        template: '<div></div>'
+                    };
+                });
             },
 
             /**
              * Prepares the live page controller.
              */
             setupUI: function(UIMgr, app) {
+                this._registerDirectives(app);
+
                 // create Live controller
                 app.lazyController('liveCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
-                    // customize your LivePage's $scope here:
+                    // customize your $scope here:
+                    $scope.userCache = Instance.User.users;
+                    $scope.deviceCache = Instance.WifiSnifferDevice.wifiSnifferDevices;
+                    $scope.datasetCache = Instance.WifiDataset.wifiDatasets;
                 });
 
                 // register page
@@ -104,29 +107,49 @@ module.exports = NoGapDef.component({
             },
 
             onPageActivate: function() {
-                if (!refreshTimer) {
-                    refreshTimer = setInterval(ThisComponent.refetchPackets.bind(ThisComponent), refreshDelay);
-                }
+                var users = Instance.User.users;
+                var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
+                var datasets = Instance.WifiDataset.wifiDatasets;
 
-                this.refetchPackets();
+                // get all kinds of related data
+                Promise.join(
+                    users.readObjects(),
+                    devices.readObjects(),
+                    datasets.readObjects(),
+
+                    this.refreshData()
+                );
             },
 
-            onPageDeactivate: function() {
-                if (refreshTimer) {
-                    clearInterval(refreshTimer);
-                    refreshTimer = null;
-                }
-            },
 
-            refetchPackets: function() {
-                this.busy = true;
+            // ################################################################################################
+            // Annotations
 
-                this.host.getMostRecentPackets()
-                .finally(function() {
-                    this.busy = false;
+
+            // ################################################################################################
+            // Filtering
+
+
+            // ################################################################################################
+            // Refreshing + real-time updates
+
+            refreshDelay: 1000,
+
+            refreshData: function() {
+                if (ThisComponent.refreshPaused) return;
+
+                ThisComponent.busy = true;
+                ThisComponent.page.invalidateView();
+
+                return Instance.CommonDBQueries.queries.PeopleCount({
+                    //timeFrameSeconds: 30000000
+                    timeFrameSeconds: 300
                 })
-                .then(function(packets) {
-                    ThisComponent.packets = packets;
+                .finally(function() {
+                    ThisComponent.busy = false;
+                })
+                .then(function(deviceCounts) {
+                    ThisComponent.deviceCounts = deviceCounts;
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent));

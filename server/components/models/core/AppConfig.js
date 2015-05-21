@@ -13,7 +13,8 @@ module.exports = NoGapDef.component({
     Base: NoGapDef.defBase(function(SharedTools, Shared, SharedContext) {
         return {
             OverridableConfigKeys: [
-                'userPasswordFirstSalt'
+                'userPasswordFirstSalt',
+                'deviceWifiConnectionFile'
             ],
 
             __ctor: function() {
@@ -80,9 +81,45 @@ module.exports = NoGapDef.component({
 
 
         return {
+            // TODO: Change to whitelist!
+            ConfigClientBlacklist: [
+                'db',
+                'session',
+                'hosts',
+                'httpd',
+                'smtp',
+                'logging',
+                'nogap',
+                'console',
+                'facebookAppSecret',
+
+                'deviceConfigDefaults',
+                'deviceWifiConnectionFile'
+
+                //'userPasswordFirstSalt'
+            ],
+
+            /**
+             * Set of protected config values that may be explicitly requested
+             * by privileged users.
+             */
+            ConfigClientPrivilegedRequestableList: [
+                'deviceWifiConnectionFile'
+            ],
+
             __ctor: function () {
                 this.defaultConfig = require(appRoot + 'appConfig');
                 this.config = _.clone(this.defaultConfig);
+
+                this.ConfigClientBlacklistMap = {}
+                for (var i = 0; i < this.ConfigClientBlacklist.length; ++i) {
+                    this.ConfigClientBlacklistMap[this.ConfigClientBlacklist[i]] = 1;
+                };
+
+                this.ConfigClientPrivilegedRequestableMap = {}
+                for (var i = 0; i < this.ConfigClientPrivilegedRequestableList.length; ++i) {
+                    this.ConfigClientPrivilegedRequestableMap[this.ConfigClientPrivilegedRequestableList[i]] = 1;
+                };
 
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
                 TokenStore = require(libRoot + 'TokenStore');
@@ -169,13 +206,13 @@ module.exports = NoGapDef.component({
             initHost: function(app, cfg) {
                 UserRole = Shared.User.UserRole;
 
+                // update trace settings
+                this.updateTraceSettings('traceHost');
+
                 /**
                  * Min privilege level required to use the system.
                  */
                 this.config.minAccessRoleId = Shared.User.UserRole[this.config.minAccessRole] || Shared.User.UserRole.StandardUser;
-
-                // update tracing settings
-                this.updateTraceSettings('traceHost');
 
                 // some default config entries
                 this.config.externalUrl = app.externalUrl;
@@ -238,11 +275,23 @@ module.exports = NoGapDef.component({
                 __ctor: function () {
                 },
 
+                _filterConfigForClient: function(cfg) {
+                    var clientCfg = {};
+                    for (var propName in cfg) {
+                        if (this.Shared.ConfigClientBlacklistMap[propName]) continue;
+                        clientCfg[propName] = cfg[propName];
+                    }
+                    return clientCfg;
+                },
+
                 getClientCtorArguments: function() {
                     // TODO: Filter sensitive information from config
                     // console.error(JSON.stringify(this.Shared.config, null, '\t'));
 
-                    return [this.Shared.config, this.Shared.runtimeConfig]
+                    return [
+                        this._filterConfigForClient(this.Shared.config), 
+                        this._filterConfigForClient(this.Shared.runtimeConfig)
+                    ];
                 },
 
                 onNewClient: function() {
@@ -273,6 +322,17 @@ module.exports = NoGapDef.component({
             },
 
             Public: {
+                /**
+                 * Request a protected value. This is only available to staff.
+                 */
+                requestConfigValue: function(key) {
+                    if (!this.Instance.User.isStaff() || !this.Shared.ConfigClientPrivilegedRequestableMap[key]) {
+                        return Promise.reject('error.invalid.permissions');
+                    }
+
+                    return this.Shared.getValue(key);
+                },
+
                 updateConfigValue: function(key, value) {
                     if (!this.Instance.User.isStaff()) {
                         return Promise.reject('error.invalid.permissions');
@@ -294,6 +354,19 @@ module.exports = NoGapDef.component({
             },
 
             initClient: function() {
+            },
+
+            requestConfigValue: function(key) {
+                return this.host.requestConfigValue(key)
+                .bind(this)
+                .then(function(val) {
+                    this.config[key] = val;
+                    return val;
+                });
+            },
+
+            updateConfigValue: function(key, value) {
+                return this.host.updateConfigValue(key, value);
             }
 
         	// setValue: function(name, value) {

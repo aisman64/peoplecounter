@@ -9,31 +9,118 @@ module.exports = NoGapDef.component({
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
-    Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { return {
-        Assets: {
-            Files: {
-                string: {
-                    template: 'DevicePage.html'
+    Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { 
+        var componentsRoot = '../../';
+        var libRoot = componentsRoot + '../lib/';
+        var SequelizeUtil;
+
+        return {
+            Assets: {
+                Files: {
+                    string: {
+                        template: 'DevicePage.html'
+                    }
+                },
+                AutoIncludes: {
                 }
             },
-            AutoIncludes: {
-            }
-        },
+
+            __ctor: function () {
+                SequelizeUtil = require(libRoot + 'SequelizeUtil');
+            },
+                    
+            /**
+             * 
+             */
+            initHost: function() {
                 
-        /**
-         * 
-         */
-        initHost: function() {
+            },
             
-        },
-        
-        /**
-         * Host commands can be directly called by the client
-         */
-        Public: {
-            
-        },
-    }}),
+            /**
+             * Host commands can be directly called by the client
+             */
+            Public: {
+                setDeviceDataset: function(deviceId, datasetId) {
+                    if (!this.Instance.User.isStaff()) return Promise.reject(makeError('error.invalid.permissions'));
+
+                    var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                    var datasets = this.Instance.WifiDataset.wifiDatasets;
+                    var datasetDeviceRelations = this.Instance.WifiDatasetSnifferRelation.datasetSnifferRelation;
+                    
+                    return Promise.join(
+                        // set device's currentDataset
+                        devices.updateObject({
+                            deviceId: deviceId,
+                            currentDatasetId: datasetId
+                        }),
+
+                        // insert the device/dataset pair into relationship table if not already exists
+                        datasetDeviceRelations.getModel().findOrCreate({
+                            where: {
+                                deviceId: deviceId,
+                                datasetId: datasetId
+                            }
+                        })
+                        .spread(function(relation, created) {
+                            if (created) {
+                                return SequelizeUtil.getValuesFromRows(relation);
+                            }
+                            return null;
+                        })
+                    )
+                    .spread(function(deviceUpdate, newRelation) {
+                        return newRelation;
+                    });
+                },
+
+                removeDeviceFromDataset: function(deviceId, datasetId) {
+                    if (!this.Instance.User.isStaff()) 
+                        return Promise.reject(makeError('error.invalid.permissions'));
+
+                    var devices = this.Instance.WifiSnifferDevice.wifiSnifferDevices;
+                    var datasets = this.Instance.WifiDataset.wifiDatasets;
+                    var datasetDeviceRelations = this.Instance.WifiDatasetSnifferRelation.datasetSnifferRelation;
+                    
+                    return Promise.join(
+                        // unset device's currentDataset (if it's currently the given datasetId)
+                        devices.updateObject({
+                            deviceId: deviceId,
+                            values: {
+                                currentDatasetId: 0
+                            },
+                            where: {
+                                currentDatasetId: datasetId
+                            }
+                        }),
+
+                        // delete the device/dataset pair from the relationship table
+                        datasetDeviceRelations.getModel().destroy({
+                            where: {
+                                deviceId: deviceId,
+                                datasetId: datasetId
+                            }
+                        })
+                    );
+                },
+
+                rebootDevice: function(deviceId) {
+                    if (!this.Instance.User.isStaff()) 
+                        return Promise.reject(makeError('error.invalid.permissions'));
+
+                    // TODO: Reboot
+                    console.error('NYI: rebootDevice');
+                },
+
+                restartDevice: function(deviceId) {
+                    if (!this.Instance.User.isStaff()) 
+                        return Promise.reject(makeError('error.invalid.permissions'));
+
+                    // TODO: Reboot
+                    console.error('NYI: restartDevice');
+                }
+            },
+        };
+    }),
     
     
     /**
@@ -63,15 +150,14 @@ module.exports = NoGapDef.component({
                     $scope.deviceCache = Instance.WifiSnifferDevice.wifiSnifferDevices;
                     $scope.datasetCache = Instance.WifiDataset.wifiDatasets;
 
-
                     $scope.onChange = function() {
                         $scope.errorMessage = null;
-                        ThisComponent.deviceSaved = false;
+                        //ThisComponent.deviceSaved = false;
                     };
 
 
                     // #########################################################################################################
-                    // Devices
+                    // Devices - general
 
                     $scope.registerNewDevice = function(name) {
                         $scope.onChange();
@@ -98,9 +184,41 @@ module.exports = NoGapDef.component({
                         // start downloading image
                         Instance.DeviceImage.downloadDeviceImage();
                     };
+
+                    $scope.startWritingDeviceWifiConfigFile = function() {
+                        ThisComponent.writingDeviceWifiConfigFile = !ThisComponent.writingDeviceWifiConfigFile;
+                        if (ThisComponent.writingDeviceWifiConfigFile) {
+                            ThisComponent.busy = true;
+                            
+                            return Instance.AppConfig.requestConfigValue('deviceWifiConnectionFile')
+                            .finally(function() {
+                                ThisComponent.busy = false;
+                            })
+                            .then(function(val) {
+                                ThisComponent.page.invalidateView();
+                            })
+                            .catch($scope.handleError.bind($scope));
+                        }
+                    };
+
+                    $scope.updateDeviceWifiConfigFile = function() {
+                        Instance.AppConfig.updateConfigValue('deviceWifiConnectionFile', Instance.AppConfig.getValue('deviceWifiConnectionFile'));
+                    };
+
+
+                    // #########################################################################################################
+                    // Devices - individual
+
+                    $scope.isDeviceActive = function(device) {
+                        var lastActiveTime = ThisComponent.deviceLastActiveTimes[device.deviceId];
+
+                        // must have checked in within the last minute
+                        return lastActiveTime && 
+                            new Date(lastActiveTime).getTime() >= (Date.now() - 60 * 1000);
+                    };
                     
 
-                    $scope.clickSaveDevice = function(device, done) {
+                    $scope.saveDeviceName = function(device, done) {
                         $scope.onChange();
 
                         ThisComponent.deviceSaving = true;
@@ -114,10 +232,6 @@ module.exports = NoGapDef.component({
                             ThisComponent.deviceSaving = false;
                         })
                         .then(function(newDevice) {
-                            if (done) {
-                                // we are done editing
-                                ThisComponent.deviceSelection.unsetSelection();
-                            }
                             ThisComponent.page.invalidateView();
                         })
                         .catch(function(err) {
@@ -147,13 +261,6 @@ module.exports = NoGapDef.component({
                         .catch($scope.handleError.bind($scope));
                     };
 
-                    $scope.setDataset = function(device, dataset) {
-                        $scope.updateDevice({
-                            deviceId: device.deviceId,
-                            currentDatasetId: dataset.datasetId
-                        });
-                    };
-
                     $scope.setDeviceJobType = function(device, jobType) {
                         $scope.updateDevice({
                             deviceId: device.deviceId,
@@ -180,20 +287,81 @@ module.exports = NoGapDef.component({
 
 
                     // #######################################################################################
-                    // Reset + Delete
+                    // Restart, Reboot, Reset + Delete
 
-                    $scope.tryResetDevice = function(device) {
-                        $scope.errorMessage = null;
+                    $scope.tryRestartDevice = function(device) {
+                        $scope.onChange();
 
                         // var nProblems = 0;
                         // if (nProblems > 0) {
                         // see: http://angular-ui.github.io/bootstrap/#modal
-                        var title = 'WARNING - You are resetting `' + device.getUserNow().userName + '`';
+                        var title = 'WARNING - You are restarting `' + device.getUserNow().userName + '`';
+                        var body = 'This will stop and restart the currently running device client process.' +
+                            'Do you really want to RESTART device `' + device.getUserNow().userName + '`?';
+                        var onOk = function() {
+                            // user pressed Ok -> Tell host to reset it.
+                            doRestartDevice(device);
+                        };
+                        var onDismiss;      // don't do anything on dismiss
+                        $scope.okCancelModal('', title, body, onOk, onDismiss);
+                    };
+
+                    var doRestartDevice = function(device) {
+                        ThisComponent.busy = true;
+                        ThisComponent.host.restartDevice(device.deviceId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function() {
+                            // invalidate view
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+                    $scope.tryRebootDevice = function(device) {
+                        $scope.onChange();
+
+                        // var nProblems = 0;
+                        // if (nProblems > 0) {
+                        // see: http://angular-ui.github.io/bootstrap/#modal
+                        var title = 'WARNING - You are rebooting `' + device.getUserNow().userName + '`';
+                        var body = 'This will shutdown the entire device. ' +
+                            'It might take several minutes for the device to come back online. ' +
+                            'Do you really want to REBOOT device `' + device.getUserNow().userName + '`?';
+                        var onOk = function() {
+                            // user pressed Ok -> Tell host to reset it.
+                            doRebootDevice(device);
+                        };
+                        var onDismiss;      // don't do anything on dismiss
+                        $scope.okCancelModal('', title, body, onOk, onDismiss);
+                    };
+
+                    var doRebootDevice = function(device) {
+                        ThisComponent.busy = true;
+                        ThisComponent.host.rebootDevice(device.deviceId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function() {
+                            // invalidate view
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+                    $scope.tryResetDevice = function(device) {
+                        $scope.onChange();
+
+                        // var nProblems = 0;
+                        // if (nProblems > 0) {
+                        // see: http://angular-ui.github.io/bootstrap/#modal
+                        var title = 'DANGER - You are resetting `' + device.getUserNow().userName + '`';
                         var body = 'Upon next connection attempt, the device will get a new ' +
                             'configuration and new credentials without having to login first. ' +
                             'That is why the device has to reset soon, or attackers can use this vulnerability to hi-jack ' +
                             'device privlege levels. ' +
-                            'Do you really want to reset device `' + device.getUserNow().userName + '`?';
+                            'Do you really want to RESET device `' + device.getUserNow().userName + '`?';
                         var onOk = function() {
                             // user pressed Ok -> Tell host to reset it.
                             doResetDevice(device);
@@ -204,7 +372,11 @@ module.exports = NoGapDef.component({
 
 
                     var doResetDevice = function(device) {
+                        ThisComponent.busy = true;
                         Instance.WifiSnifferDevice.host.resetDevice(device.deviceId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
                         .then(function() {
                             // invalidate view
                             ThisComponent.page.invalidateView();
@@ -251,9 +423,88 @@ module.exports = NoGapDef.component({
                     // #########################################################################################################
                     // Datasets
 
-                    $scope.startNewDataset = function(datasetName) {
+                    /**
+                     * Update a device's current dataset
+                     */
+                    $scope.setDeviceDataset = function(device, dataset) {
+                        ThisComponent.busy = true;
+
+                        return ThisComponent.host.setDeviceDataset(device.deviceId, dataset.datasetId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function(newRelation) {
+                            // success!
+                            if (newRelation) {
+                                // add to set of associated relations
+                                dataset.deviceRelations = dataset.deviceRelations || [];
+                                dataset.deviceRelations.push(newRelation);
+                            }
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+                    $scope.removeDeviceFromDataset = function(device, dataset) {
+                        ThisComponent.busy = true;
+
+                        return ThisComponent.host.removeDeviceFromDataset(device.deviceId, dataset.datasetId)
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function() {
+                            // success!
+                            // remove from set of associated relations
+                            dataset.deviceRelations = dataset.deviceRelations || [];
+                            _.remove(dataset.deviceRelations, {
+                                deviceId: device.deviceId,
+                                datasetId: dataset.datasetId
+                            });
+
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+                    $scope.onDatasetNameChanged = function(dataset) {
+                        ThisComponent.busy = true;
+
+                        var datasets = Instance.WifiDataset.wifiDatasets;
+
+                        return datasets.updateObject({
+                            datasetId: dataset.datasetId,
+                            datasetName: dataset.datasetName
+                        })
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function() {
+                            // success!
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
+                    };
+
+                    $scope.startNewDataset = function() {
+                        ThisComponent.busy = true;
+
                         // TODO: Create new dataset, then assign name and devices to it.
                         //      Eventually, archive the dataset...
+
+                        var newDatasetName = 'new dataset';
+                        var datasets = Instance.WifiDataset.wifiDatasets;
+
+                        return datasets.createObject({
+                            datasetName: newDatasetName
+                        })
+                        .finally(function() {
+                            ThisComponent.busy = false;
+                        })
+                        .then(function() {
+                            // success!
+                            ThisComponent.page.invalidateView();
+                        })
+                        .catch($scope.handleError.bind($scope));
                     };
                 });
 
@@ -272,10 +523,33 @@ module.exports = NoGapDef.component({
                     Instance.WifiSnifferDevice.wifiSnifferDevices.readObjects(),
 
                     // load all datasets into cache
-                    Instance.WifiDataset.wifiDatasets.readObjects()
+                    Instance.WifiDataset.wifiDatasets.readObjects(),
+
+                    this.refreshData()
                 )
-                .then(function() {
+                .spread(function(users, devices, datasets) {
                     ThisComponent.page.invalidateView();
+                })
+                .catch(function(err) {
+                    ThisComponent.page.handleError(err);
+                });
+            },
+
+            refreshDelay: 5000, // refresh every 5 seconds
+
+            refreshData: function() {
+                return Promise.join(
+                    Instance.DeviceStatus.host.getDeviceLastActiveTimes(),
+
+                    // re-load devices
+                    Instance.WifiSnifferDevice.wifiSnifferDevices.readObjects()
+                )
+                .spread(function(deviceLastActiveTimes, devices) {
+                    ThisComponent.deviceLastActiveTimes = deviceLastActiveTimes;
+                    ThisComponent.page.invalidateView();
+                })
+                .catch(function(err) {
+                    ThisComponent.page.handleError(err);
                 });
             },
 

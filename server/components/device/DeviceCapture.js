@@ -1,5 +1,6 @@
 /**
- * Kicks off device code!
+ * Capture device packets, send them to server and store them.
+ * Queue and re-send them later if not connected.
  */
 "use strict";
 
@@ -51,35 +52,44 @@ module.exports = NoGapDef.component({
                 	throw new Error('Device was logged in with its user account, but device entry was not ready: ' +
                 		user.userName);
                 }
-
-                // TODO: Dataset management (must be controlled in front-end)
-                // Shared.WifiDataSet...
-                // this.Instance.WifiDataSet...
-                
-                // insert everything, and wait for it all to finish
-                //return Promise.map(packets, function(packet) {
-                // add deviceId to packet
                 packet.deviceId = device.deviceId;
-
-                // TODO: run findOrCreate on SSID and MACAddress, and only store their ids in WifiPacket table
-
-                // insert packet into DB
-                // make sure, the fields of `packet` match the table definition in WifiPacket (sequelize.define)
-                // see: http://sequelize.readthedocs.org/en/latest/api/model/index.html#createvalues-options-promiseinstance
-                //return Shared.WifiPacket.Model.create(packet);
-                //});
-
                 // call stored procedure to take care of packet insertion
-                sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
+                return sequelize.query('CALL storePacket(?, ?, ?, ?, ?, ?);', { 
                     replacements: [
                         packet.mac,
                         packet.signalStrength,
                         packet.time,
                         packet.seqnum,
-                        packet.ssid,
+                        packet.ssid || '',
                         packet.deviceId
                     ],
-                    type: sequelize.QueryTypes.SELECT
+                    type: sequelize.QueryTypes.RAW
+                });
+                // .spread(function() {
+
+                // });
+            },
+            storePacket2: function(packet) {
+            	var user = this.Instance.User.currentUser;
+                if (!this.Instance.User.isDevice()) return Promise.reject('error.invalid.permissions');
+
+                var device = this.Instance.DeviceMain.getCurrentDevice();
+                if (!device) {
+                	// internal error: something went wrong in our authentication process
+                	throw new Error('Device was logged in with its user account, but device entry was not ready: ' +
+                		user.userName);
+                }
+                packet.deviceId = device.deviceId;
+                // call stored procedure to take care of packet insertion
+                return sequelize.query('CALL storePacket2(?, ?, ?, ?, ?, ?);', { 
+                    replacements: [
+                        packet.mac,
+                        packet.signalStrength,
+                        packet.time,
+                        packet.seqnum,
+                        packet.deviceId
+                    ],
+                    type: sequelize.QueryTypes.RAW
                 });
                 // .spread(function() {
 
@@ -99,6 +109,8 @@ module.exports = NoGapDef.component({
         var exec;
         var Queue;
         var queue;
+        var promisify;
+
         return {
             __ctor: function() {
                 ThisComponent = this;
@@ -111,24 +123,32 @@ module.exports = NoGapDef.component({
                 sys = require('sys');
                 exec = require('child_process').exec;
                 Queue = require('file-queue').Queue;
+                promisify = require("promisify-node");
             },
 
             /**
-             * This method is called by DeviceMain, once we are logged into the server!
+             * Send packet to server or put in queue, if we failed.
              */
-
             storePacket: function(packet) {
                 // send packet to server
                 return this.host.storePacket(packet)
                 .then(function() {
-                    console.log("Packet sent successfully");
+                    Instance.DeviceLog.logStatus("packet sent successfully!");
                     // DB successfully stored packet
                 })
                 .catch(function(err) {
-                    console.error(err.stack);
-                    queue.push(packet, function(err) { 
-                        if(err) throw err; 
-                        queue.length(function(err,len) { console.log(len); });
+                    Instance.DeviceLog.logError('storePacket on Host failed - ' + err.stack, true);
+
+                    // could not send packet to server -> Store in queue...
+                    return new Promise(function(resolve, reject) {
+                        queue.push(packet, function(err) {
+                            if(err) reject(err);
+                            else {
+                                // TODO: Why query length here?
+                                queue.length(function(err,len) { console.log(len); });
+                                resolve();
+                            }
+                        });  
                     });
                 });
             },
@@ -144,36 +164,29 @@ module.exports = NoGapDef.component({
         	   return result;
             },
 
-            execAsync: function(cmd) {
-                return new Promise(function(resolve, reject) {
-                    exec(cmd, function(err, stdout, stderr) {
-                        if(err) {
-                            console.log(stdout);
-                            console.log(stderr);
-                            //reject(err);
-                            resolve();
-                        }
-                        else {
-                            console.log(stdout);
-                            console.log(stderr);
-                            resolve();
-                        }
-                    });
-                });       
-            },
 
             preCapture: function() {
                 return Promise.join(
-	            ThisComponent.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp"),
-            	    ThisComponent.execAsync("ntp-wait -v"),
-                    ThisComponent.execAsync("iw phy phy0 interface add mon0 type monitor"),
-                    ThisComponent.execAsync("ifconfig mon0 up"),
+	                Instance.DeviceMain.execAsync("/usr/sbin/ntpdate -s ntp.nict.jp clock.tl.fukuoka-u.ac.jp clock.nc.fukuoka-u.ac.jp")
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('ntpdate failed - ' + err.stack || err, true); 
+                        }),
+            	    Instance.DeviceMain.execAsync("ntp-wait -v")
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('ntp-wait failed - ' + err.stack || err, true); 
+                        }),
+                    Instance.DeviceMain.execAsync("iw phy phy0 interface add mon0 type monitor")
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('iw failed - ' + err.stack || err, true); 
+                        }),
+                    Instance.DeviceMain.execAsync("ifconfig mon0 up")
+                        .catch(function(err) {
+                            Instance.DeviceLog.logError('ifconfig failed - ' + err.stack || err, true); 
+                        }),
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
-                            if(err)
-                                reject(err);
-                            else
-                                resolve();
+                            if(err) return reject(err);
+                            resolve();
                         });
                     })
                 );
@@ -186,19 +199,117 @@ module.exports = NoGapDef.component({
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.ssid = packet.payload.ieee802_11Frame.probe.tags[0].ssid;
-                ThisComponent.storePacket(result);
+                return ThisComponent.storePacket(result);
             },
 
-            startCapturing: function() {
+            basicProcessor: function(packet) {
+                var result = {};
+                result.signalStrength = packet.payload.signalStrength;
+                result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
+                result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
+                result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
+                if(result.signalStrength >= -25) {
+                    return ThisComponent.storePacket2(result);
+                }
+            },
+
+
+            flushQueue: function() {
+                Instance.DeviceLog.logStatus('flushQueue', true);
+                var dummies = [];
+                exec("ls tmp/new/*.galileo | wc -l", function(error, stdout, stderr) {
+                    var length = parseInt(stdout);
+                    if (!length) return;
+                    
+                    for(var i=0; i<length; i++) {
+                        dummies.push(0);
+                    }
+
+                    return Promise.map(dummies, function(dummy) {
+                        return new Promise(function(resolve, reject) {
+                            queue.tpop(function(err, packet, commit, rollback) {
+                                if (err)
+                                    {
+                                    reject(err);
+                                    }
+                                ThisComponent.host.storePacket(packet)
+                                .then(function() {
+                                    commit(function(err) {
+                                        if (err) {
+                                            reject(err);
+                                        }
+                                        else {
+                                            resolve();
+                                        }
+                                    });
+                                })
+                                .catch(function(err) {
+                                    rollback(function(err2) {
+                                        if (err2) {
+                                            Instance.DeviceLog.logError('Unable to rollback: ' + err2.stack, true);
+                                        }
+                                        //reject(err);
+                                        resolve();
+                                    });
+                                });
+                            });
+                        });
+                    }, {
+                        concurrency: 5              // how many packets in-flight, at the same time
+                    })
+                    .then(function() {
+                        Instance.DeviceLog.logStatus('DeviceCapture file queue flushed!', true);
+                    });
+                });
+
+                /*queue.length(function(err, length) {
+                    for(var i=0; i<5; i++) {
+                        queue.tpop(function(err, packet, commit, rollback) {
+                            ThisComponent.host.storePacket(packet)
+                                .then(function() { commit(function(err) { if(err) throw err; console.log("Stored Packet uploaded");})})
+                                .catch(function() { rollback(function(err) { if (err) throw err; console.log("Stored Packet Problem");})});
+                        }); 
+                    }
+                });*/
+            },
+
+            startCapturing: function(device) {
                 if (!pcap) return;
+                if (this.isCapturing) return;   // don't do anything
+
+                this.isCapturing = true;
+                Instance.DeviceLog.logStatus('Preparing DeviceCapture...', true);
 
                 ThisComponent.preCapture()
                 .then(function() {
-                    var pcap_session = pcap.createSession("mon0", "wlan type mgt subtype probe-req");
-                    pcap_session.on('packet', function(raw_packet) { 
-                        var packet = pcap.decode.packet(raw_packet);
-                        ThisComponent.processPacket(packet);
-                    });
+                    Instance.DeviceLog.logStatus('Starting DeviceCapture...', true);
+
+                    var device = Instance.DeviceMain.getCurrentDevice(); 
+                    var jobType = Instance.WifiSnifferDevice.DeviceJobType;
+                    var pcap_session;
+                    if(device.currentJobType == jobType.ActivitySniffer) {
+                        pcap_session = pcap.createSession("mon0", "wlan type mgt || wlan type data");
+                        pcap_session.on('packet', function(raw_packet) {
+                            return Promise.resolve()
+                            .then(function() {
+                                var packet = pcap.decode.packet(raw_packet);
+                                return ThisComponent.basicProcessor(packet);
+                            });
+                        });
+                    }
+                    else {
+                        pcap_session = pcap.createSession("mon0", "wlan type mgt subtype probe-req");
+                        pcap_session.on('packet', function(raw_packet) { 
+                            return Promise.resolve()
+                            .then(function() {
+                                var packet = pcap.decode.packet(raw_packet);
+                                return ThisComponent.processPacket(packet);
+                            })
+                            .catch(function(err) {
+                                Instance.DeviceLog.logError('DeviceCapture.processPacket failed  - ' + err.stack, true);
+                            });
+                        });
+                    }
                 });
             },
 

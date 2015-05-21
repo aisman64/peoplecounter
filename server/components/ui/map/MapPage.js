@@ -17,6 +17,14 @@ module.exports = NoGapDef.component({
                 }
             },
             AutoIncludes: {
+                js: [
+                    'http://maps.googleapis.com/maps/api/js?key=&sensor=false&extension=.js',
+                    'lib/angular/angular-google-maps.min',
+                    'lib/angular/ng-map.min',
+                    //'lib/angular/ng-map.js',
+                    'lib/angular/ng-map.debug.js'
+                    //'https://rawgit.com/allenhwkim/angularjs-google-maps/master/build/scripts/ng-map.js',
+                ]
             }
         },
                 
@@ -41,16 +49,7 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
-        var cities = [
-            {
-                city : 'HuaShan',
-                desc : 'Culture park',
-                latitude : 25.045574,
-                longitude : 121.528325
-            }
-        ];
-
-        return {
+               return {
             __ctor: function() {
                 ThisComponent = this;
             },
@@ -139,6 +138,7 @@ module.exports = NoGapDef.component({
 
                         
 
+
                     $scope.map = { 
                         center: { 
                             latitude: 24.045574, 
@@ -167,6 +167,7 @@ module.exports = NoGapDef.component({
                         longitude: 121.228325 
                      }];
 
+
                      $scope.renewData = function(deviceId, timePeriod, timeRangeFromNow) {
                         if (typeof deviceId == 'undefined' ||
                             typeof timePeriod == 'undefined' ||
@@ -186,6 +187,7 @@ module.exports = NoGapDef.component({
 
                                 };
                                 var index = 0;
+                                console.log('11111');
                                 for (var i = packets.length - 1;i >= 0; i--) {
                                     var point = {
                                         x : -i,
@@ -195,8 +197,10 @@ module.exports = NoGapDef.component({
                                     index += 1;
 
                                 }
+                                console.log('222222');
                                 var lineChart = [line];
                                 $scope.data = lineChart
+                                console.log('3333');
 
 
                             })
@@ -215,7 +219,7 @@ module.exports = NoGapDef.component({
                                 }
                             };
                             console.log('hello');
-                            Instance.WifiPacket.wifiPackets.getObjects(queryData)
+                            Instance.WifiSSIDPacket.wifiSSIDPackets.getObjects(queryData)
                             .then(function(data) {
                                 console.log("then");
                                 console.log(data);
@@ -226,7 +230,7 @@ module.exports = NoGapDef.component({
                                 console.log(error);
 
                             });
-                            // console.log(Instance.WifiPacket);
+                            // console.log(Instance.WifiSSIDPacket);
 
                         }
 
@@ -253,7 +257,7 @@ module.exports = NoGapDef.component({
 
                 // register page
                 Instance.UIMgr.registerPage(this, 'Map', this.assets.template, {
-                    iconClasses: 'fa fa-cogs'
+                    iconClasses: 'fa fa-map-marker'
                 });
             },
             
