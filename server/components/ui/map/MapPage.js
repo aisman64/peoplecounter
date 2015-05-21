@@ -68,7 +68,7 @@ module.exports = NoGapDef.component({
                         //     img: 'pub/img/HuaShan.jpg',
                         // }
                         // ];
-                        $scope.positions = [];
+                        $scope.relations = [];
                        
                         $scope.dragendPos = function(event) {
                             //var markerId = infoWindow.visibleOnMarker;
@@ -108,53 +108,12 @@ module.exports = NoGapDef.component({
                        
                         $scope.addMarker = function(event) {
                             
-                            //for (i = 0; i < 1; i++){    
                                 ThisComponent.busy = true;
-                                // var queryData = {
-                                //         where: {
-                                //             datasetSnifferRelationId: 1
-                                //         }
-                                //     };
-                                //var OldInfo = Instance.WifiDatasetSnifferRelation.datasetSnifferRelation.getObjects(queryData);
-
-                                // Instance.WifiDatasetSnifferRelation.datasetSnifferRelation.getObjects()
-                                //     .then(function(data) {
-                                        
-                                //         // console.log("then");
-                                //         // console.log(data);
-                                //         //console.log(data);
-                                //         for (var i = 0; i < data.length; i++) {
-                                //             $scope.x = data[i].lat;
-                                //             $scope.y = data[i].lng;
-                                //             $scope.positions.push({
-                                //                 lat:$scope.x, lng: $scope.y
-                                //             });                                                
-                                //         };
-                                        
-                                       
-                                //         //$scope.map.markers[0].position.A = data[0].lat;
-                                //         //$scope.map.markers[0].position.F = data[0].lng;
-
-                                //     })
-                                //     .catch(function(error){
-                                //         console.log("catch");
-                                //         console.log(error);
-                                //     });
-
-                                //console.log('王長宏');
-                                //console.log($scope.map.markers);
-                                //$scope.x = event.latLng.A;
-                                //$scope.y = event.latLng.F;
-                               // $scope.setPosition(1, $scope.x, $scope.y);
-                                //alert($scope.x);
-                                //var ll = event.latLng;
-                                //$scope.positions.push({lat:$scope.x, lng: $scope.y});
-
                                 Instance.WifiSnifferDevice.wifiSnifferDevices.getObjects()
                                     .then(function(data) {
                                     // console.log(data);
-                                    $scope.devieceNum = data.length;
-                                    $scope.devieceData = data;
+                                    $scope.deviceNum = data.length;
+                                    $scope.deviceData = data;
                                         //console.log('王長宏');   
                                         //console.log(data[0].deviceId);                                         
 
@@ -164,8 +123,8 @@ module.exports = NoGapDef.component({
                                         console.log(error);
                                     });
                                    
-                                for(var i = 0; i < $scope.devieceNum; i++){                                        
-                                    $scope.positions.push({deviceID: $scope.devieceData[i].deviceId, lat: 25.045574 , lng: 121.528325});
+                                for(var i = 0; i < $scope.deviceNum; i++){                                        
+                                    $scope.relations.push({deviceID: $scope.deviceData[i].deviceId, lat: 25.045574 , lng: 121.528325});
                                 }    
 
                             //}    
@@ -253,7 +212,29 @@ module.exports = NoGapDef.component({
                     iconClasses: 'fa fa-map-marker'
                 });
             },
-            
+
+            onPageActivate: function() {
+                var datasetCache = Instance.WifiDataset.wifiDatasets;
+                var deviceCache = Instance.WifiSnifferDevice.wifiSnifferDevices;
+                var userCache = Instance.User.users;
+
+                // get all kinds of related data
+                Promise.join(
+                    // ....relations....
+                    datasetCache.readObjects(),
+                    deviceCache.readObjects(),
+                    userCache.readObjects()
+                )
+                .finally(function() {
+                    ThisComponent.busy = false;
+                })
+                .spread(function() {
+                    ThisComponent.allRelationsOfDataset = relationCache.indices.datasetId.get(currentDatasetId);
+                    ThisComponent.page.invalidateView();
+                })
+                .catch($scope.handleError.bind($scope));
+            },
+
             /**
              * Client commands can be directly called by the host
              */

@@ -1,43 +1,26 @@
-
 <div class="ng-scope" ng-controller="mapCtrl" >
-
-
-    <map center="25.045574, 121.528325" zoom="17"  scale-control="true">
-      <div id="panel">
-        <input ng-click="addMarker()" type="button" value="Show All Markers">        
-      </div>
-        <div ng-repeat=" position in positions" >
-          <!--   <shape name="circle"  center="{{position.lat}},  {{position.lng}}" radius="10" stroke-color="#FF0000" fill-color="#FF0000" draggable="true" >
-            </shape> -->
-           <!--  <marker position="{{position.lat}},  {{position.lng}}" on-click="showInfoWindow(event, 'bar')" draggable="true" > -->
-           <!--  <marker position="{{position.lat}},  {{position.lng}}" on-click="showInfoWindow(event, 'bar')" draggable="true" on-dragend="dragendPos()" > -->
-             <marker position="{{position.lat}},  {{position.lng}}"  draggable="true" on-dragend="dragendPos()" >    
-            </marker>
-            <!-- <info-window id="bar" visible-on-marker="foo">
-                <div ng-non-bindable="">
-                        <div id="bodyContent">
-                            <input class="btn btn-default" type="button" value="device1" ng-click="setPosition(1, 1, position.lat, position.lng)">
-                            <input class="btn btn-default" type="button" value="device2" ng-click="setPosition(2, 2, position.lat, position.lng)">
-                            <input class="btn btn-default" type="button" value="device3" ng-click="setPosition(3, 3, position.lat, position.lng)">
-                            <input class="btn btn-default" type="button" value="device4" ng-click="setPosition(4, 4, position.lat, position.lng)">
-                            <input class="btn btn-default" type="button" value="device5" ng-click="setPosition(5, 5, position.lat, position.lng)">
-                        </div>
-                </div>
-            </info-window> -->
-        </div>
-    </map>
-
-        
-        <form class="form-inline">
-          <div class="form-group">
-            <div class="input-group">
-              <div class="input-group-addon">Please input your mac address</div>
-              <input type="text" ng-model="macId" class="form-control" id="macId" placeholder="mac address">
-              <div style="cursor:pointer;"class="input-group-addon btn btn-primary"  ng-click="queryByMacId(macId)">Submit</div>
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <div class="panel-title">
+                Map
             </div>
-          </div>
-        </form>
-   
-    	 
-
+        </div>
+        <div class="panel-body no-padding">
+            <map center="25.045574, 121.528325" zoom="17"  scale-control="true" style="height:600px">
+                
+                  <div ng-repeat="relation in PC.allRelationsOfDataset" >
+                      <marker position="{{relation.lat}},  {{relation.lng}}"  draggable="true" on-dragend="dragendPos()" >    
+                      </marker>
+                  </div>
+              </map>
+          <form class="form-inline">
+                <div class="form-group">
+                  <div class="input-group">
+                    <div class="input-group-addon">Please input your mac address</div>
+                    <input type="text" ng-model="macId" class="form-control" id="macId" placeholder="mac address">
+                    <div style="cursor:pointer;"class="input-group-addon btn btn-primary"  ng-click="queryByMacId(macId)">Submit</div>
+                  </div>
+                </div>
+              </form>
+    </div>
 </div>

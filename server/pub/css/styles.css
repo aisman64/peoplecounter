@@ -502,10 +502,10 @@ title, tt, u, var {
   color: #DAA520;
 }
 
-.angular-google-map-container { height: 400px; }
+.angular-google-map-container { height: 800px; }
 #map {
-    height:400px;
-    width:600px;
+    height:800px;
+    width:1200px;
 }
 .infoWindowContent {
     font-size:  14px !important;
