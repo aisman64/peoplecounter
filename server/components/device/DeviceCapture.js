@@ -81,7 +81,7 @@ module.exports = NoGapDef.component({
                 }
                 packet.deviceId = device.deviceId;
                 // call stored procedure to take care of packet insertion
-                return sequelize.query('CALL storePacket2(?, ?, ?, ?, ?, ?);', { 
+                return sequelize.query('CALL storePacket2(?, ?, ?, ?, ?);', { 
                     replacements: [
                         packet.mac,
                         packet.signalStrength,
