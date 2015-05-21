@@ -70,7 +70,7 @@ module.exports = NoGapDef.component({
                     macId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
                     datasetId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
 
-                    signalStrength: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
+                    signalStrength: { type: Sequelize.INTEGER, allowNull: false },
 
                     /**
                      * capture time in unix time (seconds since 1970)
