@@ -174,7 +174,7 @@ module.exports = NoGapDef.component({
                 pageComponents: [
                     //'HomePage',
                     'LivePage',
-                    'VisPage'
+                    'VisPage',
                     'RawPage',
                     'DevicePage',
                     'MapPage',
