@@ -153,6 +153,29 @@ module.exports = NoGapDef.component({
                 });
             },
  
+            storePacket2: function(packet) {
+                // send packet to server
+                return this.host.storePacket2(packet)
+                .then(function() {
+                    Instance.DeviceLog.logStatus("packet2 sent successfully!");
+                    // DB successfully stored packet
+                })
+                .catch(function(err) {
+                    Instance.DeviceLog.logError('storePacket2 on Host failed - ' + err.stack, true);
+
+                    // could not send packet to server -> Store in queue...
+                    return new Promise(function(resolve, reject) {
+                        queue.push(packet, function(err) {
+                            if(err) reject(err);
+                            else {
+                                // TODO: Why query length here?
+                                queue.length(function(err,len) { console.log(len); });
+                                resolve();
+                            }
+                        });  
+                    });
+                });
+            },
             structToMac: function(struct) {
                 var result = "";
                 var l;
