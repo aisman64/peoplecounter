@@ -126,8 +126,7 @@ module.exports = NoGapDef.component({
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['time']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['signalStrength']),
 
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['updatedAt']),
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['macId', 'updatedAt'])
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['time', 'macId'])
                             );
                         }
                     }

@@ -534,3 +534,10 @@ div[ng-controller='mapCtrl'] {
       padding: 5px;
       border: 1px solid #999;
     }
+
+
+/* ########################################################################################## */
+/* Application-specific stuff */
+.mac-oui {
+  color: #444
+}

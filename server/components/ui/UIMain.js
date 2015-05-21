@@ -139,14 +139,26 @@ module.exports = NoGapDef.component({
             {
                 otherComponents: [
                     'CommonDBQueries',
-                    'SMTP'
+                    'SMTP',
+                    'FacebookApi'
                 ],
                 pageComponents: [
-                    'VisPage'
                 ],
                 mayActivate: function() {
-                    return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.StandardUser;
+                    return true;
                 } 
+            },
+
+            /**
+             * Guest clients get access to these components.
+             */
+            {
+                pageComponents: [
+                    'LoginPage'
+                ],
+                mayActivate: function() {
+                    return !Instance.User.currentUser;
+                }
             },
 
             /**
@@ -162,6 +174,7 @@ module.exports = NoGapDef.component({
                 pageComponents: [
                     //'HomePage',
                     'LivePage',
+                    'VisPage',
                     'RawPage',
                     'DevicePage',
                     'MapPage',
@@ -171,34 +184,6 @@ module.exports = NoGapDef.component({
 
                 mayActivate: function() {
                     return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.StandardUser;
-                }
-            },
-
-
-            /**
-             * Logged in and unregistered users get access to these components
-             */     
-            {
-                otherComponents: [
-                    'FacebookApi'
-                ],
-
-                pageComponents: [
-                ],
-                mayActivate: function() {
-                    return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.Unregistered;
-                }
-            },
-
-            /**
-             * Guest clients get access to these components.
-             */
-            {
-                pageComponents: [
-                    'LoginPage'
-                ],
-                mayActivate: function() {
-                    return !Instance.User.currentUser;
                 }
             },
 

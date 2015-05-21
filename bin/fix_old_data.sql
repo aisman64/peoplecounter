@@ -220,4 +220,17 @@ ALTER TABLE WifiSnifferDevice ADD currentDatasetId INTEGER UNSIGNED;
 ALTER TABLE WifiSnifferDevice ADD currentJobType INTEGER UNSIGNED;
 
 
+# link OUI information to MACAddress table
 ALTER TABLE MACAddress ADD `macAnnotation` TEXT;
+ALTER TABLE MACAddress ADD ouiId INTEGER UNSIGNED;
+
+
+ALTER TABLE OUI DROP PRIMARY KEY;
+ALTER TABLE OUI ADD ouiId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (ouiId), AUTO_INCREMENT=1;
+
+UPDATE `MACAddress` m
+INNER JOIN `OUI` o
+ON (m.macAddress LIKE CONCAT(o.mac, '%'))
+SET m.ouiId = o.ouiId;
+
+# TODO: Update model defines!

@@ -217,6 +217,7 @@ module.exports = {
 
             // all kinds of model components
             'models/wifi/MACAddress',
+            'models/wifi/OUI',
             'models/wifi/SSID',
             'models/wifi/MAC_SSID_Relation',
             'models/devices/WifiSnifferDevice',
