@@ -46,7 +46,13 @@ module.exports = NoGapDef.component({
                                 return Promise.reject(makeError('error.invalid.request'));
                             }
 
-                            var queryData = { where: { } };
+                            var queryData = { 
+                                where: { },
+                                include: [{
+                                    model: Shared.OUI.Model,
+                                    as: 'OUI'
+                                }]
+                            };
                             if (!isNaNOrNull(queryInput.macId)) {
                                 queryData.where.macId = queryInput.macId;
                             }
@@ -89,18 +95,24 @@ module.exports = NoGapDef.component({
                     macId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
                     macAddress: Sequelize.STRING(16),
                     macAnnotation: Sequelize.TEXT,
+                    ouiId: {type: Sequelize.INTEGER.UNSIGNED}
                 }, {
                     freezeTableName: true,
                     tableName: 'MACAddress',
                     classMethods: {
                         onBeforeSync: function(models) {
+                            models.MACAddress.belongsTo(models.OUI,
+                                 { foreignKey: 'ouiId', as: 'OUI', foreignKeyConstraint: true });
+                            models.OUI.hasMany(models.MACAddress,
+                                 { foreignKey: 'ouiId', as: 'MACAddresses', constraints: false });
                         },
 
                         onAfterSync: function(models) {
                             var tableName = this.getTableName();
                             return Promise.join(
                                 // create indices
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['macAddress'], { indexOptions: 'UNIQUE'})
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['macAddress'], { indexOptions: 'UNIQUE'}),
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['ouiId'])
                                 //SequelizeUtil.createIndexIfNotExists(tableName, ['macAnnotation'], { indexOptions: 'UNIQUE'})
                             );
                         }

@@ -58,6 +58,18 @@ module.exports = NoGapDef.component({
         var ThisComponent;
 
         return {
+            /**
+             * The different time frames over which to count people
+             */
+            PeopleCounterTimeFrames: [
+                moment.duration({ minutes: 5 }),
+                moment.duration({ hours: 1 }),
+                moment.duration({ days: 1 }),
+                moment.duration({ days: 7 }),
+                moment.duration({ months: 1 }),
+                moment.duration({ years: 1 })
+            ],
+
             __ctor: function() {
                 ThisComponent = this;
             },
@@ -115,6 +127,8 @@ module.exports = NoGapDef.component({
                 var devices = Instance.WifiSnifferDevice.wifiSnifferDevices;
                 var datasets = Instance.WifiDataset.wifiDatasets;
 
+                ThisComponent.currentTimeFrame = ThisComponent.currentTimeFrame || ThisComponent.PeopleCounterTimeFrames[0];
+
                 // get all kinds of related data
                 Promise.join(
                     users.readObjects(),
@@ -145,9 +159,10 @@ module.exports = NoGapDef.component({
                 ThisComponent.busy = true;
                 ThisComponent.page.invalidateView();
 
+                var timeFrameSeconds = ThisComponent.currentTimeFrame.asMilliseconds() / (1000);
+
                 return Instance.CommonDBQueries.queries.PeopleCount({
-                    //timeFrameSeconds: 30000000
-                    timeFrameSeconds: 300
+                    timeFrameSeconds: timeFrameSeconds
                 })
                 .finally(function() {
                     ThisComponent.busy = false;

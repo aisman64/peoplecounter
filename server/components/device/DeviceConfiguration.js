@@ -126,8 +126,14 @@ module.exports = NoGapDef.component({
                     	var resetTimeout = _.isString(device.resetTimeout) && new Date(device.resetTimeout) || device.resetTimeout;
                         var now = new Date();
 
+
+
+
+
                         if (resetTimeout.getTime() < now.getTime()) {
                             // fail: reset time is already up!
+                            console.log("[ERROR] Timeup " + resetTimeout + " vs. " + now);
+                            console.log("[ERROR] " + device);
                             newDeviceStatus.deviceStatus = DeviceStatusId.LoginResetFailed;
                             return Promise.reject(makeError('device reset expired for #' + device.deviceId));
                         }

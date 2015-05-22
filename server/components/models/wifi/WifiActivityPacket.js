@@ -70,7 +70,7 @@ module.exports = NoGapDef.component({
                     macId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
                     datasetId: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
 
-                    signalStrength: { type: Sequelize.INTEGER.UNSIGNED, allowNull: false },
+                    signalStrength: { type: Sequelize.INTEGER, allowNull: false },
 
                     /**
                      * capture time in unix time (seconds since 1970)
@@ -106,7 +106,7 @@ module.exports = NoGapDef.component({
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['time']),
                                 SequelizeUtil.createIndexIfNotExists(tableName, ['signalStrength']),
 
-                                SequelizeUtil.createIndexIfNotExists(tableName, ['macId', 'updatedAt'])
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['time', 'macId'])
                             );
                         }
                     }

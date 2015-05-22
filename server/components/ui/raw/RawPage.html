@@ -5,6 +5,17 @@
 				raw packets
 				&nbsp;
 				&nbsp;
+
+				<a class="btn btn-warning"
+					style="width: 10em;"
+					ng-click="PC.rawSettings.scanner = !PC.rawSettings.scanner">
+					<span ng-if="PC.rawSettings.scanner">
+						Scanner
+					</span>
+					<span ng-if="!PC.rawSettings.scanner">
+						SSIDs
+					</span>
+				</a>
 				
 				<a class="btn"
 					style="width: 10em;"
@@ -76,6 +87,10 @@
 								{{ packet.MACAddress.macAnnotation && 
 										packet.MACAddress.macAnnotation || 
 									packet.MACAddress.macAddress }}
+								<span class="mac-oui"
+									ng-if="packet.MACAddress.OUI"
+									>({{packet.MACAddress.OUI.model}})</span>
+								<!-- {{packet.MACAddress.OUI.company}} -->
 								<span ng-if="PC.annotatingMacs">
 									<br />
 									<input type="text" ng-model="packet.MACAddress.macAnnotation" 
