@@ -71,6 +71,10 @@ module.exports = NoGapDef.component({
 
                         $scope.bindAttrExpression($attrs, 'settings', function(settings) {
                             settings = settings || {};
+
+                            // green by default
+                            settings.colorOn = settings.colorOn || '#00FF00';
+                            settings.colorOff = settings.colorOff || '#003200';
                             $element.sevenSeg(settings);
                         });
                     };
