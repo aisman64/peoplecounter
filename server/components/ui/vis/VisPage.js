@@ -122,6 +122,7 @@ module.exports = NoGapDef.component({
                 if (!Instance.User.isStandardUser()) return;
 
                 ThisComponent.currentMacId = parseInt(pageArgs);
+                ThisComponent.page.invalidateView();
             }
         };
     })

@@ -2,17 +2,20 @@
 
 
 	<!-- <pre>{{PC.macGraphData}}</pre> -->
-	<div class="panel panel-primary">
+	<div class="panel panel-primary"
+		ng-if="PC.currentMacId">
 	    <div class="panel-heading">
 	        <div class="panel-title">
-	            <span class="">Device:
+	            <span class=""
+	            	ng-if="PC.currentMacInfo"
+	            	>Device:
 					{{ PC.currentMacInfo.macAnnotation && 
 							PC.currentMacInfo.macAnnotation || 
 						PC.currentMacInfo.macAddress }}
 					<span
-						ng-if="PC.currentMacInfo.OUI"
 						>({{PC.currentMacInfo.OUI.model}})</span>
 	            </span>
+	            &nbsp;
 
 	            <span class="pull-right" 
 	                style="vertical-align: middle"
