@@ -178,29 +178,33 @@ module.exports = NoGapDef.component({
                                 ThisComponent.busy = false;
                             })
                             .then(function(packets) {
-                                console.log('promise back');
-                                console.log(packets);
-                                var line = {
-                                    key: 'Packet Number',
-                                    color: '#ff7f0e',
-                                    values : []
+                                $scope.$apply(function(){
+                                    console.log('promise back');
+                                    console.log(packets);
+                                    var line = {
+                                        key: 'Packet Number',
+                                        color: '#ff7f0e',
+                                        values : []
 
-                                };
-                                var index = 0;
-                                console.log('11111');
-                                for (var i = packets.length - 1;i >= 0; i--) {
-                                    var point = {
-                                        x : -i,
-                                        y : packets[i].count,
                                     };
-                                    line.values.push(point);
-                                    index += 1;
+                                    var index = 0;
+                                    console.log('11111');
+                                    for (var i = packets.length - 1;i >= 0; i--) {
+                                        var point = {
+                                            x : -i,
+                                            y : packets[i].count,
+                                        };
+                                        line.values.push(point);
+                                        index += 1;
 
-                                }
-                                console.log('222222');
-                                var lineChart = [line];
-                                $scope.data = lineChart
-                                console.log('3333');
+                                    }
+                                    console.log('222222');
+                                    var lineChart = [line];
+                                    $scope.data = lineChart;
+                                    console.log('3333');
+
+                                });
+                                
 
 
                             })
