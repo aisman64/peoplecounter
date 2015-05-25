@@ -51,10 +51,10 @@ module.exports = NoGapDef.component({
                 maxSSIDPopularity: 40,
                 PerType: {
                     MAC: {
-                        getNodeLabel: function(nodeData) {
-                            return nodeData.macAddress;
+                        getNodeLabel: function(macData) {
+                            return macData.macInfo.macAddress;
                         },
-                        computeNodeWeight: function(nodeData) {
+                        computeNodeWeight: function(macData) {
                             return .5;
                         },
                         selectedBackgroundColor: '#FFEEBB',
@@ -139,7 +139,6 @@ module.exports = NoGapDef.component({
                         $scope.$digest();
 
                         $scope.genMACGraph(macInfo);
-                        $scope.$digest();
                     })
                     .finally(function() {
                         $scope.busy = false;
@@ -158,11 +157,18 @@ module.exports = NoGapDef.component({
                     currentGraph = new Springy.Graph();
 
                     var macData = {
-                        macAddress: macInfo.macAddress,
+                        macInfo: macInfo,
                         nodeMass: 10
                     };
-                    var macNode = $scope.addGraphNode('MAC', macData);
+                    
+                    var macNode = $scope.addGraphNode('MAC', macData, true);
+                    $scope.appendSSIDNodes(macNode, macInfo);
+                    
 
+                    $scope.drawCurrentGraph();
+                };
+
+                $scope.appendSSIDNodes = function(macNode, macInfo) {
                     for (var i = 0; i < macInfo.ownSsids.length; ++i) {
                         var ssidData = macInfo.ownSsids[i];
                         if (ssidData.macIds.length < 2) {
@@ -172,31 +178,31 @@ module.exports = NoGapDef.component({
                         }
 
                         //var ssidNodeSize = ssidData.macIds.length;
-                        var node = $scope.addGraphNode('SSID', ssidData);
+                        var node = $scope.addGraphNode('SSID', ssidData, false);
 
                         // connect them with an edge
                         currentGraph.newEdge(macNode, node);
                     };
-
-                    $scope.drawCurrentGraph();
                 };
 
-                $scope.addGraphNode = function(nodeType, nodeData) {
+                $scope.addGraphNode = function(nodeType, typeData, isOpen) {
                     var RenderSettings = ThisComponent.RenderSettings;
                     var NodeTypeSettings = RenderSettings.PerType[nodeType];
 
-                    var label = nodeData.label || NodeTypeSettings.getNodeLabel(nodeData);
-                    var nodeWeight = nodeData.nodeWeight || NodeTypeSettings.computeNodeWeight(nodeData);
-                    var mass = nodeData.mass || nodeWeight + 1;
+                    var label = typeData.label || NodeTypeSettings.getNodeLabel(typeData);
+                    var nodeWeight = typeData.nodeWeight || NodeTypeSettings.computeNodeWeight(typeData);
+                    var mass = typeData.mass || nodeWeight + 1;
 
                     var fontSize = RenderSettings.minFontSize + nodeWeight * (RenderSettings.maxFontSize - RenderSettings.minFontSize);
 
                     var nodeDescription = {
                         label: label,
                         type: NodeType[nodeType],
+                        isOpen: isOpen,
                         font: fontSize + RenderSettings.fontWithoutSize,
                         height: fontSize,
-                        mass: mass
+                        mass: mass,
+                        typeData: typeData
                     };
 
                     if (NodeTypeSettings) {
@@ -225,11 +231,38 @@ module.exports = NoGapDef.component({
                     // render graph in canvas
                     var springy = $canvas.springy({
                         graph: currentGraph,
-                        damping: .1,
+                        damping: .2,
                         backgroundColor: '#FFFFFF',
 
                         nodeSelected: function(node) {
-                            
+                            var type = node.data.type;
+                            var typeData = node.data.typeData;
+                            if (node.data.isOpen) {
+                                // remove children
+                                var childEdgeList = currentGraph.adjacency[node.id];
+                                for (var childId in childEdgeList) {
+                                    var child = currentGraph.nodeSet[childId];
+                                    if (child) {
+                                        currentGraph.removeNode(child);
+                                    }
+                                };
+                                $scope.drawCurrentGraph();
+                            }
+                            else {
+                                // query and append children
+                                if (type == NodeType.SSID) {
+
+                                }
+                                else if (type == NodeType.MAC) {
+                                    var macId = typeData.macInfo.macId;
+                                    Instance.CommonDBQueries.host.computeMACRelationGraphPublic(macId)
+                                    .then(function(macInfo) {
+                                        // append to graph!
+                                        $scope.appendSSIDNodes(node, macInfo);
+                                    });
+                                }
+                            }
+                            node.data.isOpen = !node.data.isOpen;
                         }
                     });
 
@@ -241,6 +274,9 @@ module.exports = NoGapDef.component({
                         }
                         return _oldNodeGetHeight.call(this);
                     };
+
+                    // update the rest of the element
+                    $scope.$digest();
                 };
             },
         };
