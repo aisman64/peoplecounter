@@ -112,12 +112,17 @@ module.exports = NoGapDef.component({
                 mostOftenUsedSSIDs: function() {
                     return Instance.CommonDBQueries.queries.MostOftenUsedSSIDs({ limit: 20 });
                 },
+
+                namedMACs: function() {
+                    return Instance.CommonDBQueries.queries.NamedMACs();
+                }
             },
 
             onPageActivate: function(pageArgs) {
                 if (!Instance.User.isStandardUser()) return;
 
                 ThisComponent.currentMacId = parseInt(pageArgs);
+                ThisComponent.page.invalidateView();
             }
         };
     })

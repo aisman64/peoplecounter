@@ -147,7 +147,7 @@ html {
 
 
 /* ########################################################################################## */
-/* Custom button class: fancy; */
+/* Custom button classes: fancy + dark */
 
 /* btn-fancy: default style*/
 .btn-fancy { 
@@ -155,7 +155,6 @@ html {
   background-color: #17B29D; 
   border-color: #006622;
 } 
- 
 /* btn-fancy: hover style */
 .btn-fancy:hover, 
 .btn-fancy:focus {
@@ -163,7 +162,6 @@ html {
   background-color: #46B8AA;
   border-color: #006622; 
 }
-
 /* btn-fancy: active style */
 .btn-fancy:active, 
 .btn-fancy.active, 
@@ -177,7 +175,6 @@ html {
 .open .dropdown-toggle.btn-fancy { 
   background-image: none; 
 } 
- 
 /* btn-fancy: disabled style*/
 .btn-fancy.disabled, 
 .btn-fancy[disabled], 
@@ -198,15 +195,60 @@ fieldset[disabled] .btn-fancy.active {
   background-color: #17B29D; 
   border-color: #006622; 
 } 
- 
 .btn-fancy .badge { 
   color: #00BBBB; 
   background-color: #FFFFFF; 
 }
-
-
 .btn-inline {
   background-color: inherit !important;
+}
+
+
+/*dark style*/
+.btn-dark { 
+  color: #ffffff; 
+  background-color: #222; 
+  border-color: #86858C; 
+} 
+ 
+.btn-dark:hover, 
+.btn-dark:focus, 
+.btn-dark:active, 
+.btn-dark.active, 
+.open .dropdown-toggle.btn-dark { 
+  color: #ffffff; 
+  background-color: #616161; 
+  border-color: #86858C; 
+} 
+ 
+.btn-dark:active, 
+.btn-dark.active, 
+.open .dropdown-toggle.btn-dark { 
+  background-image: none; 
+} 
+ 
+.btn-dark.disabled, 
+.btn-dark[disabled], 
+fieldset[disabled] .btn-dark, 
+.btn-dark.disabled:hover, 
+.btn-dark[disabled]:hover, 
+fieldset[disabled] .btn-dark:hover, 
+.btn-dark.disabled:focus, 
+.btn-dark[disabled]:focus, 
+fieldset[disabled] .btn-dark:focus, 
+.btn-dark.disabled:active, 
+.btn-dark[disabled]:active, 
+fieldset[disabled] .btn-dark:active, 
+.btn-dark.disabled.active, 
+.btn-dark[disabled].active, 
+fieldset[disabled] .btn-dark.active { 
+  background-color: #222; 
+  border-color: #86858C; 
+} 
+ 
+.btn-dark .badge { 
+  color: #222; 
+  background-color: #ffffff; 
 }
   
   
@@ -538,6 +580,18 @@ div[ng-controller='mapCtrl'] {
 
 /* ########################################################################################## */
 /* Application-specific stuff */
+
 .mac-oui {
   color: #444
+}
+
+.fullscreen_page {
+  position: fixed;
+  top: 34px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: calc(100% - 34px);
+  width:100%;
+  overflow:auto;
 }
