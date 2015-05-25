@@ -78,6 +78,7 @@ module.exports = NoGapDef.component({
 
             __ctor: function() {
                 ThisComponent = this;
+                ThisComponent.showDevices = false;
             },
 
             _registerDirectives: function(app) {
@@ -134,7 +135,8 @@ module.exports = NoGapDef.component({
                     $scope.toggleBottomPanel = function(isOpen) {
                         isOpen = isOpen === undefined ? !$scope.BottomPanelOpen : isOpen;
                         $scope.BottomPanelOpen = isOpen;
-                        $scope.BottomPanelCurrentHeight = isOpen && $scope.BottomPanelHeight || 0;
+                        $scope.BottomPanelCurrentHeight = isOpen && $scope. BottomPanelHeight || 0;
+                        console.error($scope.BottomPanelCurrentHeight);
                     };
 
                     $scope.toggleBottomPanel($scope.LayoutSettings.BottomPanelOpen);
@@ -186,7 +188,8 @@ module.exports = NoGapDef.component({
                 var timeFrameSeconds = ThisComponent.currentTimeFrame.asMilliseconds() / (1000);
 
                 return Instance.CommonDBQueries.queries.PeopleCount({
-                    timeFrameSeconds: timeFrameSeconds
+                    timeFrameSeconds: timeFrameSeconds,
+                    includeDevices: ThisComponent.showDevices
                 })
                 .finally(function() {
                     ThisComponent.busy = false;
