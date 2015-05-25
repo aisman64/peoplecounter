@@ -62,6 +62,7 @@ module.exports = NoGapDef.component({
              * The different time frames over which to count people
              */
             PeopleCounterTimeFrames: [
+                moment.duration({ minutes: 1 }),
                 moment.duration({ minutes: 5 }),
                 moment.duration({ hours: 1 }),
                 moment.duration({ days: 1 }),
@@ -70,8 +71,14 @@ module.exports = NoGapDef.component({
                 moment.duration({ years: 1 })
             ],
 
+            LayoutSettings: {
+                BottomPanelOpen: false,
+                BottomPanelHeight: '100px'
+            },
+
             __ctor: function() {
                 ThisComponent = this;
+                ThisComponent.showDevices = false;
             },
 
             _registerDirectives: function(app) {
@@ -81,12 +88,17 @@ module.exports = NoGapDef.component({
                     var linkFun = function($scope, $element, $attrs) {
                         AngularUtil.decorateScope($scope);
 
+                        // green by default
+                        var settingsDefault = {
+                            colorOn: '#00FF00',
+                            colorOff: '#001100',
+                            //colorBackground: 'white'
+                        };
+
                         $scope.bindAttrExpression($attrs, 'settings', function(settings) {
                             settings = settings || {};
-
-                            // green by default
-                            settings.colorOn = settings.colorOn || '#00FF00';
-                            settings.colorOff = settings.colorOff || '#003200';
+                            
+                            squishy.mergeWithoutOverride(settings, settingsDefault);
                             $element.sevenSeg(settings);
                         });
                     };
@@ -111,14 +123,27 @@ module.exports = NoGapDef.component({
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
                     // customize your $scope here:
+
+                    // data
                     $scope.userCache = Instance.User.users;
                     $scope.deviceCache = Instance.WifiSnifferDevice.wifiSnifferDevices;
                     $scope.datasetCache = Instance.WifiDataset.wifiDatasets;
+
+                    // layouting
+                    $scope.LayoutSettings = ThisComponent.LayoutSettings;
+                    $scope.toggleBottomPanel = function(isOpen) {
+                        isOpen = isOpen === undefined ? !$scope.BottomPanelOpen : isOpen;
+                        $scope.BottomPanelOpen = isOpen;
+                        $scope.BottomPanelCurrentHeight = isOpen && $scope. BottomPanelHeight || 0;
+                        console.error($scope.BottomPanelCurrentHeight);
+                    };
+
+                    $scope.toggleBottomPanel($scope.LayoutSettings.BottomPanelOpen);
                 });
 
                 // register page
                 Instance.UIMgr.registerPage(this, 'Live', this.assets.template, {
-                    iconClasses: 'fa fa-bar-chart'
+                    iconClasses: 'fa fa-calculator'
                 });
             },
 
@@ -162,7 +187,8 @@ module.exports = NoGapDef.component({
                 var timeFrameSeconds = ThisComponent.currentTimeFrame.asMilliseconds() / (1000);
 
                 return Instance.CommonDBQueries.queries.PeopleCount({
-                    timeFrameSeconds: timeFrameSeconds
+                    timeFrameSeconds: timeFrameSeconds,
+                    includeDevices: ThisComponent.showDevices
                 })
                 .finally(function() {
                     ThisComponent.busy = false;

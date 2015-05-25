@@ -1,18 +1,9 @@
--- Most often used mac addresses in `clean`: count, macId
--- 102139, 12742
--- 37756, 8429
--- 36731, 166
--- 34138, 11013
--- 29649, 8815
--- 28556, 8878
--- 23694, 11015
--- 21550, 353
--- 17363, 3597
--- 13489, 8967
+# Optimization hints
+# Partitioning + using MyISAM: http://stackoverflow.com/a/511966/2228771
 
--- Time sampling (using 60 second time slices):
--- SELECT COUNT(*) c, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` WHERE macid = 11015 GROUP BY `t` ORDER BY `t` LIMIT 30;
--- SELECT COUNT(*) c, `macId`, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` GROUP BY `macId`, `t` ORDER BY `macId`, `t` LIMIT 30;
+# Time sampling (using 60 second time slices):
+# SELECT COUNT(*) c, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` WHERE macid = 11015 GROUP BY `t` ORDER BY `t` LIMIT 30;
+# SELECT COUNT(*) c, `macId`, ROUND(`time` - ROUND(`time`) % 60) t FROM `data` GROUP BY `macId`, `t` ORDER BY `macId`, `t` LIMIT 30;
 
 # Most active SSIDs
 # SELECT c count, ssidName FROM (SELECT COUNT(*) c, ssidId s FROM WifiSSIDPacket GROUP BY ssidId ORDER BY c DESC LIMIT 10) j INNER JOIN (SSID) ON (s = ssidId);
@@ -233,4 +224,12 @@ INNER JOIN `OUI` o
 ON (m.macAddress LIKE CONCAT(o.mac, '%'))
 SET m.ouiId = o.ouiId;
 
-# TODO: Update model defines!
+
+# convert time to BIGINT
+ALTER TABLE `WifiSSIDPacket` ADD `time2` DATETIME(6);
+
+UPDATE `WifiSSIDPacket`
+SET `time2` = FROM_UNIXTIME(time);
+
+CREATE INDEX WifiSSIDPacket_time2 ON WifiSSIDPacket (time2);
+CREATE INDEX WifiSSIDPacket_time2_macId ON WifiSSIDPacket (time2, macId);
