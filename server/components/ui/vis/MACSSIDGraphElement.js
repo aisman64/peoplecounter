@@ -169,6 +169,7 @@ module.exports = NoGapDef.component({
                 };
 
                 $scope.appendSSIDNodes = function(macNode, macInfo) {
+                    $scope.otherSsids = [];
                     for (var i = 0; i < macInfo.ownSsids.length; ++i) {
                         var ssidData = macInfo.ownSsids[i];
                         if (ssidData.macIds.length < 2) {
