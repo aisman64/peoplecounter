@@ -1046,6 +1046,7 @@ module.exports = NoGapDef.component({
 
                     // flag as UI newComponent
                     newComponent.isUI = true;
+                    newComponent.refreshAddressBar = Instance.UIMgr.updateAddressBar.bind(Instance.UIMgr, newComponent, true);
                 }
 
                 // hook-up all component events

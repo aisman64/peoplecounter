@@ -1,1 +1,3 @@
-SELECT MIN(time) min, MAX(time) max FROM WifiSSIDPacket WHERE macId = :macId
+SELECT macId, MIN(time) min, MAX(time) max
+FROM WifiSSIDPacket
+GROUP BY macId

@@ -50,6 +50,8 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function() {
                 ThisComponent = this;
+                this.currentMacIdList = [];
+                this.currentMacIdMap = {};
                 VisView = this.VisView = { 
                     open: {},
                     busy: {},
@@ -67,10 +69,6 @@ module.exports = NoGapDef.component({
 
                     // customize your $scope here:
                     $scope.VisView = VisView;
-                    
-                    $scope.visualizeMACAddress = function(macId) {
-                        Instance.UIMgr.gotoPage('Vis', macId);
-                    }
 
                     $scope.fetchData = function(what) {
                         setTimeout(function() {
@@ -87,8 +85,27 @@ module.exports = NoGapDef.component({
                 });
             },
 
+            toggleMacId: function(macId, enable) {
+                enable = enable || enable === undefined && !this.currentMacIdMap[macId];
+                if (enable) {
+                    // enable
+                    this.currentMacIdList.push(macId);
+                    this.currentMacIdMap[macId] = 1;
+                }
+                else {
+                    // disable
+                    _.remove(this.currentMacIdList, function(macId2) {
+                        return macId2 == macId;
+                    });
+                    delete this.currentMacIdMap[macId];
+                }
+
+                ThisComponent.page.invalidateView();
+                ThisComponent.refreshAddressBar();
+            },
+
             getPageArgs: function() {
-                return ThisComponent.currentMacId;
+                return ThisComponent.currentMacIdList.join(',');
             },
 
             getVisData: function(what) {
@@ -118,11 +135,37 @@ module.exports = NoGapDef.component({
                 }
             },
 
+            /**
+             * Possible arguments: Array of comma-separated macIds (strings or numbers)
+             */
             onPageActivate: function(pageArgs) {
                 if (!Instance.User.isStandardUser()) return;
 
-                ThisComponent.currentMacId = parseInt(pageArgs);
+                var macIds;
+                if (_.isString(pageArgs)) {
+                    macIds = pageArgs.split(',');
+                }
+                else if (_.isArray(macIdStrings)) {
+                    macIds = pageArgs;
+                }
+
+                // re-compute set of macIds
+                ThisComponent.currentMacIdList = [];
+                ThisComponent.currentMacIdMap = {};
+
+                if (macIds) {
+                    // 
+                    macIds.forEach(function(macId_) {
+                        var macId = _.isString(macId_) && parseInt(macId_) || macId_;
+                        if (macId && !ThisComponent.currentMacIdMap[macId]) {
+                            ThisComponent.currentMacIdList.push(macId);
+                            ThisComponent.currentMacIdMap[macId] = 1;
+                        }
+                    });
+                }
+
                 ThisComponent.page.invalidateView();
+                ThisComponent.refreshAddressBar();
             }
         };
     })

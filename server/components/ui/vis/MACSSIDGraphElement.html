@@ -30,9 +30,8 @@
 								{{ macEntry.macAnnotation && 
 										macEntry.macAnnotation || 
 									macEntry.macAddress }}
-								<span class="mac-oui"
-									ng-if="macEntry.model"
-									>({{macEntry.model}})</span>
+								<span ng-if="macEntry.OUI.model"
+									>({{macEntry.OUI.model}})</span>
 							</b></span>
 						</div>
 					</td>

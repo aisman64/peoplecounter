@@ -145,6 +145,7 @@ module.exports = NoGapDef.component({
             },
 
             executeQuery: function(query, args, suffix, prefix) {
+                args = args || {};
             	suffix = suffix || '';
             	prefix = prefix || '';
 
@@ -152,9 +153,9 @@ module.exports = NoGapDef.component({
         			args.limit = 50;
         		}
                 
-            	query = [query, suffix, prefix].join(' ');
+            	query = [prefix, query, suffix].join(' ');
             	return sequelize.query(query, { 
-				  	replacements: args, 
+				  	replacements: args,
 				  	type: sequelize.QueryTypes.SELECT
 			  	});
             },
@@ -168,8 +169,6 @@ module.exports = NoGapDef.component({
                     if (!_.isArray(macIds)) return Promise.reject(makeError('error.invalid.request'));
                     if (macIds.some(function(macId) { return isNaNOrNull(macId); })) return Promise.reject(makeError('error.invalid.request'));
 
-                    var allMacIdOrString = macIds.map(function(macId) { return 'macId = ' + macId; }).join(' OR ');
-
                     var queries = [
                         this.Instance.MAC_SSID_Relation.macSsidRelationships.getObjects(),
                         this.Instance.SSID.ssids.getObjects(),
@@ -179,9 +178,7 @@ module.exports = NoGapDef.component({
                         this.Instance.MACAddress.macAddresses.getObjects({
                             macId: macIds
                         }, true, false, true),
-                        this.executeQuery('MACTimes', {
-                            macId: macIds
-                        })
+                        this.Shared.executeQueryByName('MACTimes', null, 'HAVING ' + macIds.map(function(macId) { return 'macId = "' + macId + '"'; }).join(' OR '))
                     ];
 
                     return Promise.all(queries)
@@ -196,6 +193,8 @@ module.exports = NoGapDef.component({
                         var macIdsBySsidIds = _.mapValues(_.groupBy(allRelations, 'ssidId'), function(group) {
                             return _.pluck(group, 'macId');
                         });
+
+                        var timesByMacId = _.indexBy(times, 'macId');
 
                         var ssidEntriesBySsidId = _.indexBy(allSsids, 'ssidId');
 
@@ -220,7 +219,7 @@ module.exports = NoGapDef.component({
                                     name: ssidName,
 
                                     // array of macIds associated to SSID
-                                    macIds: ssidMacIds
+                                    macIdCount: ssidMacIds.length
                                 };
                             });
                         }.bind(this);
@@ -229,8 +228,10 @@ module.exports = NoGapDef.component({
                         for (var i = 0; i < macEntries.length; i++) {
                             var macEntry = macEntries[i] = macEntries[i] || {};
                             macEntry.ownSsids = getSSIDsOfMAC(macEntry.macId);
-                            macEntry.times = times[i];
+                            macEntry.times = timesByMacId[macEntry.macId];
                         };
+
+                        //console.error(JSON.stringify(timesByMacId, null, '\t'));
 
                         return macEntries;
                     });
