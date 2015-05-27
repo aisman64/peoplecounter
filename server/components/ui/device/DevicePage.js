@@ -107,7 +107,7 @@ module.exports = NoGapDef.component({
                     if (!this.Instance.User.isStaff()) 
                         return Promise.reject(makeError('error.invalid.permissions'));
 
-                    // TODO: Reboot
+                    // TODO: Get device clients independent of session, then reboot
                     console.error('NYI: rebootDevice');
                 },
 
@@ -115,7 +115,7 @@ module.exports = NoGapDef.component({
                     if (!this.Instance.User.isStaff()) 
                         return Promise.reject(makeError('error.invalid.permissions'));
 
-                    // TODO: Restart
+                    // TODO: Get device clients independent of session, then restart
                     console.error('NYI: restartDevice');
                 }
             },
