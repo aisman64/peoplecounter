@@ -30,6 +30,7 @@
 			<span style="display: inline-block; width: 6em;"></span>
 
 			<a class="btn btn-dark"
+				type="radio"
 				ng-click="toggleBottomPanel(PC.showPerDeviceInfo = !PC.showPerDeviceInfo);"
 				ng-class="{ active: PC.showPerDeviceInfo}">
 				per device
@@ -38,6 +39,7 @@
 			</a>
 
 			<a class="btn btn-dark"
+				type="radio"
 				ng-disabled="false"
 				ng-click="toggleHistoryGraph(PC.HistoryGraphOpen); PC.HistoryGraphOpen=!PC.HistoryGraphOpen;"
 				ng-class="{ active: PC.HistoryGraphOpen}">
