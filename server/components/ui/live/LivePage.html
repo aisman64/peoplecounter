@@ -23,9 +23,16 @@
 			<span style="display: inline-block; width: 6em;"></span>
 
 			<a class="btn btn-dark"
-				ng-click="toggleBottomPanel(PC.showDevices = !PC.showDevices);"
+				ng-click="console.log('who');toggleBottomPanel(PC.showDevices = !PC.showDevices);"
 				ng-class="{ active: PC.showDevices}">
 				per device
+
+				<i class="fa fa-"></i>
+			</a>
+			<a class="btn btn-dark"
+				ng-click="console.log('hello');toggleHistoryGraph(PC.HistoryGraphOpen);"
+				ng-class="{ active: PC.showDevices}">
+				History
 
 				<i class="fa fa-"></i>
 			</a>
@@ -48,6 +55,7 @@
 		    </span>
 		</div>
 	</div>
+	<nvd3 ng-if="!!HistoryGraphOpen" objectequality="true" options="options" data="data"></nvd3>
 
 	<div>
 		<div class=""
