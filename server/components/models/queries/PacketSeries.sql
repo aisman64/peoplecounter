@@ -1,6 +1,6 @@
-SELECT FROM_UNIXTIME(FLOOR(p.time/ :timePeriod )*:timePeriod) as timeNearTo,COUNT(DISTINCT(p.macId)) as count
+SELECT FROM_UNIXTIME(FLOOR(p.time/ :timePeriod )*:timePeriod) as timeNearTo,COUNT(DISTINCT(p.macId)) as count, deviceId
 FROM WifiSSIDPacket p
-WHERE p.time > UNIX_TIMESTAMP() - :timeRangeFromNow AND deviceId = :deviceId
-GROUP BY timeNearTo
+WHERE p.time > UNIX_TIMESTAMP() - :timeRangeFromNow
+GROUP BY timeNearTo, deviceId
 ORDER BY timeNearTo DESC
-LIMIT 100;
+LIMIT 500;

@@ -164,16 +164,31 @@ module.exports = NoGapDef.component({
             		return [this.Shared.QueryNameMap];
             	},
 
-                computeMACRelationGraph: function(macId) {
-                    return Promise.join(
-                        this.Instance.MACAddress.macAddresses.getObject({macId: macId}, true, false, true),
+                computeMACRelationGraph: function(macIds) {
+                    if (!_.isArray(macIds)) return Promise.reject(makeError('error.invalid.request'));
+                    if (macIds.some(function(macId) { return isNaNOrNull(macId); })) return Promise.reject(makeError('error.invalid.request'));
+
+                    var allMacIdOrString = macIds.map(function(macId) { return 'macId = ' + macId; }).join(' OR ');
+
+                    var queries = [
                         this.Instance.MAC_SSID_Relation.macSsidRelationships.getObjects(),
                         this.Instance.SSID.ssids.getObjects(),
-                        sequelize.query('SELECT COUNT(*) FROM SSID WHERE ssidName != "" AND ssidName IS NOT NULL', {
-                            type: sequelize.QueryTypes.SELECT
+                        // sequelize.query('SELECT COUNT(*) FROM SSID WHERE ssidName != "" AND ssidName IS NOT NULL', {
+                        //     type: sequelize.QueryTypes.SELECT
+                        // }),
+                        this.Instance.MACAddress.macAddresses.getObjects({
+                            macId: macIds
+                        }, true, false, true),
+                        this.executeQuery('MACTimes', {
+                            macId: macIds
                         })
-                    )
-                    .spread(function(macAddressEntry, allRelations, allSsids, totalSsidCount) {
+                    ];
+
+                    return Promise.all(queries)
+                    .bind(this)
+                    .spread(function(allRelations, allSsids, /* totalSsidCount, */ 
+                            macEntries, times) {
+
                         var ssidIdsByMacId = _.mapValues(_.groupBy(allRelations, 'macId'), function(group) {
                             return _.pluck(group, 'ssidId');
                         });
@@ -184,34 +199,40 @@ module.exports = NoGapDef.component({
 
                         var ssidEntriesBySsidId = _.indexBy(allSsids, 'ssidId');
 
-                        var ownSsidIds = ssidIdsByMacId[macId] || [];
+                        var getSSIDsOfMAC = function(macId) {
+                            var ownSsidIds = ssidIdsByMacId[macId] || [];
 
-                        var ownSsids = _.map(ownSsidIds, function(ssidId) {
-                            var entry = ssidEntriesBySsidId[ssidId];
-                            var ssidName = entry && entry.ssidName;
-                            if (!ssidName) {
-                                console.error('unnamed SSID: ' + ssidId);
-                                // ignore unnamed SSIDs
-                                return;
-                            }
+                            return _.map(ownSsidIds, function(ssidId) {
+                                var entry = ssidEntriesBySsidId[ssidId];
+                                var ssidName = entry && entry.ssidName;
+                                if (!ssidName) {
+                                    console.error('unnamed SSID: ' + ssidId);
+                                    // ignore unnamed SSIDs
+                                    return;
+                                }
 
-                            
-                            // get all MAC addresses that the given MAC address is connected to
-                            var ssidMacIds = macIdsBySsidIds[ssidId] || [];
+                                
+                                // get all MAC addresses that the given MAC address is connected to
+                                var ssidMacIds = macIdsBySsidIds[ssidId] || [];
 
-                            return {
-                                // name of SSID
-                                name: ssidName,
+                                return {
+                                    // name of SSID
+                                    name: ssidName,
 
-                                // array of macIds associated to SSID
-                                macIds: ssidMacIds
-                            };
-                        });
+                                    // array of macIds associated to SSID
+                                    macIds: ssidMacIds
+                                };
+                            });
+                        }.bind(this);
 
-                        macAddressEntry = macAddressEntry || {};
-                        macAddressEntry.ownSsids = ownSsids;
 
-                        return macAddressEntry;
+                        for (var i = 0; i < macEntries.length; i++) {
+                            var macEntry = macEntries[i] = macEntries[i] || {};
+                            macEntry.ownSsids = getSSIDsOfMAC(macEntry.macId);
+                            macEntry.times = times[i];
+                        };
+
+                        return macEntries;
                     });
                 },
             },
@@ -236,8 +257,8 @@ module.exports = NoGapDef.component({
             		return this.Shared.executeQueryByName(queryName, args, suffix, prefix);
             	},
 
-                computeMACRelationGraphPublic: function(macId) {
-                    return this.computeMACRelationGraph(macId);
+                computeMACRelationGraphPublic: function(macIds) {
+                    return this.computeMACRelationGraph(macIds);
                 }
             }
         };

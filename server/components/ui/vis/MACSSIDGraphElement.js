@@ -51,10 +51,10 @@ module.exports = NoGapDef.component({
                 maxSSIDPopularity: 40,
                 PerType: {
                     MAC: {
-                        getNodeLabel: function(nodeData) {
-                            return nodeData.macAddress;
+                        getNodeLabel: function(macData) {
+                            return macData.macEntry.macAddress;
                         },
-                        computeNodeWeight: function(nodeData) {
+                        computeNodeWeight: function(macData) {
                             return .5;
                         },
                         selectedBackgroundColor: '#FFEEBB',
@@ -116,11 +116,19 @@ module.exports = NoGapDef.component({
                     $scope.prepGraph(macId);
                 });
 
-                $scope._updateMACInfo = function(macInfo) {
-                    $scope.macInfo = macInfo;
-                    $ngModelCtrl.$setViewValue(macInfo);
+                $scope.setBusy = function(isBusy, dontInvalidate) {
+                    // use this hack-around for now...
+                    $scope.PC.busy = isBusy;
+                    if (!dontInvalidate) {
+                        $scope.PC.page.invalidateView();
+                    }
+                };
+
+                $scope._updateMACInfo = function(macEntries) {
+                    $scope.macEntries = macEntries;
+                    $ngModelCtrl.$setViewValue(macEntries);
                     $ngModelCtrl.$render();
-                    //$scope.safeDigest();
+                    //$scope.PC.page.invalidateView();
                 };
 
                 $scope.prepGraph = function(macId) {
@@ -128,81 +136,107 @@ module.exports = NoGapDef.component({
                     if (!Instance.User.isStandardUser()) return;
 
                     $scope._updateMACInfo(null);
-                    $scope.busy = true;
-                    $scope.otherSsids = []; // all SSIDs that are not added to the graph
+                    $scope.setBusy(true, true);
 
                     return Promise.join(
-                        Instance.CommonDBQueries.host.computeMACRelationGraphPublic(macId)
+                        Instance.CommonDBQueries.host.computeMACRelationGraphPublic([macId])
                     )
-                    .spread(function(macInfo) {
+                    .spread(function(macEntries) {
                         // make sure, container exists
                         $scope.$digest();
 
-                        $scope.genMACGraph(macInfo);
-                        $scope.$digest();
+                        $scope.genMACGraph(macEntries);
                     })
                     .finally(function() {
-                        $scope.busy = false;
-                        $scope.safeDigest();
+                        $scope.setBusy(false);
                     })
                     .catch($scope.handleError.bind($scope));
                 };
 
-                /**
-                 * Generate the graph around the given MAC
-                 */
-                $scope.genMACGraph = function(macInfo) {
-                    $scope._updateMACInfo(macInfo);
 
-                    // create and populate graph
-                    currentGraph = new Springy.Graph();
+                // #############################################################################
+                // Graph functions
 
-                    var macData = {
-                        macAddress: macInfo.macAddress,
-                        nodeMass: 10
-                    };
-                    var macNode = $scope.addGraphNode('MAC', macData);
-
-                    for (var i = 0; i < macInfo.ownSsids.length; ++i) {
-                        var ssidData = macInfo.ownSsids[i];
-                        if (ssidData.macIds.length < 2) {
-                            // no one else is on this SSID
-                            $scope.otherSsids.push(ssidData);
-                            continue;
-                        }
-
-                        //var ssidNodeSize = ssidData.macIds.length;
-                        var node = $scope.addGraphNode('SSID', ssidData);
-
-                        // connect them with an edge
-                        currentGraph.newEdge(macNode, node);
-                    };
-
-                    $scope.drawCurrentGraph();
+                $scope.getNodeByLabel = function(label) {
+                    return currentGraph.nodeSet[label];
                 };
 
-                $scope.addGraphNode = function(nodeType, nodeData) {
+                $scope.addGraphNode = function(nodeType, typeData, isOpen) {
                     var RenderSettings = ThisComponent.RenderSettings;
                     var NodeTypeSettings = RenderSettings.PerType[nodeType];
 
-                    var label = nodeData.label || NodeTypeSettings.getNodeLabel(nodeData);
-                    var nodeWeight = nodeData.nodeWeight || NodeTypeSettings.computeNodeWeight(nodeData);
-                    var mass = nodeData.mass || nodeWeight + 1;
+                    var label = typeData.label || NodeTypeSettings.getNodeLabel(typeData);
+                    var nodeWeight = typeData.nodeWeight || NodeTypeSettings.computeNodeWeight(typeData);
+                    var mass = typeData.mass || nodeWeight + 1;
 
                     var fontSize = RenderSettings.minFontSize + nodeWeight * (RenderSettings.maxFontSize - RenderSettings.minFontSize);
 
                     var nodeDescription = {
                         label: label,
                         type: NodeType[nodeType],
+                        isOpen: isOpen,
                         font: fontSize + RenderSettings.fontWithoutSize,
                         height: fontSize,
-                        mass: mass
+                        mass: mass,
+                        typeData: typeData
                     };
 
                     if (NodeTypeSettings) {
                         squishy.mergeWithoutOverride(nodeDescription, NodeTypeSettings);
                     }
                     return currentGraph.newNode(nodeDescription);
+                };
+
+                $scope.getOrCreateNode = function(nodeType, typeData, isOpen) {
+                    var RenderSettings = ThisComponent.RenderSettings;
+                    var NodeTypeSettings = RenderSettings.PerType[nodeType];
+
+                    var label = typeData.label || NodeTypeSettings.getNodeLabel(typeData);
+                    var node = $scope.getNodeByLabel(label);
+                    if (!node) {
+                        node = $scope.addGraphNode(nodeType, typeData, isOpen);
+                    }
+                    return node;
+                };
+
+                /**
+                 * Generate the graph around the given MAC
+                 */
+                $scope.genMACGraph = function(macEntries) {
+                    $scope._updateMACInfo(macEntries);
+
+                    // create and populate graph
+                    currentGraph = new Springy.Graph();
+
+                    for (var i = 0; i < macEntries.length; ++i) {
+                        var macEntry = macEntries[i];
+                        var macData = {
+                            macEntry: macEntry,
+                            nodeMass: 10
+                        };
+                        var macNode = $scope.addGraphNode('MAC', macData, true);
+
+                        $scope.addSSIDNodes(macNode, macEntry.ownSsids, macEntry.unsharedSsids = []);
+                    };
+
+                    $scope.drawCurrentGraph();
+                };
+
+                $scope.addSSIDNodes = function(macNode, allSsidData, unsharedSsids) {
+                    for (var i = 0; i < allSsidData.length; ++i) {
+                        var ssidData = allSsidData[i];
+                        if (ssidData.macIds.length < 2) {
+                            // no one else is on this SSID
+                            unsharedSsids.push(ssidData);
+                            continue;
+                        }
+
+                        //var ssidNodeSize = ssidData.macIds.length;
+                        var node = $scope.getOrCreateNode('SSID', ssidData, false);
+
+                        // connect them with an edge
+                        currentGraph.newEdge(macNode, node);
+                    };
                 };
 
                 $scope.drawCurrentGraph = function() {
@@ -225,11 +259,45 @@ module.exports = NoGapDef.component({
                     // render graph in canvas
                     var springy = $canvas.springy({
                         graph: currentGraph,
-                        damping: .1,
+                        damping: .2,
                         backgroundColor: '#FFFFFF',
 
                         nodeSelected: function(node) {
-                            
+                            var type = node.data.type;
+                            var typeData = node.data.typeData;
+                            if (node.data.isOpen) {
+                                // remove all children
+                                var childEdgeList = currentGraph.adjacency[node.id];
+                                for (var childId in childEdgeList) {
+                                    var child = $scope.getNodeByLabel(childId);
+                                    if (child) {
+                                        currentGraph.removeNode(child);
+                                    }
+                                };
+                                $scope.drawCurrentGraph();
+                            }
+                            else {
+                                // query and append children
+                                var promise;
+                                $scope.setBusy(true);
+
+                                if (type == NodeType.SSID) {
+
+                                }
+                                else if (type == NodeType.MAC) {
+                                    var macId = typeData.macEntry.macId;
+                                    promise = Instance.CommonDBQueries.host.computeMACRelationGraphPublic([macId])
+                                    .then(function(macEntries) {
+                                        $scope.genMACGraph(macEntries);
+                                    });
+                                }
+
+                                promise.finally(function() {
+                                    $scope.setBusy(false);
+                                })
+                                .catch($scope.handleError.bind($scope));
+                            }
+                            node.data.isOpen = !node.data.isOpen;
                         }
                     });
 
@@ -241,6 +309,9 @@ module.exports = NoGapDef.component({
                         }
                         return _oldNodeGetHeight.call(this);
                     };
+
+                    // update the rest of the element
+                    $scope.$digest();
                 };
             },
         };

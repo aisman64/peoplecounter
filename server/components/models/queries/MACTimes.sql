@@ -1,0 +1,1 @@
+SELECT MIN(time) min, MAX(time) max FROM WifiSSIDPacket WHERE macId = :macId

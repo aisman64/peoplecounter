@@ -83,7 +83,7 @@ module.exports = NoGapDef.component({
 
                 // register page
                 Instance.UIMgr.registerPage(this, 'Vis', this.assets.template, {
-                    iconClasses: 'fa fa-wifi'
+                    iconClasses: 'fa fa-bar-chart'
                 });
             },
 

@@ -7,19 +7,13 @@
 	    <div class="panel-heading">
 	        <div class="panel-title">
 	            <span class=""
-	            	ng-if="PC.currentMacInfo"
-	            	>Device:
-					{{ PC.currentMacInfo.macAnnotation && 
-							PC.currentMacInfo.macAnnotation || 
-						PC.currentMacInfo.macAddress }}
-					<span
-						>({{PC.currentMacInfo.OUI.model}})</span>
-	            </span>
+	            	ng-if="PC.currentMacEntries"
+	            	>Relationship Graph</span>
 	            &nbsp;
 
 	            <span class="pull-right" 
 	                style="vertical-align: middle"
-	                ng-style="{visibility: (PC.busy || (PC.currentMacId && !PC.currentMacInfo)) && 'visible' || 'hidden'}">
+	                ng-style="{visibility: PC.busy && 'visible' || 'hidden'}">
 	                    <i class="fa fa-spinner fa-spin"></i>
 	            </span>
 	        </div>
@@ -27,7 +21,7 @@
 	    <div class="panel-body no-padding">
 			<mac-ssid-graph
 				ng-if="PC.currentMacId"
-				ng-model="PC.currentMacInfo"
+				ng-model="PC.currentMacEntries"
 				mac-id="PC.currentMacId">
 			</mac-ssid-graph>
 		</div>
