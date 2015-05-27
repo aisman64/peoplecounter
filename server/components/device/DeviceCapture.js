@@ -209,6 +209,7 @@ module.exports = NoGapDef.component({
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err) return reject(err);
+                            ThisComponent.flushQueue();
                             resolve();
                         });
                     })
@@ -240,8 +241,7 @@ module.exports = NoGapDef.component({
             flushQueue: function() {
                 Instance.DeviceLog.logStatus('flushQueue', true);
                 var dummies = [];
-                exec("ls tmp/new/*.galileo | wc -l", function(error, stdout, stderr) {
-                    var length = parseInt(stdout);
+                queue.length(function(err, length) {
                     if (!length) return;
                     
                     for(var i=0; i<length; i++) {

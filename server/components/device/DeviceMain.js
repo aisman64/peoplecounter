@@ -380,7 +380,7 @@ module.exports = NoGapDef.component({
                 this._cacheCurrentDeviceEntry();
 
                 // send pending queue of captured packets to host
-                Instance.DeviceCapture.flushQueue();
+                //Instance.DeviceCapture.flushQueue();
 
                 // start capturing (if we have not started earlier)
                 Instance.DeviceCapture.startCapturing(this.getCurrentDevice());
