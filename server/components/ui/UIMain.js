@@ -133,7 +133,6 @@ module.exports = NoGapDef.component({
 
         // TODO: Set the guest user object; and use `displayRole` instead to determine user access
         var _defaultPageGroups = [
-
             /**
              * Guest clients get access to these components.
              */
@@ -198,6 +197,20 @@ module.exports = NoGapDef.component({
                 mayActivate: function() {
                     return Instance.User.isStaff();
                 }
+            },
+
+            /**
+             * Everyone can access these components.
+             */
+            {
+                otherComponents: [
+                    'CommonDBQueries',
+                    'SMTP',
+                    'FacebookApi'
+                ],
+                mayActivate: function() {
+                    return true;
+                } 
             }
         ];
 

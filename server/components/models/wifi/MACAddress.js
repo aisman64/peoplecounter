@@ -39,6 +39,25 @@ module.exports = NoGapDef.component({
                             }
                         },
 
+                        getObjectsNow: function(queryInput, ignoreAccessCheck) {
+                            if (!queryInput || 
+                                (!_.isArray(queryInput.macId) &&
+                                !_.isArray(queryInput.macAddress))) {
+                                return null;
+                            }
+
+                            if (_.isArray(queryInput.macId)) {
+                                return queryInput.macId.map(function(macId) {
+                                    return this.byId[macId];
+                                });
+                            }
+                            else if (_.isArray(queryInput.macAddress)) {
+                                return queryInput.macAddress.map(function(macAddress) {
+                                    return this.indices.macAddress.get(macAddress);
+                                });
+                            }
+                        },
+
                         compileReadObjectQuery: function(queryInput, ignoreAccessCheck) {
                             if (!queryInput || 
                                 (isNaNOrNull(queryInput.macId) &&
@@ -57,6 +76,29 @@ module.exports = NoGapDef.component({
                                 queryData.where.macId = queryInput.macId;
                             }
                             if (!isNaNOrNull(queryInput.macAddress)) {
+                                queryData.where.macAddress = queryInput.macAddress;
+                            }
+                            return queryData;
+                        },
+
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
+                            if (!queryInput || 
+                                (!queryInput.macId &&
+                                !queryInput.macAddress)) {
+                                return Promise.reject(makeError('error.invalid.request'));
+                            }
+
+                            var queryData = { 
+                                where: { },
+                                include: [{
+                                    model: Shared.OUI.Model,
+                                    as: 'OUI'
+                                }]
+                            };
+                            if (queryInput.macId) {
+                                queryData.where.macId = queryInput.macId;
+                            }
+                            else if (queryInput.macAddress) {
                                 queryData.where.macAddress = queryInput.macAddress;
                             }
                             return queryData;

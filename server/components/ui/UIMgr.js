@@ -329,10 +329,11 @@ module.exports = NoGapDef.component({
 
             addPageGroup: function(group) {
                 console.assert(group.mayActivate, 'Page group must define a `mayActivate` method.');
-                console.assert(group.pageComponents, 'Page group must define a `pageComponents` array.');
+                console.assert(group.pageComponents || group.otherComponents, 'Page group must define a `pageComponents` array.');
 
                 // merge `pageComponents` and `otherComponents` into `allComponents`
                 // start with `otherComponents` (non-UI components), so they are loaded first
+                group.pageComponents = group.pageComponents || [];
                 group.allComponents = group.otherComponents ? group.otherComponents.concat(group.pageComponents) : group.pageComponents;
 
                 group.pages = [];
@@ -1045,6 +1046,7 @@ module.exports = NoGapDef.component({
 
                     // flag as UI newComponent
                     newComponent.isUI = true;
+                    newComponent.refreshAddressBar = Instance.UIMgr.updateAddressBar.bind(Instance.UIMgr, newComponent, true);
                 }
 
                 // hook-up all component events

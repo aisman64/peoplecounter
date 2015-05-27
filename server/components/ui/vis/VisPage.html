@@ -2,30 +2,24 @@
 
 
 	<!-- <pre>{{PC.macGraphData}}</pre> -->
-	<div class="panel panel-primary">
+	<div class="panel panel-primary"
+		ng-if="PC.currentMacIdList.length">
 	    <div class="panel-heading">
 	        <div class="panel-title">
-	            <span class="">Device:
-					{{ PC.currentMacInfo.macAnnotation && 
-							PC.currentMacInfo.macAnnotation || 
-						PC.currentMacInfo.macAddress }}
-					<span
-						ng-if="PC.currentMacInfo.OUI"
-						>({{PC.currentMacInfo.OUI.model}})</span>
-	            </span>
+	            <span class="">Relationship Graph</span>
+	            &nbsp;
 
 	            <span class="pull-right" 
 	                style="vertical-align: middle"
-	                ng-style="{visibility: (PC.busy || (PC.currentMacId && !PC.currentMacInfo)) && 'visible' || 'hidden'}">
+	                ng-style="{visibility: PC.busy && 'visible' || 'hidden'}">
 	                    <i class="fa fa-spinner fa-spin"></i>
 	            </span>
 	        </div>
 	    </div>
 	    <div class="panel-body no-padding">
 			<mac-ssid-graph
-				ng-if="PC.currentMacId"
-				ng-model="PC.currentMacInfo"
-				mac-id="PC.currentMacId">
+				ng-model="PC.currentMacEntries"
+				mac-ids="PC.currentMacIdList">
 			</mac-ssid-graph>
 		</div>
 	</div>
@@ -69,7 +63,7 @@
 				</thead>
 				<tbody>
 					<tr ng-repeat="macEntry in VisView.data.mostConnectedMACs"
-						ng-class="{'highlight-own': PC.currentMacId == macEntry.macId}">
+						ng-class="{'highlight-own': PC.currentMacIdMap[macEntry.macId]}">
 						<td class="col-xs-1">
 							{{$index + 1}}.
 						</td>
@@ -85,8 +79,9 @@
 								>({{macEntry.model}})</span>
 						</td>
 						<td class="col-xs-3">
-							<a ng-click="visualizeMACAddress(macEntry.macId)"
-								class="btn btn-large btn-default">
+							<a ng-click="PC.toggleMacId(macEntry.macId)"
+								class="btn btn-large btn-default"
+								ng-class="{'active': PC.currentMacIdMap[macEntry.macId]}">
 								<i class="fa fa-search"></i>
 							</a>
 						</td>
@@ -140,6 +135,63 @@
 						</td>
 						<td class="col-xs-8">
 							{{ssidEntry.ssidName}}
+						</td>
+					</tr>
+				</tbody>
+			</table>
+        </accordion-group>
+
+		<!-- namedMACs -->
+	    <accordion-group is-open="VisView.open.namedMACs">
+	        <accordion-heading>
+	            <div style="display:block; cursor: pointer;"
+	            	ng-click="fetchData('namedMACs')">
+	                <span class="panel-title">
+	                	<span>
+							known MAC addresses
+	                	</span>
+	                    <span class="pull-right centered-y">
+							<i class="fa fa-spinner fa-spin"
+								ng-if="VisView.busy.namedMACs"></i>
+	                        <i class="glyphicon" style="font-size: .5em;"
+	                            ng-class="{'glyphicon-chevron-down': VisView.open.namedMACs, 'glyphicon-chevron-right': !VisView.open.namedMACs}">
+	                        </i>
+	                    </span>
+	                </span>
+	            </div>
+	        </accordion-heading>
+
+			<table class="table"
+				ng-if="VisView.data.namedMACs">
+				<thead>
+					<!-- <th class="col-xs-1">
+						
+					</th> -->
+					<th class="col-xs-3">
+						MAC address
+					</th>
+					<th class="col-xs-6">
+						name
+					</th>
+					<th class="col-xs-3">
+					</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="macEntry in VisView.data.namedMACs">
+						<!-- <td class="col-xs-1">
+							{{$index + 1}}.
+						</td> -->
+						<td class="col-xs-3">
+							{{macEntry.macAddress}}
+						</td>
+						<td class="col-xs-6">
+							{{macEntry.macAnnotation}}
+						</td>
+						<td class="col-xs-3">
+							<a ng-click="PC.toggleMacId(macEntry.macId)"
+								class="btn btn-large btn-default">
+								<i class="fa fa-search"></i>
+							</a>
 						</td>
 					</tr>
 				</tbody>
