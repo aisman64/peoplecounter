@@ -144,7 +144,6 @@ module.exports = NoGapDef.component({
                         // console.error($scope.BottomPanelCurrentHeight);
                     };
 
-                    ThisComponentHistoryGraphOpen = false;
 
                     $scope.toggleBottomPanel($scope.LayoutSettings.BottomPanelOpen);
 
@@ -171,11 +170,12 @@ module.exports = NoGapDef.component({
                             xAxis: {
                                 axisLabel: 'Time',
                                 tickFormat: function(d){
+                                    console.log(d);
                                     return d3.format('d')(d);
                                 },
                             },
                             yAxis: {
-                                axisLabel: 'People(Mac Address) Count',
+                                axisLabel: 'People Count',
                                 tickFormat: function(d){
                                     return d3.format('d')(d);
                                 },
@@ -275,6 +275,40 @@ module.exports = NoGapDef.component({
                 ThisComponent.page.invalidateView();
 
                 var timeFrameSeconds = ThisComponent.currentTimeFrame.asMilliseconds() / (1000);
+                return Promise.join(
+                    Instance.CommonDBQueries.queries.PeopleCount({
+                        timeFrameSeconds: timeFrameSeconds,
+                        includeDevices: ThisComponent.showPerDeviceInfo
+                    })
+                    .then(function(deviceCounts) {
+                        ThisComponent.deviceCounts = deviceCounts;
+                    }),
+                    ThisComponent.fetchHistoryData(timeFrameSeconds)
+                )
+                // return Promise.all(promises)
+                .finally(function() {
+                    ThisComponent.busy = false;
+                })
+                .then(function(deviceCounts) {
+                    // console.log(deviceCounts);
+                    // ThisComponent.deviceCounts = deviceCounts;
+                    ThisComponent.page.invalidateView();
+                })
+                .catch(ThisComponent.page.handleError.bind(ThisComponent));
+            },
+
+
+
+            // ################################################################################################
+            // History graph
+
+            fetchHistoryData: function(timeFrameSeconds) {
+                // TODO: Fix X-axis labels to be absolute, not relative
+                // TODO: Fix Y-axis to start at 0
+                // TODO: Graph does not refresh when timeframe is changed
+                // TODO: What is `xRange`?
+                // TODO: deviceId == 1?
+
                 // var promises = [];
                 // promises.push(Instance.CommonDBQueries.queries.PeopleCount({
                 //         timeFrameSeconds: timeFrameSeconds,
@@ -328,71 +362,49 @@ module.exports = NoGapDef.component({
                 //             }));
                 // }
                 // console.log(timeFrameSeconds);
-                var xRange = 100*24;
-                return Promise.join(
-                    Instance.CommonDBQueries.queries.PeopleCount({
-                        timeFrameSeconds: timeFrameSeconds,
-                        includeDevices: ThisComponent.showPerDeviceInfo
-                    })
-                    .then(function(deviceCounts) {
-                        ThisComponent.deviceCounts = deviceCounts;
-                    }),
-                    Instance.CommonDBQueries.queries.PacketSeries({ deviceId : 1, 
-                        timePeriod : timeFrameSeconds, timeRangeFromNow : timeFrameSeconds*xRange})
-                    .then(function(packets) {
-                                    // console.log('promise back');
-                                    // console.log(packets);
-                                    var lines = {
-                                        
 
-                                    };
-
-                                    for (var i = packets.length - 1;i >= 0; i--) {
-                                        if ( !(packets[i].deviceId in lines)) {
-                                            lines[packets[i].deviceId] = 
-                                            {
-                                                key: packets[i].deviceId,
-                                                color: (d3.scale.category10())[packets[i].deviceId],
-                                                values : []
-
-                                            };
-
-                                        } 
-                                        var point = {
-                                            x : -(lines[packets[i].deviceId].values.length+1),
-                                            y : packets[i].count,
-                                        };
-                                        
-                                        if (lines[packets[i].deviceId].values.length < xRange)lines[packets[i].deviceId].values.push(point);
-
-
-                                    }
-                                    
-                                    var lineChart = []
-                                    for (var deviceId in lines) {
-                                        lineChart.push(lines[deviceId]);
-                                    }
-
-                                    ThisComponent.page.scope.data = lineChart;
-
-
-                                
-
-
-                            })
-                    )
-                // return Promise.all(promises)
-                .finally(function() {
-                    ThisComponent.busy = false;
+                var xRange = 100*24;                
+                return Instance.CommonDBQueries.queries.PacketSeries({ 
+                    deviceId : 1, 
+                    timePeriod : timeFrameSeconds,
+                    timeRangeFromNow : timeFrameSeconds*xRange
                 })
-                .then(function(deviceCounts) {
-                    // console.log(deviceCounts);
-                    // ThisComponent.deviceCounts = deviceCounts;
-                    ThisComponent.page.invalidateView();
+                .then(function(packets) {
+                        // console.log('promise back');
+                        // console.log(packets);
+                        var lines = {
+                        
+                        };
+
+                        for (var i = packets.length - 1;i >= 0; i--) {
+                            if ( !(packets[i].deviceId in lines)) {
+                                lines[packets[i].deviceId] = 
+                                {
+                                    key: packets[i].deviceId,
+                                    color: (d3.scale.category10())[packets[i].deviceId],
+                                    values : []
+
+                                };
+
+                            } 
+                            var point = {
+                                x : -(lines[packets[i].deviceId].values.length+1),
+                                y : packets[i].count,
+                            };
+                            
+                            if (lines[packets[i].deviceId].values.length < xRange)lines[packets[i].deviceId].values.push(point);
+                        }
+                        
+                        var lineChart = []
+                        for (var deviceId in lines) {
+                            lineChart.push(lines[deviceId]);
+                        }
+
+                        ThisComponent.page.scope.data = lineChart;
+                })
+                .then(function() {
                     d3.selectAll("text").attr("fill", 'white');
-
-                })
-                .catch(ThisComponent.page.handleError.bind(ThisComponent));
+                });
             },
             
             /**

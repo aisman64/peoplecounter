@@ -21,7 +21,7 @@
 			<span ng-repeat="timeFrame in PC.PeopleCounterTimeFrames">
 				<a class="btn btn-dark"
 					ng-class="{ active: timeFrame.asMilliseconds() == PC.currentTimeFrame.asMilliseconds()}"
-					ng-click="PC.currentTimeFrame = timeFrame;PC.HistoryGraphOpen=false;">
+					ng-click="PC.currentTimeFrame = timeFrame;">
 					{{timeFrame.humanize()}}
 				</a>
 				&nbsp;
@@ -36,11 +36,14 @@
 
 				<i class="fa fa-"></i>
 			</a>
-			<a class="btn btn-dark"
-				ng-click="toggleHistoryGraph(PC.HistoryGraphOpen);PC.HistoryGraphOpen=!PC.HistoryGraphOpen;"
-				ng-class="{ active: PC.HistoryGraphOpen}">
-				History
 
+			<a class="btn btn-dark"
+				ng-disabled="false"
+				ng-click="toggleHistoryGraph(PC.HistoryGraphOpen); PC.HistoryGraphOpen=!PC.HistoryGraphOpen;"
+				ng-class="{ active: PC.HistoryGraphOpen}">
+
+				<!-- TODO: Enable button once all bugs are fixed -->
+				History
 				<i class="fa fa-"></i>
 			</a>
 
