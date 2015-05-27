@@ -18,8 +18,7 @@
 			</div>
 		</div>
 
-		<div ng-repeat="macEntry in macEntries"
-			style="border: 1px solid black">
+		<div ng-repeat="macEntry in macEntries">
 			<table class="table no-padding"><tbody>
 				<tr>
 					<td class="col-xs-4"
@@ -56,11 +55,12 @@
 
 			<table class="table no-padding"><tbody>
 				<tr>
-					<td class="col-xs-1"></td>
+					<td class="col-xs-1" style="border: 0 !important;">
+						<b>Other SSIDs ({{macEntry.unsharedSsids.length}}):</b> 
+					</td>
 					<!-- <div class="col-xs-2">
 					</div> -->
-					<td class="col-xs-11">
-						<b>Other SSIDs ({{macEntry.unsharedSsids.length}}):</b> 
+					<td class="col-xs-11" style="border: 0 !important;">
 						<span ng-repeat="ssidData in macEntry.unsharedSsids | orderBy: 'name'">
 							<span style="background-color: #EEEEEE">
 								{{ssidData.name}}

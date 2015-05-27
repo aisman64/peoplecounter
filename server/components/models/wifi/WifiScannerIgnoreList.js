@@ -16,7 +16,22 @@ module.exports = NoGapDef.component({
                     indices: [{
                         key: ['macId'],
                         unique: true
-                    }]
+                    }],
+
+                    members: {
+                        compileReadObjectsQuery: function(queryInput, ignoreAccessCheck, sendToClient) {
+                            return {
+                                include: [{
+                                    model: Shared.MACAddress.Model,
+                                    as: 'MAC',
+                                    include: [{
+                                        model: Shared.OUI.Model,
+                                        as: 'OUI'
+                                    }]
+                                }]
+                            }
+                        }
+                    }
                 }
             },
                 

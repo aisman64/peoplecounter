@@ -170,21 +170,6 @@ module.exports = NoGapDef.component({
                     return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.StandardUser;
                 }
             },
-            /**
-             * Everyone can access these components.
-             */
-            {
-                otherComponents: [
-                    'CommonDBQueries',
-                    'SMTP',
-                    'FacebookApi'
-                ],
-                pageComponents: [
-                ],
-                mayActivate: function() {
-                    return true;
-                } 
-            },
 
             /**
              * Staff gets access to these additional components

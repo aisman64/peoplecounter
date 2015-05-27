@@ -1,4 +1,4 @@
-SELECT COUNT(*) count, r.macId AS macId, macAddress, o.model AS model
+SELECT COUNT(*) count, r.macId AS macId, macAddress, macAnnotation, o.model AS model
 FROM MAC_SSID_Relation r
 INNER JOIN MACAddress a
 ON (r.macId = a.macId)

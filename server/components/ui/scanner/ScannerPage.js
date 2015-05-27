@@ -46,11 +46,12 @@ module.exports = NoGapDef.component({
 
         return {
             ScannerSettings: {
-                timeFrameSeconds: 600000000
+                timeFrameSeconds: 60
             },
 
             __ctor: function() {
                 ThisComponent = this;
+                this.ScannerView = { open: {} };
                 this.scannedMacs = [];
                 this.colorsPerMacId = {};
             },
@@ -64,6 +65,7 @@ module.exports = NoGapDef.component({
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
                     // customize your ScannerPage's $scope here:
+                    $scope.ScannerView = ThisComponent.ScannerView;
                     $scope.ignoreCache = Instance.WifiScannerIgnoreList.wifiscannerIgnoreList;
                     $scope.historyCache = Instance.WifiScannerHistory.wifiScannerHistory;
                 });

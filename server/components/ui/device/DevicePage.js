@@ -115,7 +115,7 @@ module.exports = NoGapDef.component({
                     if (!this.Instance.User.isStaff()) 
                         return Promise.reject(makeError('error.invalid.permissions'));
 
-                    // TODO: Reboot
+                    // TODO: Restart
                     console.error('NYI: restartDevice');
                 }
             },

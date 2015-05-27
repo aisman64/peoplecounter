@@ -147,6 +147,16 @@ module.exports = NoGapDef.component({
                                  { foreignKey: 'ouiId', as: 'OUI', foreignKeyConstraint: true });
                             models.OUI.hasMany(models.MACAddress,
                                  { foreignKey: 'ouiId', as: 'MACAddresses', constraints: false });
+
+                            models.WifiScannerIgnoreList.belongsTo(models.MACAddress,
+                                 { foreignKey: 'macId', as: 'MAC', foreignKeyConstraint: true });
+                            models.MACAddress.hasMany(models.WifiScannerIgnoreList,
+                                 { foreignKey: 'macId', as: 'scannerIgnoreList', constraints: false });
+
+                            models.WifiScannerHistory.belongsTo(models.MACAddress,
+                                 { foreignKey: 'macId', as: 'MAC', foreignKeyConstraint: true });
+                            models.MACAddress.hasMany(models.WifiScannerHistory,
+                                 { foreignKey: 'macId', as: 'scannerHistory', constraints: false });
                         },
 
                         onAfterSync: function(models) {

@@ -70,8 +70,11 @@ module.exports = NoGapDef.component({
                     // customize your $scope here:
                     $scope.VisView = VisView;
 
-                    $scope.fetchData = function(what) {
+                    $scope.fetchData = function(what, force) {
                         setTimeout(function() {
+                            if (force) {
+                                VisView.open[what] = true;
+                            }
                             if (VisView.open[what]) {
                                 ThisComponent.getVisData(what);
                             }
@@ -83,25 +86,6 @@ module.exports = NoGapDef.component({
                 Instance.UIMgr.registerPage(this, 'Vis', this.assets.template, {
                     iconClasses: 'fa fa-bar-chart'
                 });
-            },
-
-            toggleMacId: function(macId, enable) {
-                enable = enable || enable === undefined && !this.currentMacIdMap[macId];
-                if (enable) {
-                    // enable
-                    this.currentMacIdList.push(macId);
-                    this.currentMacIdMap[macId] = 1;
-                }
-                else {
-                    // disable
-                    _.remove(this.currentMacIdList, function(macId2) {
-                        return macId2 == macId;
-                    });
-                    delete this.currentMacIdMap[macId];
-                }
-
-                ThisComponent.page.invalidateView();
-                ThisComponent.refreshAddressBar();
             },
 
             getPageArgs: function() {
@@ -122,6 +106,10 @@ module.exports = NoGapDef.component({
             },
 
             queryFunctions: {
+                recentMACs: function() {
+                    return Instance.CommonDBQueries.queries.NewestMACs({ limit: 20 });
+                },
+
                 mostConnectedMACs: function() {
                     return Instance.CommonDBQueries.queries.MostConnectedMACs({ limit: 20 });
                 },
@@ -166,6 +154,47 @@ module.exports = NoGapDef.component({
                         }
                     });
                 }
+
+                ThisComponent.page.invalidateView();
+                ThisComponent.refreshAddressBar();
+            },
+
+            refreshData: function() {
+                var promises = [];
+                for (var what in VisView.open) {
+                    if (VisView.open[what]) {
+                        promises.push(ThisComponent.getVisData(what));
+                    }   
+                }
+
+                return Promise.all(promises);
+            },
+
+            /**
+             * Add/remove MAC to/from graph visualization
+             */
+            toggleMacId: function(macId, enable) {
+                enable = enable || enable === undefined && !this.currentMacIdMap[macId];
+                if (enable) {
+                    // enable
+                    this.currentMacIdList.push(macId);
+                    this.currentMacIdMap[macId] = 1;
+                }
+                else {
+                    // disable
+                    _.remove(this.currentMacIdList, function(macId2) {
+                        return macId2 == macId;
+                    });
+                    delete this.currentMacIdMap[macId];
+                }
+
+                ThisComponent.page.invalidateView();
+                ThisComponent.refreshAddressBar();
+            },
+
+            clearRelationshipGraph: function() {
+                this.currentMacIdList = [];
+                this.currentMacIdMap = {};
 
                 ThisComponent.page.invalidateView();
                 ThisComponent.refreshAddressBar();
