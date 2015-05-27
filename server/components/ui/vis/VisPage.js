@@ -145,8 +145,11 @@ module.exports = NoGapDef.component({
                 if (_.isString(pageArgs)) {
                     macIds = pageArgs.split(',');
                 }
-                else if (_.isArray(macIdStrings)) {
+                else if (_.isArray(pageArgs)) {
                     macIds = pageArgs;
+                }
+                else if (_.isNumber(pageArgs)) {
+                    macIds = [pageArgs];
                 }
 
                 // re-compute set of macIds

@@ -159,10 +159,10 @@ module.exports = NoGapDef.component({
                     //'HomePage',
                     'LivePage',
                     'VisPage',
+                    'ScannerPage',
                     'RawPage',
                     'DevicePage',
                     'MapPage',
-                    'ResultPage',
                     'AccountPage'
                 ],
 

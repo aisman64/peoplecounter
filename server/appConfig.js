@@ -219,6 +219,8 @@ module.exports = {
             'models/wifi/WifiSSIDPacket',
             'models/wifi/WifiActivityPacket',
             'models/wifi/MAC_SSID_Relation',
+            'models/wifi/WifiScannerHistory',
+            'models/wifi/WifiScannerIgnoreList',
             'models/devices/WifiSnifferDevice',
             'models/devices/WifiDataset',
             'models/devices/WifiDatasetSnifferRelation',
@@ -252,15 +254,14 @@ module.exports = {
             // user pages:
             'ui/home/HomePage',
             'ui/live/LivePage',
+            'ui/scanner/ScannerPage',
             'ui/raw/RawPage',
             'ui/device/DevicePage',
             'ui/account/AccountPage',
             'ui/map/MapPage',
-            'ui/result/ResultPage',
             // superuser pages:
 
             'ui/map/MapPage',
-            'ui/result/ResultPage',
 
             'ui/admin/AdminPage'
         ]

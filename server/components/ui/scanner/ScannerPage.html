@@ -1,0 +1,80 @@
+<div class="fill container-page" ng-controller="scannerCtrl">
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<div class="panel-title"><span>
+				scanner
+				&nbsp;
+				&nbsp;
+				
+				<a class="btn"
+					style="width: 10em;"
+					ng-style="{ visibility: PC.annotatingMacs && 'hidden' || '' }"
+					ng-class="{ 'btn-danger': !PC.refreshPaused, 'btn-success': PC.refreshPaused }"
+					ng-click="PC.refreshPaused = !PC.refreshPaused">
+					<span ng-if="PC.refreshPaused">
+						Start!
+					</span>
+					<span ng-if="!PC.refreshPaused">
+						Stop!
+					</span>
+				</a>
+
+                <span class="pull-right" ng-show="PC.busy">
+                    <i class="fa fa-spinner fa-spin"></i>
+                </span>
+			</span></div>
+		</div>
+		<div class="panel-body">
+			<table class="table table-striped">
+				<thead>
+					<th class="col-xs-4">
+						who
+					</th>
+					<th class="col-xs-3">
+						first seen
+					</th>
+					<th class="col-xs-3">
+						last seen
+					</th>
+					<th class="col-xs-2">
+						<!-- buttons -->
+					</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="macEntry in PC.scannedMacs | orderBy: '-macEntry.timeMax'">
+						<td class="col-xs-4">
+							<span style="vertical-align: middle">
+								{{ macEntry.macAnnotation || 
+									macEntry.macAddress }}
+								<span class="mac-oui"
+									ng-if="packet.MACAddress.OUI"
+									>({{macEntry.model}})</span>
+								<!-- {{packet.MACAddress.OUI.company}} -->
+							</span>
+						</td>
+						<td class="col-xs-3"
+							style="vertical-align: middle;">
+							<span ng-if="macEntry.timeMin"
+								code="time = util.moment(util.Math.round(macEntry.timeMin * 1000));">
+								{{ time.format('LLL') }} &nbsp; ({{ time.fromNow() }})
+							</span>
+						</td>
+						<td class="col-xs-3"
+							style="vertical-align: middle;">
+							<span ng-if="macEntry.timeMax"
+								code="time = util.moment(util.Math.round(macEntry.timeMax * 1000));">
+								{{ time.format('LLL') }} &nbsp; ({{ time.fromNow() }})
+							</span>
+						</td>
+						<td class="col-xs-2">
+							<a class="btn btn-info"
+								ng-click="gotoPage('Vis', macEntry.macId)">
+								<i class="fa fa-search"></i>
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>

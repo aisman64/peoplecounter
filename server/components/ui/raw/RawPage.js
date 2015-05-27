@@ -218,8 +218,6 @@ module.exports = NoGapDef.component({
             refreshDelay: 500,
 
             refreshData: function() {
-                if (ThisComponent.refreshPaused) return;
-
                 ThisComponent.busy = true;
                 ThisComponent.page.invalidateView();
 

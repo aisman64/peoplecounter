@@ -224,7 +224,6 @@ module.exports = NoGapDef.component({
                             });
                         }.bind(this);
 
-
                         for (var i = 0; i < macEntries.length; i++) {
                             var macEntry = macEntries[i] = macEntries[i] || {};
                             macEntry.ownSsids = getSSIDsOfMAC(macEntry.macId);
@@ -253,9 +252,13 @@ module.exports = NoGapDef.component({
             			args.limit = 50;
             		}
 
+                    // for safety reasons, don't allow this stuff
             		var prefix = '';
             		suffix = '';
             		return this.Shared.executeQueryByName(queryName, args, suffix, prefix);
+                    // .tap(function(res) {
+                    //     console.error(JSON.stringify(res, null, '\t'));
+                    // });
             	},
 
                 computeMACRelationGraphPublic: function(macIds) {

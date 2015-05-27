@@ -101,11 +101,11 @@
 								<a class="btn btn-info"
 									ng-if="PC.inspecting && !PC.rawSettings.where.macId"
 									ng-click="PC.setPacketFilter('macId', packet.macId)">
-									<i class="fa fa-search"></i>
+									<i class="fa fa-bolt"></i>
 								</a>
 								<a class="btn btn-info"
 									ng-click="gotoPage('Vis', packet.macId)">
-									<i class="fa fa-wifi"></i>
+									<i class="fa fa-search"></i>
 								</a>
 							</span>
 						</td>
@@ -124,7 +124,7 @@
 									ng-click="
 										PC.setPacketFilter('macId', packet.macId);
 										PC.setPacketFilter('seqnum', packet.seqnum);">
-									<i class="fa fa-search"></i>
+									<i class="fa fa-bolt"></i>
 								</a>
 							</span>
 						</td>

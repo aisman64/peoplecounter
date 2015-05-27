@@ -9,12 +9,12 @@ module.exports = NoGapDef.component({
     /**
      * Everything defined in `Host` lives only on the host side (Node).
      */
-    Host: NoGapDef.defHost(function(Shared, Context) { 
+    Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) { 
         return {
             Assets: {
                 Files: {
                     string: {
-                        template: 'ResultPage.html'
+                        template: 'ScannerPage.html'
                     }
                 },
                 AutoIncludes: {
@@ -45,26 +45,51 @@ module.exports = NoGapDef.component({
         var ThisComponent;
 
         return {
+            ScannerSettings: {
+                timeFrameSeconds: 600000000
+            },
+
             __ctor: function() {
                 ThisComponent = this;
+                this.colorsPerMacId = {};
             },
 
             /**
-             * Prepares the home page controller.
+             * Prepares the scanner page controller.
              */
             setupUI: function(UIMgr, app) {
-                // create Home controller
-                app.lazyController('resultCtrl', function($scope) {
+                // create Scanner controller
+                app.lazyController('scannerCtrl', function($scope) {
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
-                    // customize your HomePage's $scope here:
+                    // customize your ScannerPage's $scope here:
                 });
 
                 // register page
-                // TODO
-                // Instance.UIMgr.registerPage(this, 'Result', this.assets.template, {
-                //     iconClasses: 'fa fa-'
-                // });
+                Instance.UIMgr.registerPage(this, 'Scanner', this.assets.template, {
+                    iconClasses: 'fa fa-wifi'
+                });
+            },
+
+
+            refreshDelay: 500,
+
+            refreshData: function() {
+                ThisComponent.busy = true;
+                ThisComponent.page.invalidateView();
+
+                
+                return Promise.join(
+                    Instance.CommonDBQueries.queries.CurrentlyScannedMACs(ThisComponent.ScannerSettings)
+                    .then(function(scannedMacs) {
+                        ThisComponent.scannedMacs = scannedMacs;
+                    })
+                )
+                .finally(function() {
+                    ThisComponent.busy = false;
+                    ThisComponent.page.invalidateView();
+                })
+                .catch(ThisComponent.page.handleError.bind(ThisComponent));
             },
             
             /**
