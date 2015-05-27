@@ -4,9 +4,16 @@
 	<div>
 		<div class="vertical-space"></div>
 
-		<seven-seg 
+		<seven-seg ng-if="!PC.HistoryGraphOpen"
 			settings="{ digits: 5, value: _.result(_.find(PC.deviceCounts, {'deviceId': 0}), 'count') || 0 }">
 		</seven-seg>
+		<style>
+			div.nvtooltip {
+				display:none;
+			}
+		</style>
+			<nvd3 style="color:black;" forcey="[0]" ng-if="PC.HistoryGraphOpen" objectequality="true" options="options" data="data" config="{ refreshDataOnly:true }"></nvd3>
+		
 
 		<div class="vertical-space"></div>
 
@@ -14,7 +21,7 @@
 			<span ng-repeat="timeFrame in PC.PeopleCounterTimeFrames">
 				<a class="btn btn-dark"
 					ng-class="{ active: timeFrame.asMilliseconds() == PC.currentTimeFrame.asMilliseconds()}"
-					ng-click="PC.currentTimeFrame = timeFrame">
+					ng-click="PC.currentTimeFrame = timeFrame;PC.HistoryGraphOpen=false;">
 					{{timeFrame.humanize()}}
 				</a>
 				&nbsp;
@@ -26,6 +33,13 @@
 				ng-click="toggleBottomPanel(PC.showPerDeviceInfo = !PC.showPerDeviceInfo);"
 				ng-class="{ active: PC.showPerDeviceInfo}">
 				per device
+
+				<i class="fa fa-"></i>
+			</a>
+			<a class="btn btn-dark"
+				ng-click="toggleHistoryGraph(PC.HistoryGraphOpen);PC.HistoryGraphOpen=!PC.HistoryGraphOpen;"
+				ng-class="{ active: PC.HistoryGraphOpen}">
+				History
 
 				<i class="fa fa-"></i>
 			</a>
@@ -48,6 +62,7 @@
 		    </span>
 		</div>
 	</div>
+	
 
 	<div>
 		<div class=""

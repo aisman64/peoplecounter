@@ -138,7 +138,97 @@ module.exports = NoGapDef.component({
                         console.error($scope.BottomPanelCurrentHeight);
                     };
 
+                    $scope.toggleHistoryGraph = function(isOpen) {
+                        isOpen = isOpen === undefined ? !$scope.HistoryGraphOpen : isOpen;
+                        $scope.HistoryGraphOpen = isOpen;
+                        // console.error($scope.BottomPanelCurrentHeight);
+                    };
+
+                    ThisComponentHistoryGraphOpen = false;
+
                     $scope.toggleBottomPanel($scope.LayoutSettings.BottomPanelOpen);
+
+                    $scope.options = {
+                        chart: {
+                            type: 'lineChart',
+                            height: 550,
+                            margin : {
+                                top: 20,
+                                right: 20,
+                                bottom: 100,
+                                left: 55
+                            },
+                            x: function(d){ return d.x; },
+                            y: function(d){ return d.y; },
+                            showTooltip : false,
+                            useInteractiveGuideline: true,
+                            dispatch: {
+                                stateChange: function(e){ console.log("stateChange"); },
+                                changeState: function(e){ console.log("changeState"); },
+                                tooltipShow: function(e){ e.stopPropagation() },
+                                tooltipHide: function(e){ console.log("tooltipHide"); }
+                            },
+                            xAxis: {
+                                axisLabel: 'Time',
+                                tickFormat: function(d){
+                                    return d3.format('d')(d);
+                                },
+                            },
+                            yAxis: {
+                                axisLabel: 'People(Mac Address) Count',
+                                tickFormat: function(d){
+                                    return d3.format('d')(d);
+                                },
+                                axisLabelDistance: 30,
+
+                            },
+                            transitionDuration: 0,
+                            callback: function(chart){
+                                console.log("!!! lineChart callback !!!");
+                            }
+                        },
+                        tooltip: {
+                            enable: false,
+
+                        },
+                        title: {
+                            enable: true,
+                            text: 'People Counter by Mac Address'
+                        },
+                        subtitle: {
+                            enable: false,
+                            text: 'Subtitle for simple line chart. Lorem ipsum dolor sit amet, at eam blandit sadipscing, vim adhuc sanctus disputando ex, cu usu affert alienum urbanitas.',
+                            css: {
+                                'text-align': 'center',
+                                'margin': '10px 13px 0px 7px'
+                            }
+                        },
+                        caption: {
+                            enable: false,
+                            html: '<b>Figure 1.</b> Lorem ipsum dolor sit amet, at eam blandit sadipscing, <span style="text-decoration: underline;">vim adhuc sanctus disputando ex</span>, cu usu affert alienum urbanitas. <i>Cum in purto erat, mea ne nominavi persecuti reformidans.</i> Docendi blandit abhorreant ea has, minim tantas alterum pro eu. <span style="color: darkred;">Exerci graeci ad vix, elit tacimates ea duo</span>. Id mel eruditi fuisset. Stet vidit patrioque in pro, eum ex veri verterem abhorreant, id unum oportere intellegam nec<sup>[1, <a href="https://github.com/krispo/angular-nvd3" target="_blank">2</a>, 3]</sup>.',
+                            css: {
+                                'text-align': 'justify',
+                                'margin': '10px 13px 0px 7px'
+                            }
+                        }
+                    };
+
+                    
+
+                    /*Random Data Generator */
+                    
+
+
+                    // $scope.data = [
+                    // {key: 'Packet Number',
+                    // color: '#ff7f0e',
+                    // values : [{x : 1, y: 5}, {x : 2, y: 10}] }]
+                    $scope.data = [];
+
+                    
+
+
+
                 });
 
                 // register page
@@ -185,7 +275,60 @@ module.exports = NoGapDef.component({
                 ThisComponent.page.invalidateView();
 
                 var timeFrameSeconds = ThisComponent.currentTimeFrame.asMilliseconds() / (1000);
+                // var promises = [];
+                // promises.push(Instance.CommonDBQueries.queries.PeopleCount({
+                //         timeFrameSeconds: timeFrameSeconds,
+                //         includeDevices: ThisComponent.showPerDeviceInfo
+                //     })
+                //     .then(function(deviceCounts) {
+                //         ThisComponent.deviceCounts = deviceCounts;
+                //     }));
+                // if (!!ThisComponent.page.scope.HistoryGraphOpen) {
+                //     promises.push(Instance.CommonDBQueries.queries.PacketSeries({ deviceId : 1, 
+                //         timePeriod : 60, timeRangeFromNow : 6000000})
+                //     .then(function(packets) {
+                //                     // console.log('promise back');
+                //                     console.log(packets);
+                //                     var lines = {
+                                        
 
+                //                     };
+
+                //                     for (var i = packets.length - 1;i >= 0; i--) {
+                //                         if ( !(packets[i].deviceId in lines)) {
+                //                             lines[packets[i].deviceId] = 
+                //                             {
+                //                                 key: packets[i].deviceId,
+                //                                 color: (d3.scale.category10())[packets[i].deviceId],
+                //                                 values : []
+
+                //                             };
+
+                //                         } 
+                //                         var point = {
+                //                             x : -lines[packets[i].deviceId].values.length,
+                //                             y : packets[i].count,
+                //                         };
+                                        
+                //                         lines[packets[i].deviceId].values.push(point);
+
+
+                //                     }
+                //                     var lineChart = []
+                //                     for (var deviceId in lines) {
+                //                         lineChart.push(lines[deviceId]);
+                //                     }
+
+                //                     ThisComponent.page.scope.data = lineChart;
+
+
+                                
+
+
+                //             }));
+                // }
+                // console.log(timeFrameSeconds);
+                var xRange = 100*24;
                 return Promise.join(
                     Instance.CommonDBQueries.queries.PeopleCount({
                         timeFrameSeconds: timeFrameSeconds,
@@ -193,11 +336,61 @@ module.exports = NoGapDef.component({
                     })
                     .then(function(deviceCounts) {
                         ThisComponent.deviceCounts = deviceCounts;
-                    })
-                )
+                    }),
+                    Instance.CommonDBQueries.queries.PacketSeries({ deviceId : 1, 
+                        timePeriod : timeFrameSeconds, timeRangeFromNow : timeFrameSeconds*xRange})
+                    .then(function(packets) {
+                                    // console.log('promise back');
+                                    // console.log(packets);
+                                    var lines = {
+                                        
+
+                                    };
+
+                                    for (var i = packets.length - 1;i >= 0; i--) {
+                                        if ( !(packets[i].deviceId in lines)) {
+                                            lines[packets[i].deviceId] = 
+                                            {
+                                                key: packets[i].deviceId,
+                                                color: (d3.scale.category10())[packets[i].deviceId],
+                                                values : []
+
+                                            };
+
+                                        } 
+                                        var point = {
+                                            x : -(lines[packets[i].deviceId].values.length+1),
+                                            y : packets[i].count,
+                                        };
+                                        
+                                        if (lines[packets[i].deviceId].values.length < xRange)lines[packets[i].deviceId].values.push(point);
+
+
+                                    }
+                                    
+                                    var lineChart = []
+                                    for (var deviceId in lines) {
+                                        lineChart.push(lines[deviceId]);
+                                    }
+
+                                    ThisComponent.page.scope.data = lineChart;
+
+
+                                
+
+
+                            })
+                    )
+                // return Promise.all(promises)
                 .finally(function() {
                     ThisComponent.busy = false;
+                })
+                .then(function(deviceCounts) {
+                    // console.log(deviceCounts);
+                    // ThisComponent.deviceCounts = deviceCounts;
                     ThisComponent.page.invalidateView();
+                    d3.selectAll("text").attr("fill", 'white');
+
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent));
             },

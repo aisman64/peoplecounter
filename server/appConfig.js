@@ -23,7 +23,7 @@ module.exports = {
         'filePath': __dirname + '/data/DeviceImage.img'
     },
 
-    'deviceHostNamePrefix': 'dv_one_dev_',
+    'deviceHostNamePrefix': 'dv-one-dev-',
 
 
     // ########################################################################################################################
@@ -102,7 +102,8 @@ module.exports = {
         'blackList': {
             'functions': {
                 'DeviceCommunications.checkIn': 1,
-                'RawPage.getMostRecentPackets': 1,
+                'LivePage.getMostRecentPackets': 1,
+                'DeviceCapture.storePacket': 1, 
                 'DeviceStatus.getDeviceLastActiveTimes': 1,
                 'CommonDBQueries.executeQuery': 1,
                 'DeviceLog.logDeviceErrors': 1
@@ -121,6 +122,8 @@ module.exports = {
         'blackList': {
             'functions': {
                 'DeviceCommunications.host.checkIn': 1,
+                'LivePage.host.getMostRecentPackets': 1,
+                'DeviceCapture.storePacket': 1,
                 'RawPage.host.getMostRecentPackets': 1,
                 'DeviceStatus.host.getDeviceLastActiveTimes': 1,
                 'CommonDBQueries.host.executeQuery': 1,
@@ -216,8 +219,6 @@ module.exports = {
             'models/wifi/MACAddress',
             'models/wifi/OUI',
             'models/wifi/SSID',
-            'models/wifi/WifiSSIDPacket',
-            'models/wifi/WifiActivityPacket',
             'models/wifi/MAC_SSID_Relation',
             'models/wifi/WifiScannerHistory',
             'models/wifi/WifiScannerIgnoreList',
@@ -225,6 +226,8 @@ module.exports = {
             'models/devices/WifiDataset',
             'models/devices/WifiDatasetSnifferRelation',
             'models/devices/DeviceStatus',
+            'models/wifi/WifiSSIDPacket',
+            'models/wifi/WifiActivityPacket',
             'models/CommonDBQueries',
 
             // misc utilities
