@@ -78,7 +78,7 @@ module.exports = NoGapDef.component({
 
             __ctor: function() {
                 ThisComponent = this;
-                ThisComponent.showDevices = false;
+                ThisComponent.showPerDeviceInfo = false;
             },
 
             _registerDirectives: function(app) {
@@ -186,15 +186,17 @@ module.exports = NoGapDef.component({
 
                 var timeFrameSeconds = ThisComponent.currentTimeFrame.asMilliseconds() / (1000);
 
-                return Instance.CommonDBQueries.queries.PeopleCount({
-                    timeFrameSeconds: timeFrameSeconds,
-                    includeDevices: ThisComponent.showDevices
-                })
+                return Promise.join(
+                    Instance.CommonDBQueries.queries.PeopleCount({
+                        timeFrameSeconds: timeFrameSeconds,
+                        includeDevices: ThisComponent.showPerDeviceInfo
+                    })
+                    .then(function(deviceCounts) {
+                        ThisComponent.deviceCounts = deviceCounts;
+                    })
+                )
                 .finally(function() {
                     ThisComponent.busy = false;
-                })
-                .then(function(deviceCounts) {
-                    ThisComponent.deviceCounts = deviceCounts;
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent));
