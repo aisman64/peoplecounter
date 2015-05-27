@@ -150,7 +150,7 @@ module.exports = NoGapDef.component({
                     $scope.options = {
                         chart: {
                             type: 'lineChart',
-                            height: 550,
+                            height: 510,
                             margin : {
                                 top: 20,
                                 right: 20,
