@@ -3,12 +3,10 @@
 
 	<!-- <pre>{{PC.macGraphData}}</pre> -->
 	<div class="panel panel-primary"
-		ng-if="PC.currentMacId">
+		ng-if="PC.currentMacIdList.length">
 	    <div class="panel-heading">
 	        <div class="panel-title">
-	            <span class=""
-	            	ng-if="PC.currentMacEntries"
-	            	>Relationship Graph</span>
+	            <span class="">Relationship Graph</span>
 	            &nbsp;
 
 	            <span class="pull-right" 
@@ -20,9 +18,8 @@
 	    </div>
 	    <div class="panel-body no-padding">
 			<mac-ssid-graph
-				ng-if="PC.currentMacId"
 				ng-model="PC.currentMacEntries"
-				mac-id="PC.currentMacId">
+				mac-ids="PC.currentMacIdList">
 			</mac-ssid-graph>
 		</div>
 	</div>
@@ -66,7 +63,7 @@
 				</thead>
 				<tbody>
 					<tr ng-repeat="macEntry in VisView.data.mostConnectedMACs"
-						ng-class="{'highlight-own': PC.currentMacId == macEntry.macId}">
+						ng-class="{'highlight-own': PC.currentMacIdMap[macEntry.macId]}">
 						<td class="col-xs-1">
 							{{$index + 1}}.
 						</td>
@@ -82,8 +79,9 @@
 								>({{macEntry.model}})</span>
 						</td>
 						<td class="col-xs-3">
-							<a ng-click="visualizeMACAddress(macEntry.macId)"
-								class="btn btn-large btn-default">
+							<a ng-click="PC.toggleMacId(macEntry.macId)"
+								class="btn btn-large btn-default"
+								ng-class="{'active': PC.currentMacIdMap[macEntry.macId]}">
 								<i class="fa fa-search"></i>
 							</a>
 						</td>
@@ -190,7 +188,7 @@
 							{{macEntry.macAnnotation}}
 						</td>
 						<td class="col-xs-3">
-							<a ng-click="visualizeMACAddress(macEntry.macId)"
+							<a ng-click="PC.toggleMacId(macEntry.macId)"
 								class="btn btn-large btn-default">
 								<i class="fa fa-search"></i>
 							</a>
