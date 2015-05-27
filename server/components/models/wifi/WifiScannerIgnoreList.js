@@ -12,7 +12,11 @@ module.exports = NoGapDef.component({
     	return {
             Caches: {
                 wifiscannerIgnoreList: {
-                    idProperty: 'scannerIgnoreListId'
+                    idProperty: 'scannerIgnoreListId',
+                    indices: [{
+                        key: ['macId'],
+                        unique: true
+                    }]
                 }
             },
                 
@@ -38,13 +42,13 @@ module.exports = NoGapDef.component({
                 /**
                  * 
                  */
-                return sequelize.define('WifiscannerIgnoreList', {
+                return sequelize.define('WifiScannerIgnoreList', {
                     scannerIgnoreListId: {type: Sequelize.INTEGER.UNSIGNED, primaryKey: true, autoIncrement: true},
                     
                     macId: { type: Sequelize.INTEGER.UNSIGNED }
                 }, {
                     freezeTableName: true,
-                    tableName: 'WifiscannerIgnoreList',
+                    tableName: 'WifiScannerIgnoreList',
                     classMethods: {
                         onBeforeSync: function(models) {
                         },

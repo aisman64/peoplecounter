@@ -54,7 +54,7 @@ module.exports = NoGapDef.component({
                                 return Promise.reject(makeError('error.invalid.request'));
                             }
 
-                            return this.indices.byId[queryInput];
+                            return this.byId[queryInput];
                         },
 
                         compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {

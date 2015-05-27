@@ -51,6 +51,7 @@ module.exports = NoGapDef.component({
 
             __ctor: function() {
                 ThisComponent = this;
+                this.scannedMacs = [];
                 this.colorsPerMacId = {};
             },
 
@@ -63,6 +64,8 @@ module.exports = NoGapDef.component({
                     UIMgr.registerPageScope(ThisComponent, $scope);
                     
                     // customize your ScannerPage's $scope here:
+                    $scope.ignoreCache = Instance.WifiScannerIgnoreList.wifiscannerIgnoreList;
+                    $scope.historyCache = Instance.WifiScannerHistory.wifiScannerHistory;
                 });
 
                 // register page
@@ -72,24 +75,63 @@ module.exports = NoGapDef.component({
             },
 
 
-            refreshDelay: 500,
-
-            refreshData: function() {
+            runPromise: function(promise) {
                 ThisComponent.busy = true;
                 ThisComponent.page.invalidateView();
 
-                
-                return Promise.join(
-                    Instance.CommonDBQueries.queries.CurrentlyScannedMACs(ThisComponent.ScannerSettings)
-                    .then(function(scannedMacs) {
-                        ThisComponent.scannedMacs = scannedMacs;
-                    })
-                )
+                return promise
                 .finally(function() {
                     ThisComponent.busy = false;
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent));
+            },
+
+
+            refreshDelay: 500,
+
+            refreshData: function() {
+                return this.runPromise(Promise.join(
+                    Instance.CommonDBQueries.queries.CurrentlyScannedMACs(ThisComponent.ScannerSettings)
+                    .then(function(scannedMacs) {
+                        _.merge(ThisComponent.scannedMacs, scannedMacs);
+                        //ThisComponent.scannedMacs = scannedMacs;
+                    }),
+
+                    Instance.WifiScannerIgnoreList.wifiscannerIgnoreList.readObjects(),
+
+                    Instance.WifiScannerHistory.wifiScannerHistory.readObjects()
+                ));
+            },
+
+            toggleHistory: function(macEntry) {
+                var historyCache = Instance.WifiScannerHistory.wifiScannerHistory;
+                var historyEntry = historyCache.indices.macId.get(macEntry.macId);
+                if (historyEntry) {
+                    // remove
+                    this.runPromise(historyCache.deleteObject(historyEntry));
+                }
+                else {
+                    // add
+                    this.runPromise(historyCache.createObject({
+                        macId: macEntry.macId
+                    }));
+                }
+            },
+
+            toggleIgnore: function(macEntry) {
+                var ignoreCache = Instance.WifiScannerIgnoreList.wifiscannerIgnoreList;
+                var ignoreEntry = ignoreCache.indices.macId.get(macEntry.macId);
+                if (ignoreEntry) {
+                    // remove
+                    this.runPromise(ignoreCache.deleteObject(ignoreEntry));
+                }
+                else {
+                    // add
+                    this.runPromise(ignoreCache.createObject({
+                        macId: macEntry.macId
+                    }));
+                }
             },
             
             /**

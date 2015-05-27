@@ -12,7 +12,11 @@ module.exports = NoGapDef.component({
     	return {
             Caches: {
                 wifiScannerHistory: {
-                    idProperty: 'scannerHistoryId'
+                    idProperty: 'scannerHistoryId',
+                    indices: [{
+                        key: ['macId'],
+                        unique: true
+                    }]
                 }
             },
                 
@@ -44,7 +48,19 @@ module.exports = NoGapDef.component({
                     macId: { type: Sequelize.INTEGER.UNSIGNED }
                 }, {
                     freezeTableName: true,
-                    tableName: 'WifiScannerHistory'
+                    tableName: 'WifiScannerHistory',
+                    classMethods: {
+                        onBeforeSync: function(models) {
+                        },
+
+                        onAfterSync: function(models) {
+                            var tableName = this.getTableName();
+                            return Promise.join(
+                                // create indices
+                                SequelizeUtil.createIndexIfNotExists(tableName, ['macId'], { indexOptions: 'UNIQUE'})
+                            );
+                        }
+                    }
                 });
             }
         };

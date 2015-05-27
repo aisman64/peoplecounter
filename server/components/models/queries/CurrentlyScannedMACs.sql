@@ -1,8 +1,12 @@
-SELECT p.macId macId, count, MIN(s.time) timeMin, MAX(s.time) timeMax, m.macAddress macAddress, m.macAnnotation macAnnotation, o.model model
+SELECT p.macId macId, COUNT, LEAST(timeMin, MIN(s.time)) timeMin, GREATEST(timeMax, MAX(s.time)) timeMax, p.signalStrength signalStrength, m.macAddress macAddress, m.macAnnotation macAnnotation, o.model model
 FROM (
-	SELECT macId, COUNT(*) count
-	FROM `WifiActivityPacket` p
-	WHERE p.time > UNIX_TIMESTAMP() - :timeFrameSeconds
+	SELECT macId, signalStrength, COUNT(*) `count`, MIN(`time`) timeMin, MAX(`time`) timeMax
+	FROM (
+		SELECT macId, `time`, signalStrength
+		FROM `WifiActivityPacket`
+		WHERE `time` > UNIX_TIMESTAMP() - :timeFrameSeconds
+		ORDER BY `time` DESC
+	) p
 	GROUP BY macId
 ) p
 INNER JOIN `WifiSSIDPacket` s

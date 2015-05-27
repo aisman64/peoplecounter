@@ -71,6 +71,22 @@
 								ng-click="gotoPage('Vis', macEntry.macId)">
 								<i class="fa fa-search"></i>
 							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.toggleHistory(macEntry)"
+								ng-class="{
+									active: historyCache.indices.macId.get(macEntry.macId)
+								}">
+								<i class="fa fa-check green"></i>
+							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.toggleIgnore(macEntry)"
+								ng-class="{
+									active: ignoreCache.indices.macId.get(macEntry.macId)
+								}">
+								<i class="fa fa-ban red"></i>
+							</a>
 						</td>
 					</tr>
 				</tbody>
