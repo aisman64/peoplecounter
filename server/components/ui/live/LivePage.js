@@ -353,10 +353,7 @@ module.exports = NoGapDef.component({
                                             {
                                                 key: packets[i].deviceId,
                                                 color: (d3.scale.category10())[packets[i].deviceId],
-                                                values : [{
-                                                    x : 0,
-                                                    y : 0
-                                                }]
+                                                values : []
 
                                             };
 
