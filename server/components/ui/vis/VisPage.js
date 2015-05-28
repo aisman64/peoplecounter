@@ -198,7 +198,28 @@ module.exports = NoGapDef.component({
 
                 ThisComponent.page.invalidateView();
                 ThisComponent.refreshAddressBar();
-            }
+            },
+
+
+            // ################################################################################################
+            // Annotations
+
+            onMACAnnotationUpdated: function(macId, macAnnotation) {
+                ThisComponent.busy = true;
+
+                //ThisComponent.host.updateMACAnnotation(macId, macAnnotation)
+                Instance.MACAddress.macAddresses.updateObject({
+                    macId: macId,
+                    macAnnotation: macAnnotation
+                })
+                .finally(function() {
+                    ThisComponent.busy = false;
+                })
+                .then(function() {
+                    ThisComponent.page.invalidateView();
+                })
+                .catch(ThisComponent.page.handleError.bind(ThisComponent));
+            },
         };
     })
 });

@@ -94,7 +94,7 @@
 								<span ng-if="PC.annotatingMacs">
 									<br />
 									<input type="text" ng-model="packet.MACAddress.macAnnotation" 
-										ng-change="PC.onMACAnnotationUpdated(packet.macId, packet.MACAddress.macAnnotation)" />
+										ng-change="PC.onMACAnnotationUpdated(packet.macId, packet.MACAddress.macAnnotation || null)" />
 								</span>
 							</span>
 							<span class="pull-right" style="vertical-align: middle">

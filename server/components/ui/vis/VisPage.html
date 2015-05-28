@@ -261,10 +261,25 @@
 							{{macEntry.macAnnotation}}
 						</td>
 						<td class="col-xs-3">
-							<a ng-click="PC.toggleMacId(macEntry.macId)"
-								class="btn btn-large btn-default">
+							<a class="btn btn-info"
+								ng-click="PC.toggleMacId(macEntry.macId)">
 								<i class="fa fa-search"></i>
 							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.annotatingMacs = !(PC.annotatingMacs == macEntry.macId) && macEntry.macId;
+									PC.refreshPaused = !!PC.annotatingMacs"
+								ng-class="{
+									active: PC.annotatingMacs
+								}">
+								<i class="fa fa-edit"></i>
+							</a>
+
+							<span ng-if="PC.annotatingMacs == macEntry.macId">
+								<br />
+								<input type="text" ng-model="macEntry.macAnnotation"
+									ng-change="PC.onMACAnnotationUpdated(macEntry.macId, macEntry.macAnnotation || null)" />
+							</span>
 						</td>
 					</tr>
 				</tbody>
