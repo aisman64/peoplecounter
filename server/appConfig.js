@@ -190,6 +190,8 @@ module.exports = {
 
     // NoGap component and application configuration
     'nogap': {
+        'maxCommandsPerRequest': 0,
+        
         'logging'      : {
             'verbose'   : 1
         },

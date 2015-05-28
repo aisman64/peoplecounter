@@ -31,23 +31,24 @@
 		<div class="panel-body">
 			<table class="table table-striped">
 				<thead>
-					<th class="col-xs-2">
+					<th class="col-xs-3">
 						who
 					</th>
-					<th class="col-xs-4">
+					<th class="col-xs-3">
 						first seen
 					</th>
-					<th class="col-xs-4">
+					<th class="col-xs-3">
 						last seen
 					</th>
-					<th class="col-xs-2">
+					<th class="col-xs-3">
 						<!-- buttons -->
 					</th>
 				</thead>
 				<tbody>
 					<tr ng-repeat="macEntry in PC.scannedMacs | orderBy: '-macEntry.timeMax'"
 						ng-if="!ignoreCache.indices.macId.get(macEntry.macId)">
-						<td class="col-xs-4">
+						<td class="col-xs-3"
+							style="vertical-align: middle;">
 							<span style="vertical-align: middle">
 								{{ macEntry.macAnnotation || 
 									macEntry.macAddress }}
@@ -61,17 +62,20 @@
 							style="vertical-align: middle;">
 							<span ng-if="macEntry.timeMin"
 								code="time = util.moment(util.Math.round(macEntry.timeMin * 1000));">
-								{{ time.format('LLL') }} &nbsp; ({{ time.fromNow() }})
+								{{ time.format('LLL') }} <br />
+								({{ time.fromNow() }})
 							</span>
 						</td>
 						<td class="col-xs-3"
 							style="vertical-align: middle;">
 							<span ng-if="macEntry.timeMax"
 								code="time = util.moment(util.Math.round(macEntry.timeMax * 1000));">
-								{{ time.format('LLL') }} &nbsp; ({{ time.fromNow() }})
+								{{ time.format('LLL') }}  <br />
+								({{ time.fromNow() }})
 							</span>
 						</td>
-						<td class="col-xs-2">
+						<td class="col-xs-3"
+							style="vertical-align: middle;">
 							<a class="btn btn-info"
 								ng-click="gotoPage('Vis', macEntry.macId)">
 								<i class="fa fa-search"></i>
