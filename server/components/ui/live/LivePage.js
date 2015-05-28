@@ -283,15 +283,15 @@ module.exports = NoGapDef.component({
                     .then(function(deviceCounts) {
                         ThisComponent.deviceCounts = deviceCounts;
                     }),
+                    
                     ThisComponent.fetchHistoryData(timeFrameSeconds)
                 )
-                // return Promise.all(promises)
-                .finally(function() {
-                    ThisComponent.busy = false;
-                })
                 .then(function(deviceCounts) {
                     // console.log(deviceCounts);
                     // ThisComponent.deviceCounts = deviceCounts;
+                })
+                .finally(function() {
+                    ThisComponent.busy = false;
                     ThisComponent.page.invalidateView();
                 })
                 .catch(ThisComponent.page.handleError.bind(ThisComponent));
