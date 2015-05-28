@@ -103,8 +103,13 @@ module.exports = NoGapDef.component({
                 return Promise.join(
                     Instance.CommonDBQueries.queries.CurrentlyScannedMACs(ThisComponent.ScannerSettings)
                     .then(function(scannedMacs) {
+                        // first merge in new entries
                         _.merge(ThisComponent.scannedMacs, scannedMacs);
-                        //ThisComponent.scannedMacs = scannedMacs;
+
+                        // then remove all missing entries
+                        _.remove(ThisComponent.scannedMacs, function(entry) {
+                            return !_.find(scannedMacs, {macId: entry.macId});
+                        });
                     }),
 
                     Instance.WifiScannerIgnoreList.wifiscannerIgnoreList.readObjects(),
