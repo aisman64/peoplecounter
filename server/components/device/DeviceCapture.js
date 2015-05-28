@@ -81,7 +81,7 @@ module.exports = NoGapDef.component({
                 }
                 packet.deviceId = device.deviceId;
                 // call stored procedure to take care of packet insertion
-                return sequelize.query('CALL storePacket2(?, ?, ?, ?, ?, ?);', { 
+                return sequelize.query('CALL storePacket2(?, ?, ?, ?, ?);', { 
                     replacements: [
                         packet.mac,
                         packet.signalStrength,
@@ -153,6 +153,29 @@ module.exports = NoGapDef.component({
                 });
             },
  
+            storePacket2: function(packet) {
+                // send packet to server
+                return this.host.storePacket2(packet)
+                .then(function() {
+                    Instance.DeviceLog.logStatus("packet2 sent successfully!");
+                    // DB successfully stored packet
+                })
+                .catch(function(err) {
+                    Instance.DeviceLog.logError('storePacket2 on Host failed - ' + err.stack, true);
+
+                    // could not send packet to server -> Store in queue...
+                    return new Promise(function(resolve, reject) {
+                        queue.push(packet, function(err) {
+                            if(err) reject(err);
+                            else {
+                                // TODO: Why query length here?
+                                queue.length(function(err,len) { console.log(len); });
+                                resolve();
+                            }
+                        });  
+                    });
+                });
+            },
             structToMac: function(struct) {
                 var result = "";
                 var l;
@@ -186,6 +209,7 @@ module.exports = NoGapDef.component({
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err) return reject(err);
+                            ThisComponent.flushQueue();
                             resolve();
                         });
                     })
@@ -217,8 +241,7 @@ module.exports = NoGapDef.component({
             flushQueue: function() {
                 Instance.DeviceLog.logStatus('flushQueue', true);
                 var dummies = [];
-                exec("ls tmp/new/*.galileo | wc -l", function(error, stdout, stderr) {
-                    var length = parseInt(stdout);
+                queue.length(function(err, length) {
                     if (!length) return;
                     
                     for(var i=0; i<length; i++) {

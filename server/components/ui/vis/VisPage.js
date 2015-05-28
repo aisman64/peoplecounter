@@ -50,6 +50,8 @@ module.exports = NoGapDef.component({
         return {
             __ctor: function() {
                 ThisComponent = this;
+                this.currentMacIdList = [];
+                this.currentMacIdMap = {};
                 VisView = this.VisView = { 
                     open: {},
                     busy: {},
@@ -67,13 +69,12 @@ module.exports = NoGapDef.component({
 
                     // customize your $scope here:
                     $scope.VisView = VisView;
-                    
-                    $scope.visualizeMACAddress = function(macId) {
-                        Instance.UIMgr.gotoPage('Vis', macId);
-                    }
 
-                    $scope.fetchData = function(what) {
+                    $scope.fetchData = function(what, force) {
                         setTimeout(function() {
+                            if (force) {
+                                VisView.open[what] = true;
+                            }
                             if (VisView.open[what]) {
                                 ThisComponent.getVisData(what);
                             }
@@ -88,7 +89,7 @@ module.exports = NoGapDef.component({
             },
 
             getPageArgs: function() {
-                return ThisComponent.currentMacId;
+                return ThisComponent.currentMacIdList.join(',');
             },
 
             getVisData: function(what) {
@@ -105,6 +106,10 @@ module.exports = NoGapDef.component({
             },
 
             queryFunctions: {
+                recentMACs: function() {
+                    return Instance.CommonDBQueries.queries.NewestMACs({ limit: 20 });
+                },
+
                 mostConnectedMACs: function() {
                     return Instance.CommonDBQueries.queries.MostConnectedMACs({ limit: 20 });
                 },
@@ -118,12 +123,103 @@ module.exports = NoGapDef.component({
                 }
             },
 
+            /**
+             * Possible arguments: Array of comma-separated macIds (strings or numbers)
+             */
             onPageActivate: function(pageArgs) {
                 if (!Instance.User.isStandardUser()) return;
 
-                ThisComponent.currentMacId = parseInt(pageArgs);
+                var macIds;
+                if (_.isString(pageArgs)) {
+                    macIds = pageArgs.split(',');
+                }
+                else if (_.isArray(pageArgs)) {
+                    macIds = pageArgs;
+                }
+                else if (_.isNumber(pageArgs)) {
+                    macIds = [pageArgs];
+                }
+
+                // re-compute set of macIds
+                ThisComponent.currentMacIdList = [];
+                ThisComponent.currentMacIdMap = {};
+
+                if (macIds) {
+                    // 
+                    macIds.forEach(function(macId_) {
+                        var macId = _.isString(macId_) && parseInt(macId_) || macId_;
+                        if (macId && !ThisComponent.currentMacIdMap[macId]) {
+                            ThisComponent.currentMacIdList.push(macId);
+                            ThisComponent.currentMacIdMap[macId] = 1;
+                        }
+                    });
+                }
+
                 ThisComponent.page.invalidateView();
-            }
+                ThisComponent.refreshAddressBar();
+            },
+
+            refreshData: function() {
+                var promises = [];
+                for (var what in VisView.open) {
+                    if (VisView.open[what]) {
+                        promises.push(ThisComponent.getVisData(what));
+                    }   
+                }
+
+                return Promise.all(promises);
+            },
+
+            /**
+             * Add/remove MAC to/from graph visualization
+             */
+            toggleMacId: function(macId, enable) {
+                enable = enable || enable === undefined && !this.currentMacIdMap[macId];
+                if (enable) {
+                    // enable
+                    this.currentMacIdList.push(macId);
+                    this.currentMacIdMap[macId] = 1;
+                }
+                else {
+                    // disable
+                    _.remove(this.currentMacIdList, function(macId2) {
+                        return macId2 == macId;
+                    });
+                    delete this.currentMacIdMap[macId];
+                }
+
+                ThisComponent.page.invalidateView();
+                ThisComponent.refreshAddressBar();
+            },
+
+            clearRelationshipGraph: function() {
+                this.currentMacIdList = [];
+                this.currentMacIdMap = {};
+
+                ThisComponent.page.invalidateView();
+                ThisComponent.refreshAddressBar();
+            },
+
+
+            // ################################################################################################
+            // Annotations
+
+            onMACAnnotationUpdated: function(macId, macAnnotation) {
+                ThisComponent.busy = true;
+
+                //ThisComponent.host.updateMACAnnotation(macId, macAnnotation)
+                Instance.MACAddress.macAddresses.updateObject({
+                    macId: macId,
+                    macAnnotation: macAnnotation
+                })
+                .finally(function() {
+                    ThisComponent.busy = false;
+                })
+                .then(function() {
+                    ThisComponent.page.invalidateView();
+                })
+                .catch(ThisComponent.page.handleError.bind(ThisComponent));
+            },
         };
     })
 });

@@ -80,17 +80,21 @@ jQuery.fn.springy = function(params) {
 	var nearest = null;
 	var dragged = null;
 
+	// jQuery(canvas).click(function(e) {
+	// 	var pos = jQuery(this).offset();
+	// 	var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
+	// 	selected = layout.nearest(p);
+
+
+	// });
+
 	jQuery(canvas).mousedown(function(e) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
-		selected = nearest = dragged = layout.nearest(p);
+		nearest = dragged = layout.nearest(p);
 
-		if (selected.node !== null) {
+		if (dragged.node) {
 			dragged.point.m = 10000.0;
-
-			if (nodeSelected) {
-				nodeSelected(selected.node);
-			}
 		}
 
 		renderer.start();
@@ -100,11 +104,18 @@ jQuery.fn.springy = function(params) {
 	jQuery(canvas).dblclick(function(e) {
 		var pos = jQuery(this).offset();
 		var p = fromScreen({x: e.pageX - pos.left, y: e.pageY - pos.top});
-		selected = layout.nearest(p);
-		node = selected.node;
+		var selected = layout.nearest(p);
+		var node = selected.node;
+
+		if (node && nodeSelected) {
+			nodeSelected(node);
+		}
+
 		if (node && node.data && node.data.ondoubleclick) {
 			node.data.ondoubleclick();
 		}
+
+		renderer.start();
 	});
 
 	jQuery(canvas).mousemove(function(e) {

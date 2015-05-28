@@ -1,1 +1,1 @@
-mysqldump --opt --where="1 LIMIT 20000" -p peoplecounter OUI MACAddress SSID MAC_SSID_Relation WifiDataset WifiSSIDPacket WifiActivityPacket WifiSnifferDevice WifiDatasetSnifferRelation User > "db.sql"
+mysqldump --opt --where="1 LIMIT 50000" -p peoplecounter OUI MACAddress SSID MAC_SSID_Relation WifiDataset WifiSSIDPacket WifiActivityPacket WifiSnifferDevice WifiDatasetSnifferRelation User > "db.sql"

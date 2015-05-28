@@ -41,6 +41,7 @@ module.exports = NoGapDef.component({
 
         return {
             DeviceLastActiveTimes: {},
+            DeviceLastInstances: {},
 
             __ctor: function () {
                 SequelizeUtil = require(libRoot + 'SequelizeUtil');
@@ -81,6 +82,18 @@ module.exports = NoGapDef.component({
                 });
             },
 
+            runForeachDevice: function(fn) {
+                return Promise.map(Object.values(this.DeviceLastInstances), fn);
+            },
+
+            runForDevice: function(deviceId, fn) {
+                var Instance = this.DeviceLastInstances[deviceId];
+                if (Instance) {
+                    return fn(Instance);
+                }
+                return Promise.reject(makeError('device not available'));
+            },
+
             Private: {
             	logStatus: function(newDeviceStatus) {
                     return this.deviceStatuses.createObject(newDeviceStatus, true, true)
@@ -97,7 +110,9 @@ module.exports = NoGapDef.component({
                     var currentDevice = this.Instance.DeviceMain.getCurrentDevice();
                     if (!currentDevice) return;
 
-                    this.Shared.DeviceLastActiveTimes[currentDevice.deviceId] = new Date();
+                    var deviceId = currentDevice.deviceId;
+                    this.Shared.DeviceLastActiveTimes[deviceId] = new Date();
+                    this.Shared.DeviceLastInstances[deviceId] = this.Instance;
                 }
             },
             

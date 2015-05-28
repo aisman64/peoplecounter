@@ -93,7 +93,8 @@ squishy.clone = function(obj, deepCopy, targetObj) {
         if (!obj.hasOwnProperty(i)) continue;
         
         var prop = obj[i];
-        if (deepCopy && (typeof(prop) === "object" || typeof(prop) === "array")) {
+        if (deepCopy && (typeof(prop) === "object" || prop instanceof Array) && 
+                (typeof(prop) !== 'string' && !(prop instanceof String))) {
             // deep-copy if the property is an object or an array
             targetObj[i] = squishy.clone(obj[i], true);
         }
@@ -104,6 +105,7 @@ squishy.clone = function(obj, deepCopy, targetObj) {
     }
     return targetObj;
 };
+
 
 /**
  * Copy all properties from src to dst, but do not override properties

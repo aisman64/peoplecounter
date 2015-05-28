@@ -54,7 +54,7 @@ module.exports = NoGapDef.component({
                                 return Promise.reject(makeError('error.invalid.request'));
                             }
 
-                            return this.indices.byId[queryInput];
+                            return this.byId[queryInput];
                         },
 
                         compileReadObjectsQuery: function(queryInput, ignoreAccessCheck) {
@@ -71,7 +71,7 @@ module.exports = NoGapDef.component({
     }),
 
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) {
-    	var ConfigModel;
+        var ConfigModel;
         var UserRole;
 
         var SequelizeUtil,
@@ -94,7 +94,7 @@ module.exports = NoGapDef.component({
                 'facebookAppSecret',
 
                 'deviceConfigDefaults',
-                'deviceWifiConnectionFile'
+                'deviceWifiConnectionFile',
 
                 //'userPasswordFirstSalt'
             ],
@@ -104,7 +104,8 @@ module.exports = NoGapDef.component({
              * by privileged users.
              */
             ConfigClientPrivilegedRequestableList: [
-                'deviceWifiConnectionFile'
+                'deviceWifiConnectionFile',
+                'userPasswordFirstSalt'
             ],
 
             __ctor: function () {
@@ -369,11 +370,11 @@ module.exports = NoGapDef.component({
                 return this.host.updateConfigValue(key, value);
             }
 
-        	// setValue: function(name, value) {
-        	// 	this.cfg[name] = value;
-        	// 	// TODO: Store value in DB
-        	// 	//this.host.setValue(name, value);
-        	// },
+            // setValue: function(name, value) {
+            //  this.cfg[name] = value;
+            //  // TODO: Store value in DB
+            //  //this.host.setValue(name, value);
+            // },
         };
     })
 });

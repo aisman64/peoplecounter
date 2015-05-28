@@ -159,10 +159,10 @@ module.exports = NoGapDef.component({
                     //'HomePage',
                     'LivePage',
                     'VisPage',
+                    'ScannerPage',
                     'RawPage',
                     'DevicePage',
                     'MapPage',
-                    'ResultPage',
                     'AccountPage'
                 ],
 
@@ -170,7 +170,6 @@ module.exports = NoGapDef.component({
                     return Instance.User.currentUser && Instance.User.currentUser.displayRole >= UserRole.StandardUser;
                 }
             },
-
 
             /**
              * Staff gets access to these additional components

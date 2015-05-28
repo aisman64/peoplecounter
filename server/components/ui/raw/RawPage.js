@@ -215,15 +215,13 @@ module.exports = NoGapDef.component({
             // ################################################################################################
             // Refreshing + real-time updates
 
-            refreshDelay: 500,
+            refreshDelay: 1000,
 
             refreshData: function() {
-                if (ThisComponent.refreshPaused) return;
-
                 ThisComponent.busy = true;
                 ThisComponent.page.invalidateView();
 
-                ThisComponent.host.getMostRecentPackets(ThisComponent.rawSettings)
+                return ThisComponent.host.getMostRecentPackets(ThisComponent.rawSettings)
                 .finally(function() {
                     ThisComponent.busy = false;
                 })

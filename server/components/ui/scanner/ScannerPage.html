@@ -1,0 +1,274 @@
+<div class="fill container-page" ng-controller="scannerCtrl">
+	<div class="panel panel-primary">
+		<div class="panel-heading">
+			<div class="panel-title" 
+				style="vertical-align: middle;"><span>
+				Scanner
+				&nbsp;
+				&nbsp;
+				
+				<a class="btn"
+					style="width: 10em;"
+					ng-style="{ visibility: PC.annotatingMacs && 'hidden' || '' }"
+					ng-class="{ 'btn-danger': !PC.refreshPaused, 'btn-success': PC.refreshPaused }"
+					ng-click="PC.refreshPaused = !PC.refreshPaused">
+					<span ng-if="PC.refreshPaused">
+						Start!
+					</span>
+					<span ng-if="!PC.refreshPaused">
+						Stop!
+					</span>
+				</a>
+
+                <span class="pull-right"
+                	style="vertical-align: middle;"
+                	ng-style="{ visibility: PC.scanning && ' ' || 'hidden' }">
+                	scanning...
+                    <!-- <i class="fa fa-spinner fa-spin"></i> -->
+                </span>
+			</span></div>
+		</div>
+		<div class="panel-body">
+			<table class="table table-striped">
+				<thead>
+					<th class="col-xs-3">
+						who
+					</th>
+					<th class="col-xs-3">
+						first seen
+					</th>
+					<th class="col-xs-3">
+						last seen
+					</th>
+					<th class="col-xs-3">
+						<!-- buttons -->
+					</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="macEntry in PC.scannedMacs | orderBy: '-macEntry.timeMax'"
+						ng-if="!ignoreCache.indices.macId.get(macEntry.macId)">
+						<td class="col-xs-3"
+							style="vertical-align: middle;">
+							<span style="vertical-align: middle">
+								{{ macEntry.macAnnotation || 
+									macEntry.macAddress }}
+								<span class="mac-oui"
+									ng-if="macEntry.model"
+									>({{macEntry.model}})</span>
+								<!-- {{packet.MACAddress.OUI.company}} -->
+							</span>
+						</td>
+						<td class="col-xs-3"
+							style="vertical-align: middle;">
+							<span ng-if="macEntry.timeMin"
+								code="time = util.moment(util.Math.round(macEntry.timeMin * 1000));">
+								{{ time.format('LLL') }} <br />
+								({{ time.fromNow() }})
+							</span>
+						</td>
+						<td class="col-xs-3"
+							style="vertical-align: middle;">
+							<span ng-if="macEntry.timeMax"
+								code="time = util.moment(util.Math.round(macEntry.timeMax * 1000));">
+								{{ time.format('LLL') }}  <br />
+								({{ time.fromNow() }})
+							</span>
+						</td>
+						<td class="col-xs-3"
+							style="vertical-align: middle;">
+							<a class="btn btn-info"
+								ng-click="gotoPage('Vis', macEntry.macId)">
+								<i class="fa fa-search"></i>
+							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.toggleHistory(macEntry)"
+								ng-class="{
+									active: historyCache.indices.macId.get(macEntry.macId)
+								}"
+								title="pin">
+								<i class="fa fa-check green"></i>
+							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.toggleIgnore(macEntry)"
+								ng-class="{
+									active: ignoreCache.indices.macId.get(macEntry.macId)
+								}"
+								title="ignore">
+								<i class="fa fa-ban red"></i>
+							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.annotatingMacs = !(PC.annotatingMacs == macEntry.macId) && macEntry.macId;
+									PC.refreshPaused = !!PC.annotatingMacs"
+								ng-class="{
+									active: PC.annotatingMacs
+								}">
+								<i class="fa fa-edit"></i>
+							</a>
+
+							&nbsp;
+
+							{{macEntry.signalStrength}}
+
+							<span ng-if="PC.annotatingMacs == macEntry.macId">
+								<br />
+								<input type="text" ng-model="macEntry.macAnnotation"
+									ng-change="PC.onMACAnnotationUpdated(macEntry.macId, macEntry.macAnnotation || null)" />
+							</span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+		</div>
+	</div>
+
+
+	<accordion close-others="false">
+	    <!-- history -->
+	    <accordion-group
+	    	ng-init="ScannerView.open.history = true;"
+	    	is-open="ScannerView.open.history">
+
+	        <accordion-heading>
+	            <div style="display:block; cursor: pointer;">
+	                <span class="panel-title">
+	                	<span>
+							Pinned
+	                	</span>
+	                    <span class="pull-right centered-y">
+							<i class="fa fa-spinner fa-spin"
+								ng-if="ScannerView.busy.history"></i>
+	                        <i class="glyphicon" style="font-size: .5em;"
+	                            ng-class="{'glyphicon-chevron-down': ScannerView.open.history, 'glyphicon-chevron-right': !ScannerView.open.history}">
+	                        </i>
+	                    </span>
+	                </span>
+	            </div>
+	        </accordion-heading>
+
+			<table class="table">
+				<thead>
+					<th class="col-xs-1">
+						
+					</th>
+					<th class="col-xs-6">
+						who
+					</th>
+					<th class="col-xs-3">
+						pinned when
+					</th>
+					<th class="col-xs-2">
+					</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="entry in historyCache.list | orderBy: '-createdAt'">
+						<td class="col-xs-1">
+							{{$index + 1}}.
+						</td>
+						<td class="col-xs-5">
+							{{ entry.MAC.macAnnotation && 
+									entry.MAC.macAnnotation || 
+								entry.MAC.macAddress }}
+							<span class="mac-oui"
+								ng-if="entry.MAC.OUI.model"
+								>({{entry.MAC.OUI.model}})</span>
+						</td>
+						<td class="col-xs-3">
+							{{ util.moment(entry.createdAt).fromNow()}}
+						</td>
+						<td class="col-xs-3">
+							<a class="btn btn-info"
+								ng-click="gotoPage('Vis', entry.macId)">
+								<i class="fa fa-search"></i>
+							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.toggleHistory(entry)"
+								ng-class="{
+									active: historyCache.indices.macId.get(entry.macId)
+								}">
+								<i class="fa fa-check green"></i>
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+        </accordion-group>
+
+
+	    <!-- ignore list -->
+	    <accordion-group
+	    	ng-init="ScannerView.open.ignore = false;"
+	    	is-open="ScannerView.open.ignore">
+
+	        <accordion-heading>
+	            <div style="display:block; cursor: pointer;">
+	                <span class="panel-title">
+	                	<span>
+							Ignore list
+	                	</span>
+	                    <span class="pull-right centered-y">
+							<i class="fa fa-spinner fa-spin"
+								ng-if="ScannerView.busy.ignore"></i>
+	                        <i class="glyphicon" style="font-size: .5em;"
+	                            ng-class="{'glyphicon-chevron-down': ScannerView.open.ignore, 'glyphicon-chevron-right': !ScannerView.open.ignore}">
+	                        </i>
+	                    </span>
+	                </span>
+	            </div>
+	        </accordion-heading>
+
+			<table class="table">
+				<thead>
+					<th class="col-xs-1">
+						
+					</th>
+					<th class="col-xs-6">
+						who
+					</th>
+					<th class="col-xs-3">
+						ignored when
+					</th>
+					<th class="col-xs-2">
+					</th>
+				</thead>
+				<tbody>
+					<tr ng-repeat="entry in ignoreCache.list | orderBy: '-createdAt'">
+						<td class="col-xs-1">
+							{{$index + 1}}.
+						</td>
+						<td class="col-xs-5">
+							{{ entry.MAC.macAnnotation && 
+									entry.MAC.macAnnotation || 
+								entry.MAC.macAddress }}
+							<span class="mac-oui"
+								ng-if="entry.MAC.OUI.model"
+								>({{entry.MAC.OUI.model}})</span>
+						</td>
+						<td class="col-xs-3">
+							{{ util.moment(entry.createdAt).fromNow()}}
+						</td>
+						<td class="col-xs-3">
+							<a class="btn btn-info"
+								ng-click="gotoPage('Vis', entry.macId)">
+								<i class="fa fa-search"></i>
+							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.toggleIgnore(entry)"
+								ng-class="{
+									active: ignoreCache.indices.macId.get(entry.macId)
+								}">
+								<i class="fa fa-ban red"></i>
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+        </accordion-group>
+
+    </accordion>
+</div>
