@@ -162,7 +162,6 @@ module.exports = NoGapDef.component({
                     'ScannerPage',
                     'RawPage',
                     'DevicePage',
-                    'MapPage',
                     'AccountPage'
                 ],
 
