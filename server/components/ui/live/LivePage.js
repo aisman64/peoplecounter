@@ -276,7 +276,7 @@ module.exports = NoGapDef.component({
                     })
                     .then(function(deviceCounts) {
                         ThisComponent.deviceCounts = deviceCounts;
-                    })
+                    }),
                     
                     ThisComponent.fetchHistoryData(timeFrameSeconds)
                 )
