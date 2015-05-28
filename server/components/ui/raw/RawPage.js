@@ -215,7 +215,7 @@ module.exports = NoGapDef.component({
             // ################################################################################################
             // Refreshing + real-time updates
 
-            refreshDelay: 500,
+            refreshDelay: 1000,
 
             refreshData: function() {
                 ThisComponent.busy = true;
