@@ -232,7 +232,7 @@ module.exports = NoGapDef.component({
                 result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
-                if(packet.payload.signalStrength >= -50) {
+                if(packet.payload.signalStrength >= -40) {
                     return ThisComponent.storePacket2(result);
                 }
             },
