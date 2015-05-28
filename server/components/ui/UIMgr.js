@@ -873,7 +873,7 @@ module.exports = NoGapDef.component({
             _onPageDeactivate: function(page, newPage) {
                 // disable running timer(s)
                 if (page.component._refreshTimer) {
-                    clearInterval(page.component._refreshTimer);
+                    clearTimeout(page.component._refreshTimer);
                     page.component._refreshTimer = null;
                 }
 
@@ -958,17 +958,7 @@ module.exports = NoGapDef.component({
 
                 // start timer to call `refreshData`
                 if (component.refreshData) {
-                    var minRefreshDelay = 300;
-                    var delay = component.refreshDelay || Instance.AppConfig.getValue('defaultPageRefreshDelay');
-                    if (isNaN(delay) || delay < minRefreshDelay) {
-                        // sanity check
-                        console.error('refreshDelay too fast for page: ' + page.name);
-                        delay = minRefreshDelay;
-                    }
-                    component._refreshTimer = setInterval(function() {
-                        if (component.refreshPaused) return;
-                        component.refreshData();
-                    }, delay);
+                    ThisComponent._doRefresh(component);
                 }
 
                 // call `onPageActivate`
@@ -978,6 +968,29 @@ module.exports = NoGapDef.component({
                     // add history entry
                     Instance.UIMgr.updateAddressBar(component, true);
                 });
+            },
+
+            _doRefresh: function(component) {
+                var minRefreshDelay = 300;
+                var delay = component.refreshDelay || Instance.AppConfig.getValue('defaultPageRefreshDelay');
+                if (isNaN(delay) || delay < minRefreshDelay) {
+                    // sanity check
+                    console.error('refreshDelay too fast for page: ' + page.name);
+                    delay = minRefreshDelay;
+                }
+                
+                component._refreshTimer = setTimeout(function() {
+                    Promise.resolve()
+                    .then(function() {
+                        if (!component.refreshPaused) {
+                            return component.refreshData();
+                        }
+                    })
+                    .finally(function() {
+                        // repeat
+                        ThisComponent._doRefresh(component);
+                    });
+                }, delay);
             },
                     
             /**

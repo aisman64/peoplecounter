@@ -221,7 +221,7 @@ module.exports = NoGapDef.component({
                 ThisComponent.busy = true;
                 ThisComponent.page.invalidateView();
 
-                ThisComponent.host.getMostRecentPackets(ThisComponent.rawSettings)
+                return ThisComponent.host.getMostRecentPackets(ThisComponent.rawSettings)
                 .finally(function() {
                     ThisComponent.busy = false;
                 })
