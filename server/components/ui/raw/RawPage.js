@@ -17,7 +17,6 @@ module.exports = NoGapDef.component({
      */
     Host: NoGapDef.defHost(function(SharedTools, Shared, SharedContext) {
         var packetIncludes;
-        var packetStreamLimit = 50;
 
         var componentsRoot = '../../';
         var libRoot = componentsRoot + '../lib/';
@@ -46,60 +45,6 @@ module.exports = NoGapDef.component({
              * Host commands can be directly called by the client
              */
             Public: {
-                getMostRecentPackets: function(settings, lastId) {
-                    if (!settings) {
-                        return Promise.reject(makeError('error.invalid.request'));
-                    }
-
-                    var where = settings.where || {};
-                    var queryData = {
-                        where: where,
-                        order: 'time DESC'
-                    };
-
-                    if (lastId) {
-                        where.packetId = {gt: lastId}
-                    }
-                    else {
-                        // first query, just contains the latest few packets
-                        queryData.limit = packetStreamLimit;
-                    }
-
-                    var cache;
-                    if (settings.scanner) {
-                        cache = this.Instance.WifiActivityPacket.wifiActivityPackets;
-
-                        queryData.include = packetIncludes = [{
-                            model: Shared.MACAddress.Model,
-                            as: 'MACAddress',
-                            attributes: ['macAddress', 'macAnnotation'],
-                            include: [{
-                                model: Shared.OUI.Model,
-                                as: 'OUI'
-                            }]
-                        }];
-                    }
-                    else {
-                        cache = this.Instance.WifiSSIDPacket.wifiSSIDPackets;
-
-                        queryData.include = packetIncludes = [{
-                            model: Shared.SSID.Model,
-                            as: 'SSID',
-                            attributes: ['ssidName']
-                        },{
-                            model: Shared.MACAddress.Model,
-                            as: 'MACAddress',
-                            attributes: ['macAddress', 'macAnnotation'],
-                            include: [{
-                                model: Shared.OUI.Model,
-                                as: 'OUI'
-                            }]
-                        }];
-                    }
-
-                    return cache.findObjects(queryData);
-                },
-
                 // updateMACAnnotation: function(macId, macAnnotation) {
                 //     if (!this.Instance.User.isStaff()) {
                 //         return Promise.reject('error.invalid.permissions');
@@ -221,7 +166,13 @@ module.exports = NoGapDef.component({
                 ThisComponent.busy = true;
                 ThisComponent.page.invalidateView();
 
-                return ThisComponent.host.getMostRecentPackets(ThisComponent.rawSettings)
+                var query = ThisComponent.rawSettings.scanner && 
+                    Instance.CommonDBQueries.queries.RawActivityPackets || 
+                    Instance.CommonDBQueries.queries.RawSSIDPackets;
+
+                return query({
+                    limit: 50
+                })
                 .finally(function() {
                     ThisComponent.busy = false;
                 })
