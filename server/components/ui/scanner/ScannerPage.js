@@ -46,7 +46,7 @@ module.exports = NoGapDef.component({
 
         return {
             ScannerSettings: {
-                timeFrameSeconds: 60
+                timeFrameSeconds: 600000000
             },
 
             __ctor: function() {
@@ -54,6 +54,10 @@ module.exports = NoGapDef.component({
                 this.ScannerView = { open: {} };
                 this.scannedMacs = [];
                 this.colorsPerMacId = {};
+            },
+
+            initClient: function() {
+                this.ScannerSettings.timeFrameSeconds = Instance.AppConfig.getValue('scannerTimeFrameSeconds') || 60;
             },
 
             /**
@@ -93,7 +97,10 @@ module.exports = NoGapDef.component({
             refreshDelay: 500,
 
             refreshData: function() {
-                return this.runPromise(Promise.join(
+                ThisComponent.scanning = true;
+                ThisComponent.page.invalidateView();
+                
+                return Promise.join(
                     Instance.CommonDBQueries.queries.CurrentlyScannedMACs(ThisComponent.ScannerSettings)
                     .then(function(scannedMacs) {
                         _.merge(ThisComponent.scannedMacs, scannedMacs);
@@ -103,7 +110,12 @@ module.exports = NoGapDef.component({
                     Instance.WifiScannerIgnoreList.wifiscannerIgnoreList.readObjects(),
 
                     Instance.WifiScannerHistory.wifiScannerHistory.readObjects()
-                ));
+                )
+                .finally(function() {
+                    ThisComponent.scanning = false;
+                    ThisComponent.page.invalidateView();
+                })
+                .catch(ThisComponent.page.handleError.bind(ThisComponent));;
             },
 
             toggleHistory: function(macEntry) {
@@ -134,6 +146,26 @@ module.exports = NoGapDef.component({
                         macId: macEntry.macId
                     }));
                 }
+            },
+
+            // ################################################################################################
+            // Annotations
+
+            onMACAnnotationUpdated: function(macId, macAnnotation) {
+                ThisComponent.busy = true;
+
+                //ThisComponent.host.updateMACAnnotation(macId, macAnnotation)
+                Instance.MACAddress.macAddresses.updateObject({
+                    macId: macId,
+                    macAnnotation: macAnnotation
+                })
+                .finally(function() {
+                    ThisComponent.busy = false;
+                })
+                .then(function() {
+                    ThisComponent.page.invalidateView();
+                })
+                .catch(ThisComponent.page.handleError.bind(ThisComponent));
             },
             
             /**
