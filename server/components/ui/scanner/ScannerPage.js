@@ -46,7 +46,7 @@ module.exports = NoGapDef.component({
 
         return {
             ScannerSettings: {
-                timeFrameSeconds: 60
+                timeFrameSeconds: 600000000000
             },
 
             __ctor: function() {
