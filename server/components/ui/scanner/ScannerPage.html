@@ -22,7 +22,7 @@
 
                 <span class="pull-right"
                 	style="vertical-align: middle;"
-                	ng-style="{ visibility: PC.busy && ' ' || 'hidden' }">
+                	ng-style="{ visibility: PC.scanning && ' ' || 'hidden' }">
                 	scanning...
                     <!-- <i class="fa fa-spinner fa-spin"></i> -->
                 </span>
@@ -98,6 +98,21 @@
 								title="ignore">
 								<i class="fa fa-ban red"></i>
 							</a>
+
+							<a class="btn btn-info"
+								ng-click="PC.annotatingMacs = !(PC.annotatingMacs == macEntry.macId) && macEntry.macId;
+									PC.refreshPaused = !!PC.annotatingMacs"
+								ng-class="{
+									active: PC.annotatingMacs
+								}">
+								<i class="fa fa-edit"></i>
+							</a>
+
+							<span ng-if="PC.annotatingMacs == macEntry.macId">
+								<br />
+								<input type="text" ng-model="macEntry.macAnnotation"
+									ng-change="PC.onMACAnnotationUpdated(macEntry.macId, macEntry.macAnnotation)" />
+							</span>
 						</td>
 					</tr>
 				</tbody>
