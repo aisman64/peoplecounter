@@ -107,16 +107,22 @@ module.exports = NoGapDef.component({
                     if (!this.Instance.User.isStaff()) 
                         return Promise.reject(makeError('error.invalid.permissions'));
 
-                    // TODO: Reboot
-                    console.error('NYI: rebootDevice');
+                    // TODO: Get device clients independent of session, then reboot
+                    //console.error('NYI: rebootDevice');
+                    return Shared.DeviceStatus.runForDevice(deviceId, function(Instance) {
+                        return Instance.DeviceMain.client.reboot();
+                    });
                 },
 
                 restartDevice: function(deviceId) {
                     if (!this.Instance.User.isStaff()) 
                         return Promise.reject(makeError('error.invalid.permissions'));
 
-                    // TODO: Restart
-                    console.error('NYI: restartDevice');
+                    // TODO: Get device clients independent of session, then restart
+                    //console.error('NYI: restartDevice');
+                    return Shared.DeviceStatus.runForDevice(deviceId, function(Instance) {
+                        return Instance.DeviceMain.client.restart();
+                    });
                 }
             },
         };

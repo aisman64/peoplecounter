@@ -243,10 +243,16 @@ module.exports = NoGapDef.component({
      */
     Client: NoGapDef.defClient(function(Tools, Instance, Context) {
         var ThisComponent;
+        var process;
 
         return {
             __ctor: function() {
                 ThisComponent = this;
+                try {
+                    process = require('process');
+                }
+                catch (err) {
+                }
             },
 
             /**
@@ -395,6 +401,10 @@ module.exports = NoGapDef.component({
                     this._initializedDevice = 1;
 
                     this.onDeviceReady();
+                },
+
+                restart: function() {
+                    process.exit(0);
                 }
             }
         };
