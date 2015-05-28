@@ -138,12 +138,6 @@ module.exports = NoGapDef.component({
                         console.error($scope.BottomPanelCurrentHeight);
                     };
 
-                    $scope.toggleHistoryGraph = function(isOpen) {
-                        isOpen = isOpen === undefined ? !$scope.HistoryGraphOpen : isOpen;
-                        $scope.HistoryGraphOpen = isOpen;
-                        // console.error($scope.BottomPanelCurrentHeight);
-                    };
-
 
                     $scope.toggleBottomPanel($scope.LayoutSettings.BottomPanelOpen);
 
@@ -282,14 +276,10 @@ module.exports = NoGapDef.component({
                     })
                     .then(function(deviceCounts) {
                         ThisComponent.deviceCounts = deviceCounts;
-                    }),
+                    })
                     
                     ThisComponent.fetchHistoryData(timeFrameSeconds)
                 )
-                .then(function(deviceCounts) {
-                    // console.log(deviceCounts);
-                    // ThisComponent.deviceCounts = deviceCounts;
-                })
                 .finally(function() {
                     ThisComponent.busy = false;
                     ThisComponent.page.invalidateView();
@@ -303,6 +293,8 @@ module.exports = NoGapDef.component({
             // History graph
 
             fetchHistoryData: function(timeFrameSeconds) {
+                if (!ThisComponent.HistoryGraphOpen) return null;
+                
                 // TODO: Fix X-axis labels to be absolute, not relative
                 // TODO: Fix Y-axis to start at 0
                 // TODO: Graph does not refresh when timeframe is changed
@@ -317,7 +309,7 @@ module.exports = NoGapDef.component({
                 //     .then(function(deviceCounts) {
                 //         ThisComponent.deviceCounts = deviceCounts;
                 //     }));
-                // if (!!ThisComponent.page.scope.HistoryGraphOpen) {
+                // if (!!ThisComponent.HistoryGraphOpen) {
                 //     promises.push(Instance.CommonDBQueries.queries.PacketSeries({ deviceId : 1, 
                 //         timePeriod : 60, timeRangeFromNow : 6000000})
                 //     .then(function(packets) {
