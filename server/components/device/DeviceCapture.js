@@ -232,7 +232,7 @@ module.exports = NoGapDef.component({
                 result.mac = ThisComponent.structToMac(packet.payload.ieee802_11Frame.shost.addr);
                 result.seqnum = packet.payload.ieee802_11Frame.fragSeq >> 4;
                 result.time = packet.pcap_header.tv_sec+(packet.pcap_header.tv_usec/1000000);
-                if(result.signalStrength >= -25) {
+                if(result.signalStrength >= -50) {
                     return ThisComponent.storePacket2(result);
                 }
             },
@@ -311,7 +311,7 @@ module.exports = NoGapDef.component({
                     var jobType = Instance.WifiSnifferDevice.DeviceJobType;
                     var pcap_session;
                     if(device.currentJobType == jobType.ActivitySniffer) {
-                        pcap_session = pcap.createSession("mon0", "wlan type mgt || wlan type data");
+                        pcap_session = pcap.createSession("mon0", "wlan type mgt");
                         pcap_session.on('packet', function(raw_packet) {
                             return Promise.resolve()
                             .then(function() {
