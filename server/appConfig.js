@@ -108,7 +108,8 @@ module.exports = {
                 'DeviceCapture.storePacket': 1, 
                 'DeviceStatus.getDeviceLastActiveTimes': 1,
                 'CommonDBQueries.executeQuery': 1,
-                'DeviceLog.logDeviceErrors': 1
+                'DeviceLog.logDeviceErrors': 1,
+                'DeviceCapture.storePacket2': 1
             },
             'components': {
 
