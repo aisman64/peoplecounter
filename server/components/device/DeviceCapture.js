@@ -142,12 +142,11 @@ module.exports = NoGapDef.component({
                     // could not send packet to server -> Store in queue...
                     return new Promise(function(resolve, reject) {
                         queue.push(packet, function(err) {
-                            if(err) reject(err);
-                            else {
-                                // TODO: Why query length here?
-                                queue.length(function(err,len) { console.log(len); });
-                                resolve();
-                            }
+                            if(err) return reject(err);
+
+                            // TODO: Why query length here?
+                            queue.length(function(err,len) { console.log(len); });
+                            resolve();
                         });  
                     });
                 });
@@ -166,23 +165,22 @@ module.exports = NoGapDef.component({
                     // could not send packet to server -> Store in queue...
                     return new Promise(function(resolve, reject) {
                         queue.push(packet, function(err) {
-                            if(err) reject(err);
-                            else {
-                                // TODO: Why query length here?
-                                queue.length(function(err,len) { console.log(len); });
-                                resolve();
-                            }
+                            if(err) return reject(err);
+
+                            // TODO: Why query length here?
+                            queue.length(function(err,len) { console.log(len); });
+                            resolve();
                         });  
                     });
                 });
             },
+
             structToMac: function(struct) {
                 var result = "";
-                var l;
-                for(var i = 0; i<6; i++)
-                        {
-                        l = struct[i].toString(16);
-                        result += l.length === 1 ? '0' + l: l;
+                var len;
+                for(var i = 0; i<6; i++) {
+                    len = struct[i].toString(16);
+                    result += len.length === 1 ? ('0' + len) : len;
 		        }
         	   return result;
             },
@@ -209,6 +207,7 @@ module.exports = NoGapDef.component({
                     new Promise(function(resolve, reject) {  
                         queue = new Queue('tmp/', function(err, stdout, stderr) {
                             if(err) return reject(err);
+
                             ThisComponent.flushQueue();
                             resolve();
                         });
@@ -251,27 +250,25 @@ module.exports = NoGapDef.component({
                     return Promise.map(dummies, function(dummy) {
                         return new Promise(function(resolve, reject) {
                             queue.tpop(function(err, packet, commit, rollback) {
-                                if (err)
-                                    {
-                                    reject(err);
-                                    }
+                                if (err) return reject(err);
+
                                 ThisComponent.host.storePacket(packet)
                                 .then(function() {
                                     commit(function(err) {
-                                        if (err) {
-                                            reject(err);
-                                        }
-                                        else {
-                                            resolve();
-                                        }
+                                        if (err) return reject(err);
+
+                                        resolve();
                                     });
                                 })
                                 .catch(function(err) {
+                                    // something went wrong -> Rollback
                                     rollback(function(err2) {
                                         if (err2) {
                                             Instance.DeviceLog.logError('Unable to rollback: ' + err2.stack, true);
+                                            //return reject(err);
                                         }
-                                        //reject(err);
+
+                                        // just resolve anyway
                                         resolve();
                                     });
                                 });
