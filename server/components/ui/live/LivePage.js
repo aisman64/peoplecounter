@@ -141,15 +141,12 @@ module.exports = NoGapDef.component({
 
                     $scope.toggleBottomPanel($scope.LayoutSettings.BottomPanelOpen);
 
-                    $scope.labels = ["January", "February", "March", "April", "May", "June", "July"];
-                    $scope.series = ['Series A', 'Series B'];
+                    $scope.labels = [];
+                    $scope.series = [];
                     $scope.data = [
-                        [65, 59, 80, 81, 56, 55, 40],
-                        [28, 48, 40, 19, 86, 27, 90]
+                        [],
+                        []
                     ];
-                    $scope.onClick = function (points, evt) {
-                        console.log(points, evt);
-                     };
 
                      $scope.options = {
                         scaleBeginAtZero: true,
@@ -239,38 +236,44 @@ module.exports = NoGapDef.component({
 
                 var promises = [];
                
-                return Instance.CommonDBQueries.queries.PacketSeries({ 
+                return Instance.CommonDBQueries.queries.PacketSum({ 
                     timePeriod : timeFrameSeconds
                 })
                 .then(function(packets) {
                     var labels = []
+                    var series = ['sum']
+                    var data = [[]]
 
-                    var series = []
-
-                    for (var packet in packets){
-
-
+                    for (var i = 0;i < packets.length;i++){
+                        labels.push(packets[i].timeNearTo)
+                        data[0].push(parseInt( packets[i].count));
                     }
 
 
-                    console.log(packets)
-                        var data = [[
-                                [65, 59, 80, 81, 56, 55, 40],
-                                [28, 48, 40, 19, 86, 27, 90]
-                            ], 
-                            [
-                                [49, 9, 36, 78, 26, 45, 70],
-                                [68, 78, 30, 49, 56, 67, 50]
-                            ],
-                            [
-                                [51, 49, 60, 61, 36, 45, 60],
-                                [68, 78, 60, 69, 56, 67, 60]
-                            ] ];
 
-                        console.log('hello world');
-                        var ii = Math.floor(Math.random() * (3 - 0));
-                        console.log(ii)
-                        ThisComponent.page.scope.data = data[ii];
+                    // console.log(packets);
+                        // var data = [[
+                        //         [65, 59, 80, 81, 56, 55, 40],
+                        //         [28, 48, 40, 19, 86, 27, 90]
+                        //     ], 
+                        //     [
+                        //         [49, 9, 36, 78, 26, 45, 70],
+                        //         [68, 78, 30, 49, 56, 67, 50]
+                        //     ],
+                        //     [
+                        //         [51, 49, 60, 61, 36, 45, 60],
+                        //         [68, 78, 60, 69, 56, 67, 60]
+                        //     ] ];
+
+                        // console.log('hello world');
+                        // var ii = Math.floor(Math.random() * (3 - 0));
+                        // console.log(ii)
+                        // console.log(data);
+                        // console.log(labels);
+                        // console.log(series);
+                        ThisComponent.page.scope.data = data;
+                        ThisComponent.page.scope.labels = labels;
+                        ThisComponent.page.scope.series = series;
                 })
                 .then(function() {
                     

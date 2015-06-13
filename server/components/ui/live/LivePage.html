@@ -13,9 +13,8 @@
 			}
 		</style>
 			<canvas ng-if="PC.HistoryGraphOpen" id="line" class="chart chart-line" data="data"
-				  labels="labels" legend="true" series="series" options="options"
-				  click="onClick">
-				</canvas> 
+				  labels="labels" legend="true" series="series" options="options">
+			</canvas> 
 		
 
 		<div class="vertical-space"></div>
@@ -34,7 +33,7 @@
 
 			<a class="btn btn-dark"
 				type="radio"
-				ng-click="toggleBottomPanel(PC.showPerDeviceInfo = !PC.showPerDeviceInfo);"
+				ng-click="toggleBottomPanel(PC.showPerDeviceInfo = !PC.showPerDeviceInfo);PC.HistoryGraphOpen=false;"
 				ng-class="{ active: PC.showPerDeviceInfo}">
 				per device
 
@@ -42,7 +41,7 @@
 			</a>
 
 			<a class="btn btn-dark"
-				ng-click="PC.HistoryGraphOpen=!PC.HistoryGraphOpen;"
+				ng-click="PC.HistoryGraphOpen=!PC.HistoryGraphOpen;PC.showPerDeviceInfo=false;"
 				ng-class="{ active: PC.HistoryGraphOpen}">
 
 				<!-- TODO: Enable button once all bugs are fixed -->
