@@ -12,7 +12,10 @@
 				display:none;
 			}
 		</style>
-			<nvd3 style="color:black;" forcey="[0]" ng-if="PC.HistoryGraphOpen" objectequality="true" options="options" data="data" config="{ refreshDataOnly:true }"></nvd3>
+			<canvas ng-if="PC.HistoryGraphOpen" id="line" class="chart chart-line" data="data"
+				  labels="labels" legend="true" series="series" options="options"
+				  click="onClick">
+				</canvas> 
 		
 
 		<div class="vertical-space"></div>
@@ -39,7 +42,6 @@
 			</a>
 
 			<a class="btn btn-dark"
-				ng-disabled="true"
 				ng-click="PC.HistoryGraphOpen=!PC.HistoryGraphOpen;"
 				ng-class="{ active: PC.HistoryGraphOpen}">
 
