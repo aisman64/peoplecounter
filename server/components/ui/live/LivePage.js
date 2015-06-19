@@ -276,7 +276,6 @@ module.exports = NoGapDef.component({
                         // update the last data
                         var dataLength = data[0].length;
                         data[0][dataLength-1] = parseInt(packets[0].count);
-
                         
                         for (var i = 1;i < packets.length;i++){
                             labels.push(packets[i].timeNearTo)
