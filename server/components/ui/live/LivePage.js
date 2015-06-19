@@ -277,9 +277,15 @@ module.exports = NoGapDef.component({
                         var dataLength = data[0].length;
                         data[0][dataLength-1] = parseInt(packets[0].count);
                         
-                        for (var i = 1;i < packets.length;i++){
+                        for (var i = 1;i < packets.length;i++) {
                             labels.push(packets[i].timeNearTo)
                             data[0].push(parseInt( packets[i].count));
+                        }
+
+                        // deal with too much data
+                        for (var i = 0;i < data[0].lanegh - ThisComponent.historyGraphPointLimit;i++) {
+                            data[0].shift();
+                            labels.shift();
                         }
 
                         ThisComponent.page.scope.data = data;
