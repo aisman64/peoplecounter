@@ -79,6 +79,7 @@ module.exports = NoGapDef.component({
             __ctor: function() {
                 ThisComponent = this;
                 ThisComponent.showPerDeviceInfo = false;
+                ThisComponent.historyGraphPointLimit = 50;
             },
 
             _registerDirectives: function(app) {
@@ -141,18 +142,15 @@ module.exports = NoGapDef.component({
 
                     $scope.toggleBottomPanel($scope.LayoutSettings.BottomPanelOpen);
 
+                    // history graph
                     $scope.labels = [];
                     $scope.series = [];
                     $scope.data = [
-                        [],
-                        []
                     ];
 
-                     $scope.options = {
+                    $scope.options = {
                         scaleBeginAtZero: true,
-                     }
-
-
+                    };
 
                 });
 
@@ -226,58 +224,77 @@ module.exports = NoGapDef.component({
             // History graph
 
             fetchHistoryData: function(timeFrameSeconds) {
-                if (!ThisComponent.HistoryGraphOpen) return null;
+                if (!ThisComponent.HistoryGraphOpen) {
+                    ThisComponent.labels = [];
+                    ThisComponent.series = [];
+                    ThisComponent.data = [];
+                    return null;
+                }
 
-                
-                
-                // TODO: Fix X-axis labels to be absolute, not relative
-                // TODO: Graph does not refresh when timeframe is changed
-                // TODO: Put the response data in graph
+                if (ThisComponent.page.scope.labels.length == 0 
+                    || !ThisComponent.page.scope.timeFrameSeconds 
+                    || ThisComponent.page.scope.timeFrameSeconds != timeFrameSeconds ) {
 
-                var promises = [];
-               
-                return Instance.CommonDBQueries.queries.PacketSum({ 
-                    timePeriod : timeFrameSeconds
-                })
-                .then(function(packets) {
-                    var labels = []
-                    var series = ['sum']
-                    var data = [[]]
+                    ThisComponent.page.scope.timeFrameSeconds = timeFrameSeconds;
 
-                    for (var i = 0;i < packets.length;i++){
-                        labels.push(packets[i].timeNearTo)
-                        data[0].push(parseInt( packets[i].count));
-                    }
+                    return Instance.CommonDBQueries.queries.PacketSum({ 
+                        timePeriod : timeFrameSeconds,
+                        pointLimit : ThisComponent.historyGraphPointLimit
+                    })
+                    .then(function(packets) { // first time
+                        console.log('first time');
+                        console.log(packets.length);
+                        var labels = []
+                        var series = ['sum']
+                        var data = [[]]
 
+                        for (var i = 0;i < packets.length;i++){
+                            labels.push(packets[i].timeNearTo)
+                            data[0].push(parseInt( packets[i].count));
+                        }
 
-
-                    // console.log(packets);
-                        // var data = [[
-                        //         [65, 59, 80, 81, 56, 55, 40],
-                        //         [28, 48, 40, 19, 86, 27, 90]
-                        //     ], 
-                        //     [
-                        //         [49, 9, 36, 78, 26, 45, 70],
-                        //         [68, 78, 30, 49, 56, 67, 50]
-                        //     ],
-                        //     [
-                        //         [51, 49, 60, 61, 36, 45, 60],
-                        //         [68, 78, 60, 69, 56, 67, 60]
-                        //     ] ];
-
-                        // console.log('hello world');
-                        // var ii = Math.floor(Math.random() * (3 - 0));
-                        // console.log(ii)
-                        // console.log(data);
-                        // console.log(labels);
-                        // console.log(series);
                         ThisComponent.page.scope.data = data;
                         ThisComponent.page.scope.labels = labels;
                         ThisComponent.page.scope.series = series;
-                })
-                .then(function() {
-                    
-                });
+
+                    });
+
+                } else { // incremental
+                    console.log('incremental');
+                    var labels = ThisComponent.page.scope.labels;
+                    var latestTime = labels[labels.length - 1]
+                    return Instance.CommonDBQueries.queries.PacketIncremental({ 
+                        timePeriod : timeFrameSeconds,
+                        latestTime : latestTime
+
+                    })
+                    .then(function(packets) {
+
+                        var data = ThisComponent.page.scope.data;
+                        var labels = ThisComponent.page.scope.labels;
+
+                        // update the last data
+                        var dataLength = data[0].length;
+                        data[0][dataLength-1] = parseInt(packets[0].count);
+
+                        
+                        for (var i = 1;i < packets.length;i++){
+                            labels.push(packets[i].timeNearTo)
+                            data[0].push(parseInt( packets[i].count));
+                        }
+
+                        ThisComponent.page.scope.data = data;
+                        ThisComponent.page.scope.labels = labels;
+                        
+                    });
+
+
+
+                }
+
+
+               
+                
             },
             
             /**
