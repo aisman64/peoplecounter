@@ -57,6 +57,10 @@ module.exports = NoGapDef.component({
                     'lib/nvd3/nv.d3.min.js',
 
 
+                    'lib/chart-js/Chart.js',
+                    'lib/chart-js/angular-chart.js',
+
+
 
 
                     // seven-segment display
@@ -75,6 +79,7 @@ module.exports = NoGapDef.component({
                      */
                     'lib/normalize.css',
                     'lib/nvd3/nv.d3.min.css',
+                    'lib/chart-js/angular-chart.css',
 
                     // our custom styles
                     'css/styles.css'
@@ -517,7 +522,8 @@ module.exports = NoGapDef.component({
                     'timespanPicker',
                     'uiGmapgoogle-maps',
                     'ngMap',
-                    'nvd3'
+                    'nvd3',
+                    'chart.js'
                 ];
                 var angularApp = angular.module('app', includeModules);
                 angularApp.config(function(uiGmapGoogleMapApiProvider) {
