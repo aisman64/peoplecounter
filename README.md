@@ -1,5 +1,9 @@
 # peoplecounter
 
+## Results
+
+Check out the official project website: http://aisman64.github.io/peoplecounter/
+
 
 ## Getting Started
 * Setup node web server by following [these steps](https://github.com/Domiii/node-sample-app)
