@@ -15,7 +15,7 @@
 		* Go to `server` folder
 		* Run `npm start`
 	* Setup device (tested only on Galileo)
-                * Connect your device to a network (wired or wireless)
+		* Connect your device to a network (wired or wireless)
 		* Boot up the device
 		* Make sure to copy the [deviceClient/ folder](https://github.com/aisman64/peoplecounter/tree/master/deviceClient) to the device
 			* Optional: Register `StartDeviceClient.js` as a system service (so it will auto-reconnect on boot-up)
