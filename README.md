@@ -39,7 +39,7 @@
 {
 	DeviceClientCacheFile: "./data/_ClientCache",
 	ReconnectDelay: 3000,
-	HostUrl: "http://localhost:3000"
+	HostUrl: "http://localhost:9123"
 }
 ```
 
